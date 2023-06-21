@@ -2,8 +2,11 @@
 /// 
 /// returns simple case for now
 /// 
-/// note: returns error if k is 0, should it return NAN
+/// FIXME: should return an Err result? right now just panics
  pub fn group_velocity(k: f64) -> f64 {
+   if k == 0.0 {
+      panic!("k can not equal 0");
+   }
     let g = 9.8; // relocate this?
     (g/k).sqrt()
  }
@@ -57,7 +60,7 @@ mod test_functions {
          (0.0, 1.0, 0.0, 3.13050),
          (-1.0, 0.0, -3.13050, 0.0),
          (0.0, -1.0, 0.0, -3.13050),
-         // (0.0, 0.0, 0.0, 0.0) would return an error 
+         // (0.0, 0.0, 0.0, 0.0) // this would cause panic
       ];
       for (kx, ky, ans_dxdt, ans_dydt) in results {
          let (dxdt, dydt, _, _) = odes(kx, ky);
