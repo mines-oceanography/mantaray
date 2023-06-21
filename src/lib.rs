@@ -5,7 +5,7 @@
 /// FIXME: should return an Err result? right now just panics
  pub fn group_velocity(k: f64) -> f64 {
    if k == 0.0 {
-      panic!("k can not equal 0");
+      todo!("k can not equal 0");
    }
     let g = 9.8; // relocate this?
     (g/k).sqrt()
@@ -77,7 +77,6 @@ mod test_functions {
 
 
 use ode_solvers::*;
-use ode_solvers::rk4::*;
 
 type State = Vector4<f64>;
 type Time = f64;
@@ -99,10 +98,10 @@ impl ode_solvers::System<State> for WaveRayPath {
 
 #[cfg(test)]
 mod test_ode_solver {
-   use std::{fs::File, io::Write, path::Path};
+   use std::{fs::File, io::Write};
 
    use crate::{State, WaveRayPath};
-   use ode_solvers::{*, rk4::*};
+   use ode_solvers::*;
 
    #[test]
    fn test_solver() {
