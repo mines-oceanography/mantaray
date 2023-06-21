@@ -2,7 +2,7 @@
 /// 
 /// returns simple case for now
 /// 
-/// FIXME: if k is 0, returns inf. this may cause problems?
+/// note: returns error if k is 0, should it return NAN
  pub fn group_velocity(k: f64) -> f64 {
     let g = 9.8; // relocate this?
     (g/k).sqrt()
@@ -11,6 +11,7 @@
  /// Takes current state and calculates derivatives
  /// 
  /// returns the odes
+ ///  
  pub fn odes(kx: f64, ky: f64) -> (f64, f64, f64, f64) {
 
     let k_mag = (kx*kx + ky*ky).sqrt();
@@ -47,7 +48,7 @@ mod test_functions {
       } 
     }
 
-       // testing ode on simple cases worked out by hand
+   // testing ode on simple cases worked out by hand
    #[test]
    fn test_odes() {
       let results = [
@@ -56,6 +57,7 @@ mod test_functions {
          (0.0, 1.0, 0.0, 3.13050),
          (-1.0, 0.0, -3.13050, 0.0),
          (0.0, -1.0, 0.0, -3.13050),
+         // (0.0, 0.0, 0.0, 0.0) would return an error 
       ];
       for (kx, ky, ans_dxdt, ans_dydt) in results {
          let (dxdt, dydt, _, _) = odes(kx, ky);
