@@ -125,16 +125,15 @@ mod test_ode_solver {
             let y = stepper.y_out();
             
             let mut file = File::create("test.txt").expect("could not open file");
-
+            writeln!(&mut file, "t x y kx ky").expect("could not write to file");
             for (i, x) in stepper.x_out().iter().enumerate() {
-               let yi = y[i]; // note: Matrix type https://docs.rs/nalgebra/latest/nalgebra/base/struct.Matrix.html
-               writeln!(&mut file, "{x}, {yi}").expect("could not write to file");
+               write!(&mut file, "{x} ").expect("could not write to file");
+               for elem in y[i].iter() {
+                  write!(&mut file, "{elem} ").expect("could not write to file");
+               }
+               writeln!(&mut file, " ").expect("could not write to file");
             }
-            // note: this example code has an error at save
-            // Do something with the output...
-            // let path = Path::new("./outputs/kepler_orbit_dopri5.dat"); 
-            // save(stepper.x_out(), stepper.y_out(), path);  
-            // println!("Results saved in: {:?}", path);
+            
          },
          Err(_) => println!("An error occured."),
       }
