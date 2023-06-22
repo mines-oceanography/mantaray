@@ -144,18 +144,27 @@ mod test_ode_solver {
                writeln!(&mut file, " ").expect("could not write to file");
             }
 
-            // // read written file
-            // let check_file = File::open("test.txt").expect("could not open file");
-            // let buf_answers = BufReader::new(check_file);
-            // let mut vec_results: Vec<String> = Vec::new();
-            // for line in buf_answers.lines() {
-            //    vec_results.push(line.unwrap_or(String::from("\0")));
-            // }
+            // read written file
+            let check_file = File::open("test.txt").expect("could not open file");
+            let buf_answers = BufReader::new(check_file);
+            let mut vec_results: Vec<String> = Vec::new();
+            for line in buf_answers.lines() {
+               vec_results.push(line.unwrap_or(String::from("\0")));
+            }
 
-            // // check to see if equal (todo add epsilon so numbers can be slighlty off)
-            // for (i, line) in vec_results.iter().enumerate() {
-            //    assert!(vec_answers[i] == *line);
-            // }
+            // check to see if equal (todo add epsilon so numbers can be slighlty off)
+            for (i, line) in vec_results.iter().enumerate() {
+               if i == 0 {
+                  continue;
+               }
+               let ans: Vec<&str> = vec_answers[i].split_whitespace().collect();
+               let check: Vec<&str> = line.split_whitespace().collect();
+               for j in 0..5 {
+                  let val_f64: f64 = check[j].parse().unwrap();
+                  let ans_f64: f64 = ans[j].parse().unwrap();
+                  assert!((val_f64 - ans_f64).abs() < 1.0e-13, "expected value: {}, actual value: {}", ans_f64, val_f64); // checked against this website: https://www.mathstools.com/section/main/runge_kutta_calculator
+               }
+            }
          },
          Err(_) => println!("An error occured."),
       }
