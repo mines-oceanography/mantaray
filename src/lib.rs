@@ -113,6 +113,20 @@ mod test_ode_solver {
    use ode_solvers::*;
 
    #[test]
+   #[should_panic]
+   fn zero_k() {
+      let system = WaveRayPath { g: 9.8 };
+      let y0 = State::new(0.0, 0.0, 0.0, 0.0);
+
+      let t0 = 0.0;
+      let tf = 10.0;
+      let step_size = 1.0;
+
+      let mut stepper = Rk4::new(system, t0, y0, tf, step_size);
+      let res = stepper.integrate();
+   }
+
+   #[test]
    fn test_solver() {
 
       // open file
