@@ -1,7 +1,10 @@
 
-#[derive(Debug)]
+#[derive(Debug, thiserror::Error)]
 pub enum Error {
-   Undefined
+   #[error("Undefined error")]
+   Undefined,
+   #[error("Argument passed was out of bounds")]
+   ArgumentOutOfBounds
 }
 
 /// This function takes in the states and returns group velocity:
@@ -11,7 +14,7 @@ pub enum Error {
 /// FIXME: should return an Err result? right now just panics
  pub fn group_velocity(k: f64) -> Result<f64, Error> {
    if k <= 0.0 {
-      return Err(Error::Undefined);
+      return Err(Error::ArgumentOutOfBounds);
    }
    let g = 9.8; // relocate this?
    Ok((g/k).sqrt())
