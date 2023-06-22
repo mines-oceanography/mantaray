@@ -1,14 +1,20 @@
+
+#[derive(Debug)]
+pub enum Error {
+   Undefined
+}
+
 /// This function takes in the states and returns group velocity:
 /// 
 /// returns simple case for now
 /// 
 /// FIXME: should return an Err result? right now just panics
- pub fn group_velocity(k: f64) -> f64 {
-   if k == 0.0 {
-      todo!("k can not equal 0");
+ pub fn group_velocity(k: f64) -> Result<f64, Error> {
+   if k <= 0.0 {
+      return Err(Error::Undefined);
    }
-    let g = 9.8; // relocate this?
-    (g/k).sqrt()
+   let g = 9.8; // relocate this?
+   Ok((g/k).sqrt())
  }
 
  /// Takes current state and calculates derivatives
@@ -20,7 +26,7 @@
     let k_mag = (kx*kx + ky*ky).sqrt();
     let k_dir = ky.atan2(kx);
 
-    let cg = group_velocity(k_mag);
+    let cg = group_velocity(k_mag).unwrap();
     let cgx = cg * k_dir.cos();
     let cgy = cg * k_dir.sin();
 
@@ -47,7 +53,7 @@ mod test_functions {
          (10.0, 0.989949)
       ];
       for (k, ans) in results {
-         assert!((group_velocity(k) - ans).abs() < 1.0e-4, "k: {}, ans: {}", k, ans);
+         assert!((group_velocity(k).unwrap() - ans).abs() < 1.0e-4, "k: {}, ans: {}", k, ans);
       } 
     }
 
