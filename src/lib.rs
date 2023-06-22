@@ -98,7 +98,7 @@ impl ode_solvers::System<State> for WaveRayPath {
 
 #[cfg(test)]
 mod test_ode_solver {
-   use std::{fs::File, io::Write};
+   use std::{fs::File, io::Write, io::{BufReader, BufRead}};
 
    use crate::{State, WaveRayPath};
    use ode_solvers::*;
@@ -106,11 +106,22 @@ mod test_ode_solver {
    #[test]
    fn test_solver() {
 
-      let system = WaveRayPath{ g: 9.8 };
-      let y0 = State::new(0.0, 0.0, 1.0, 0.0); // (x, y, kx, ky)
+      // open file
+      let check_file = File::open("answers.txt").expect("could not open file");
+      let buf_answers = BufReader::new(check_file);
+      let mut vec_answers: Vec<String> = Vec::new();
+      for line in buf_answers.lines() {
+         vec_answers.push(line.unwrap_or(String::from("\0")));
+      }
+      // get initial state
+      let vec_y0 : Vec<&str> = vec_answers[1].split(" ").collect();
 
-      let t0 = 0.0;
-      let tf = 2.0;
+      // set up ode_solvers
+      let system = WaveRayPath{ g: 9.8 };
+      let y0 = State::new(vec_y0[1].parse().unwrap(), vec_y0[2].parse().unwrap(), vec_y0[3].parse().unwrap(), vec_y0[4].parse().unwrap()); // (x, y, kx, ky)
+
+      let t0 = vec_y0[0].parse().unwrap();
+      let tf = 10.0;
       let step_size = 1.0;
 
       let mut stepper = Rk4::new(system, t0, y0, tf, step_size);
@@ -119,8 +130,8 @@ mod test_ode_solver {
           // Handle result
       match res {
          Ok(stats) => {
-            dbg!(stats);
 
+            // write file
             let y = stepper.y_out();
             
             let mut file = File::create("test.txt").expect("could not open file");
@@ -132,7 +143,19 @@ mod test_ode_solver {
                }
                writeln!(&mut file, " ").expect("could not write to file");
             }
-            
+
+            // // read written file
+            // let check_file = File::open("test.txt").expect("could not open file");
+            // let buf_answers = BufReader::new(check_file);
+            // let mut vec_results: Vec<String> = Vec::new();
+            // for line in buf_answers.lines() {
+            //    vec_results.push(line.unwrap_or(String::from("\0")));
+            // }
+
+            // // check to see if equal (todo add epsilon so numbers can be slighlty off)
+            // for (i, line) in vec_results.iter().enumerate() {
+            //    assert!(vec_answers[i] == *line);
+            // }
          },
          Err(_) => println!("An error occured."),
       }
