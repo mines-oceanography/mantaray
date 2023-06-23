@@ -65,7 +65,7 @@ impl ode_solvers::System<State> for WaveRayPath {
 
 
 #[cfg(test)]
-mod tests {
+mod test_constant_cg {
 
    use crate::{group_velocity, odes};
 
