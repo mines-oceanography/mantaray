@@ -60,6 +60,12 @@ mod test_functions {
       } 
     }
 
+    #[test]
+    fn test_negative_k() {
+         assert!(group_velocity(-1.0).is_err());
+         assert!(group_velocity(-12.0).is_err())
+      }
+
    // testing ode on simple cases worked out by hand
    #[test]
    fn test_odes() {
