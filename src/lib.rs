@@ -133,6 +133,35 @@ mod test_ode_solver {
    }
 
    #[test]
+   // Testing the ode_solvers Rk4 function only in the kx or ky direction
+   fn test_axis() {
+      // answers should be the square root of gravity
+      let check_axis = [
+         (0.0, 1.0, 0.0, (9.8_f64).sqrt()),
+         (1.0, 0.0, (9.8_f64).sqrt(), 0.0)
+      ];
+      for (kx, ky, xf, yf) in check_axis {
+         let system = WaveRayPath { g: 9.8 };
+         let y0 = State::new(0.0, 0.0, kx, ky);
+         let mut stepper = Rk4::new(system, 0.0, y0, 1.0, 1.0);
+         if stepper.integrate().is_ok() {
+            dbg!(stepper.x_out());
+            dbg!(stepper.y_out());
+            let last_state = stepper.y_out().last().unwrap();
+            assert!(
+               (last_state.x - xf).abs() < 3.0*f64::EPSILON // super close, so I will take the values it gives as accurate
+               && (last_state.y - yf).abs() < 3.0*f64::EPSILON,
+               "expected xf: {}, actual: {} \nexpected yf: {}, actual: {}",
+               xf, last_state.x, yf, last_state.y
+            );
+         } else {
+            panic!("Error during ode_solvers integration")
+         }
+      }
+   }
+
+
+   #[test]
    fn test_solver() {
 
       // open file
