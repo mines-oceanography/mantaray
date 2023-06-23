@@ -11,7 +11,6 @@ pub enum Error {
 /// 
 /// returns simple case for now
 /// 
-/// FIXME: should return an Err result? right now just panics
  pub fn group_velocity(k: f64) -> Result<f64, Error> {
    if k <= 0.0 {
       return Err(Error::ArgumentOutOfBounds);
