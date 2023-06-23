@@ -16,7 +16,7 @@ pub enum Error {
       return Err(Error::ArgumentOutOfBounds);
    }
    let g = 9.8; // relocate this?
-   Ok((g/k).sqrt())
+   Ok((g/k).sqrt()/2.0)
  }
 
 
@@ -73,10 +73,10 @@ mod test_constant_cg {
     #[test]
     fn test_group_velocity() {
       let results = [
-         (1.0, 3.1305),
-         (3.0, 1.80739),
-         (5.0, 1.4),
-         (10.0, 0.989949)
+         (1.0, 1.565247584249853),
+         (3.0, 0.9036961141150639),
+         (5.0, 0.7),
+         (10.0, 0.4949747468305833)
       ];
       for (k, ans) in results {
          assert!((group_velocity(k).unwrap() - ans).abs() < 1.0e-4, "k: {}, ans: {}", k, ans);
@@ -94,10 +94,10 @@ mod test_constant_cg {
    fn test_odes() {
       let results = [
          // (kx, ky, dxdt, dydt)
-         (1.0, 0.0, 3.13050, 0.0),
-         (0.0, 1.0, 0.0, 3.13050),
-         (-1.0, 0.0, -3.13050, 0.0),
-         (0.0, -1.0, 0.0, -3.13050),
+         (1.0, 0.0, 1.565247584249853, 0.0),
+         (0.0, 1.0, 0.0, 1.565247584249853),
+         (-1.0, 0.0, -1.565247584249853, 0.0),
+         (0.0, -1.0, 0.0, -1.565247584249853),
          // (0.0, 0.0, 0.0, 0.0) // this would cause panic
       ];
       for (kx, ky, ans_dxdt, ans_dydt) in results {
@@ -133,10 +133,10 @@ mod test_constant_cg {
    fn test_axis() {
       // answers should be the square root of gravity
       let check_axis = [
-         (0.0, 1.0, 0.0, (9.8_f64).sqrt()),
-         (1.0, 0.0, (9.8_f64).sqrt(), 0.0),
-         (0.0, -1.0, 0.0, -(9.8_f64).sqrt()),
-         (-1.0, 0.0, -(9.8_f64).sqrt(), 0.0)
+         (0.0, 1.0, 0.0, (9.8_f64).sqrt()/2.0),
+         (1.0, 0.0, (9.8_f64).sqrt()/2.0, 0.0),
+         (0.0, -1.0, 0.0, -(9.8_f64).sqrt()/2.0),
+         (-1.0, 0.0, -(9.8_f64).sqrt()/2.0, 0.0)
       ];
       for (kx, ky, xf, yf) in check_axis {
          let system = WaveRayPath { g: 9.8 };
