@@ -84,7 +84,7 @@ $$
 $$
 
 $$
-c_g = \frac{g}{2} \frac{\tanh{(kH)}+ kH \text{sech}^2{(kH)}}{\left[kH\tanh{(kH)}\right]^{1/2}}
+c_g = \frac{g}{2} \frac{\tanh{(kH)}+ kH \text{sech}^2{(kH)}}{\left[gk\tanh{(kH)}\right]^{1/2}}
 $$
 
 $$
