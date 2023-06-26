@@ -9,16 +9,15 @@ pub enum Error {
 
 /// This function takes in the states and returns group velocity:
 /// 
-/// returns simple case for now
+/// returns no current, constant h, general equation
 /// 
- pub fn group_velocity(k: f64) -> Result<f64, Error> {
+ pub fn group_velocity(k: f64, h: f64) -> Result<f64, Error> {
    if k <= 0.0 {
       return Err(Error::ArgumentOutOfBounds);
    }
    let g = 9.8; // relocate this?
-   Ok((g/k).sqrt()/2.0)
+   Ok( (g / 2.0) * ( ((k*h).tanh() + (k*h)/(k*h).cosh().powi(2)) / (k*g*(k*h).tanh()).sqrt() ) )
  }
-
 
  /// Takes current state and calculates derivatives
  /// 
@@ -29,7 +28,8 @@ pub enum Error {
     let k_mag = (kx*kx + ky*ky).sqrt();
     let k_dir = ky.atan2(kx);
 
-    let cg = group_velocity(k_mag).unwrap();
+    let h = 1000.0;
+    let cg = group_velocity(k_mag, h).unwrap();
     let cgx = cg * k_dir.cos();
     let cgy = cg * k_dir.sin();
 
@@ -79,14 +79,14 @@ mod test_constant_cg {
          (10.0, 0.4949747468305833)
       ];
       for (k, ans) in results {
-         assert!((group_velocity(k).unwrap() - ans).abs() < 1.0e-4, "k: {}, ans: {}", k, ans);
+         assert!((group_velocity(k, 1000.0).unwrap() - ans).abs() < 1.0e-4, "k: {}, ans: {}", k, ans);
       } 
     }
 
     #[test]
     fn test_negative_k() {
-         assert!(group_velocity(-1.0).is_err());
-         assert!(group_velocity(-12.0).is_err())
+         assert!(group_velocity(-1.0, 1000.0).is_err());
+         assert!(group_velocity(-12.0, 1000.0).is_err())
       }
 
    // testing ode on simple cases worked out by hand
