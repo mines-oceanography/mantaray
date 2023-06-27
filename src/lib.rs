@@ -325,6 +325,28 @@ mod test_constant_cg {
 
 }
 
+#[test]
+fn out_of_range_give_nan() {
+   let system = WaveRayPath::new(9.8, Box::new(ArrayHeight { array: vec![
+      vec![1000.0, 1000.0],
+      vec![1000.0, 1000.0]
+   ] }));
+   let y0 = State::new(0.0, 0.0, 0.0, 1.0);
+
+   let t0 = 0.0;
+   let tf = 10.0;
+   let step_size = 1.0;
+
+   let mut stepper = Rk4::new(system, t0, y0, tf, step_size);
+   let res = stepper.integrate();
+
+   let last_step = stepper.y_out().last().unwrap();
+
+   assert!(
+      last_step.x.is_nan() && last_step.y.is_nan()
+   );
+}
+
 fn output_to_file() {
    todo!()
 }
