@@ -28,7 +28,7 @@ fn output_to_file(system: WaveRayPath, t0: f64, y0: State, tf: f64, step_size: f
       writeln!(&mut file, " ").expect("could not write to file");
    }
    Ok(file)
-   
+
 }
 
 #[test]
@@ -59,12 +59,12 @@ impl WaveRayPath {
 }
 
 struct ConstantDepth {
-   h: f64,
+   d: f64,
 }
 
 impl Depth for ConstantDepth {
    fn calculate(&self, _x: f64, _y: f64) -> f64 {
-       self.h
+       self.d
    }
 }
 
@@ -87,15 +87,15 @@ impl Depth for ArrayDepth {
 /// 
 /// returns no current, constant h, general equation
 /// 
- pub fn group_velocity(k: f64, h: f64) -> Result<f64, Error> {
-   if h < 0.0 {
+ pub fn group_velocity(k: f64, d: f64) -> Result<f64, Error> {
+   if d < 0.0 {
       return Ok(f64::NAN); // FIXME: should this also return an error?
    }
    if k <= 0.0 {
       return Err(Error::ArgumentOutOfBounds);
    }
    let g = 9.8; // relocate this?
-   Ok( (g / 2.0) * ( ((k*h).tanh() + (k*h)/(k*h).cosh().powi(2)) / (k*g*(k*h).tanh()).sqrt() ) ) // TODO: test with deep and shallow water cases
+   Ok( (g / 2.0) * ( ((k*d).tanh() + (k*d)/(k*d).cosh().powi(2)) / (k*g*(k*d).tanh()).sqrt() ) ) // TODO: test with deep and shallow water cases
  }
 
  /// Takes current state and calculates derivatives
@@ -135,8 +135,8 @@ struct WaveRayPath {
 
 impl ode_solvers::System<State> for WaveRayPath {
    fn system(&self, x: Time, y: &State, dy: &mut State) {
-      let h = self.depth(y[0], y[1]);
-       let (dxdt, dydt, dkxdt, dkydt) = odes(y[2], y[3], h);
+      let d = self.depth(y[0], y[1]);
+       let (dxdt, dydt, dkxdt, dkydt) = odes(y[2], y[3], d);
        
        dy[0] = dxdt;
        dy[1] = dydt;
@@ -199,7 +199,7 @@ mod test_constant_cg {
    #[test]
    #[should_panic]
    fn test_zero_k() {
-      let system = WaveRayPath::new(9.8, Box::new(ConstantDepth { h: 1000.0 }));
+      let system = WaveRayPath::new(9.8, Box::new(ConstantDepth { d: 1000.0 }));
       let y0 = State::new(0.0, 0.0, 0.0, 0.0);
 
       let t0 = 0.0;
@@ -221,7 +221,7 @@ mod test_constant_cg {
          (-1.0, 0.0, -(9.8_f64).sqrt()/2.0, 0.0)
       ];
       for (kx, ky, xf, yf) in check_axis {
-         let system = WaveRayPath::new(9.8, Box::new(ConstantDepth { h: 1000.0 }));
+         let system = WaveRayPath::new(9.8, Box::new(ConstantDepth { d: 1000.0 }));
          let y0 = State::new(0.0, 0.0, kx, ky);
          let mut stepper = Rk4::new(system, 0.0, y0, 1.0, 1.0);
          if stepper.integrate().is_ok() {
@@ -272,7 +272,7 @@ mod test_constant_cg {
    #[test]
    // if any of the input is NAN, the output should be none, even if k is zero
    fn test_nan() {
-      let system = WaveRayPath::new(9.8, Box::new(ConstantDepth { h: 1000.0 }));
+      let system = WaveRayPath::new(9.8, Box::new(ConstantDepth { d: 1000.0 }));
       let nan = f64::NAN;
       let y0 = State::new(0.0, nan, 0.0, 0.0);
 
@@ -288,7 +288,7 @@ mod test_constant_cg {
    #[test]
    // test when d / wavelenth < 1 / 20
    fn test_shallow() {
-      // answers should be the square root of gravity * h, but are not, they get closer as h approaches 0.
+      // answers should be the square root of gravity * h, but are not, they get closer as d approaches 0.
       let check_axis = [
          (0.0, 1.0, 0.0, 0.9850257444023037), // should be 0.9899494936611665
          (1.0, 0.0, 0.9850257444023037, 0.0),
@@ -296,7 +296,7 @@ mod test_constant_cg {
          (-1.0, 0.0, -0.9850257444023037, 0.0)
       ];
       for (kx, ky, xf, yf) in check_axis {
-         let system = WaveRayPath::new(9.8, Box::new(ConstantDepth { h: 0.1 }));
+         let system = WaveRayPath::new(9.8, Box::new(ConstantDepth { d: 0.1 }));
          let y0 = State::new(0.0, 0.0, kx, ky);
          let mut stepper = Rk4::new(system, 0.0, y0, 1.0, 1.0);
          if stepper.integrate().is_ok() {
