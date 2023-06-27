@@ -7,6 +7,43 @@ pub enum Error {
    ArgumentOutOfBounds
 }
 
+// TODO: have this function accept stepper as an argument
+use std::io::Write;
+fn output_to_file(system: WaveRayPath, t0: f64, y0: State, tf: f64, step_size: f64) -> Result<File, Error> {
+
+   let mut stepper = Rk4::new(system, t0, y0, tf, step_size);
+   let res = stepper.integrate();
+   if let Err(_) = res {
+      return Err(Error::Undefined);
+   }
+   let y = stepper.y_out();
+   
+   let mut file = File::create("y_out.txt").expect("could not open file");
+   writeln!(&mut file, "t x y kx ky").expect("could not write to file");
+   for (i, x) in stepper.x_out().iter().enumerate() {
+      write!(&mut file, "{x} ").expect("could not write to file");
+      for elem in y[i].iter() {
+         write!(&mut file, "{elem} ").expect("could not write to file");
+      }
+      writeln!(&mut file, " ").expect("could not write to file");
+   }
+   Ok(file)
+   
+}
+
+#[test]
+// test writing a file
+fn write_file() {
+   let system = WaveRayPath::new(9.8, Box::new(ConstantDepth { d: 1000.0 }));
+   let y0 = State::new(0.0, 0.0, 0.0, 1.0);
+
+   let t0 = 0.0;
+   let tf = 10.0;
+   let step_size = 1.0;
+
+   assert!(output_to_file(system, t0, y0, tf, step_size).is_ok());
+}
+
 
 trait Depth {
     fn calculate(&self, x: f64, y: f64) -> f64;
@@ -83,6 +120,8 @@ impl Depth for ArrayDepth {
     (dxdt, dydt, dkxdt, dkydt)
  }
 
+
+use std::fs::File;
 
 use ode_solvers::*;
 
@@ -243,8 +282,6 @@ mod test_constant_cg {
 
       let mut stepper = Rk4::new(system, t0, y0, tf, step_size);
 
-      dbg!(stepper.y_out());
-
       assert!(stepper.y_out().last().is_none());
    }
 
@@ -299,12 +336,3 @@ fn out_of_range_give_nan() {
       last_step.x.is_nan() && last_step.y.is_nan()
    );
 }
-
-fn output_to_file() {
-   todo!()
-}
-
-//matplotlib, pyplot, imprt matplotlib.pyplot as plt, plt.plot(x, y)
-// numpy
-// np.loadtxt()
-// pandas for read csv
