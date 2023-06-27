@@ -57,26 +57,30 @@ struct ArrayHeight {
    array: Vec<Vec<f64>>,
 }
 
-// FIXME: if the x and y becomes outside the range of the array, the program should stop iterating, and not crash
+// FIXME: the program is not crashing, but NAN isn't that useful. maybe use option: some or none
 impl Height for ArrayHeight {
    fn calculate(&self, x: f64, y: f64) -> f64 {
-       self.array[x as usize][y as usize] // FIXME: need checks for index in range
+      if x as usize >= self.array.len() || y as usize >= self.array.len() {
+         return f64::NAN;
+      }
+       self.array[x as usize][y as usize] // FIXME: since x and y are floats, they are truncated or rounded to a usize. I probably want a better interpolation estimate
    }
 }
 
-
-// TODO: create a file (array) height struct and implement Height on them
 
 /// This function takes in the states and returns group velocity:
 /// 
 /// returns no current, constant h, general equation
 /// 
  pub fn group_velocity(k: f64, h: f64) -> Result<f64, Error> {
+   if h < 0.0 {
+      return Ok(f64::NAN); // FIXME: should this also return an error?
+   }
    if k <= 0.0 {
       return Err(Error::ArgumentOutOfBounds);
    }
    let g = 9.8; // relocate this?
-   Ok( (g / 2.0) * ( ((k*h).tanh() + (k*h)/(k*h).cosh().powi(2)) / (k*g*(k*h).tanh()).sqrt() ) )
+   Ok( (g / 2.0) * ( ((k*h).tanh() + (k*h)/(k*h).cosh().powi(2)) / (k*g*(k*h).tanh()).sqrt() ) ) // TODO: test with deep and shallow water cases
  }
 
  /// Takes current state and calculates derivatives
