@@ -277,5 +277,22 @@ mod test_constant_cg {
       }
    }
 
+   #[test]
+   // if any of the input is NAN, the output should be none, even if k is zero
+   fn test_nan() {
+      let system = WaveRayPath::new(9.8, Box::new(ConstantHeight { h: 1000.0 }));
+      let nan = f64::NAN;
+      let y0 = State::new(0.0, nan, 0.0, 0.0);
+
+      let t0 = 0.0;
+      let tf = 1.0;
+      let step_size = 1.0;
+
+      let mut stepper = Rk4::new(system, t0, y0, tf, step_size);
+
+      dbg!(stepper.y_out());
+
+      assert!(stepper.y_out().last().is_none());
+   }
 
 }
