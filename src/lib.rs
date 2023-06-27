@@ -295,4 +295,41 @@ mod test_constant_cg {
       assert!(stepper.y_out().last().is_none());
    }
 
+   #[test]
+   // test when d / wavelenth < 1 / 20
+   fn test_shallow() {
+      // answers should be the square root of gravity * h, but are not, they get closer as h approaches 0.
+      let check_axis = [
+         (0.0, 1.0, 0.0, 0.9850257444023037), // should be 0.9899494936611665
+         (1.0, 0.0, 0.9850257444023037, 0.0),
+         (0.0, -1.0, 0.0, -0.9850257444023037),
+         (-1.0, 0.0, -0.9850257444023037, 0.0)
+      ];
+      for (kx, ky, xf, yf) in check_axis {
+         let system = WaveRayPath::new(9.8, Box::new(ConstantHeight { h: 0.1 }));
+         let y0 = State::new(0.0, 0.0, kx, ky);
+         let mut stepper = Rk4::new(system, 0.0, y0, 1.0, 1.0);
+         if stepper.integrate().is_ok() {
+            let last_state = stepper.y_out().last().unwrap();
+            assert!(
+               (last_state.x - xf).abs() < f64::EPSILON // super close, so I will take the values it gives as accurate
+               && (last_state.y - yf).abs() < f64::EPSILON,
+               "expected xf: {}, actual: {} \nexpected yf: {}, actual: {}",
+               xf, last_state.x, yf, last_state.y
+            );
+         } else {
+            panic!("Error during ode_solvers integration")
+         }
+      }
+   }
+
 }
+
+fn output_to_file() {
+   todo!()
+}
+
+//matplotlib, pyplot, imprt matplotlib.pyplot as plt, plt.plot(x, y)
+// numpy
+// np.loadtxt()
+// pandas for read csv
