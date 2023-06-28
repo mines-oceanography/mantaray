@@ -35,7 +35,7 @@ fn output_to_file(system: WaveRayPath, t0: f64, y0: State, tf: f64, step_size: f
 // test writing a file
 fn write_file() {
    let system = WaveRayPath::new(9.8, Box::new(ConstantDepth { d: 1000.0 }));
-   let y0 = State::new(0.0, 0.0, 0.0, 1.0);
+   let y0 = State::new(0.0, 0.0, 1.0, -1.0);
 
    let t0 = 0.0;
    let tf = 10.0;
