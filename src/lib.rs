@@ -1,11 +1,5 @@
-
-#[derive(Debug, thiserror::Error)]
-pub enum Error {
-   #[error("Undefined error")]
-   Undefined,
-   #[error("Argument passed was out of bounds")]
-   ArgumentOutOfBounds
-}
+mod error;
+pub use crate::error::Error;
 
 // TODO: have this function accept stepper as an argument
 use std::io::Write;
