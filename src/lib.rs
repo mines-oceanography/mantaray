@@ -1,3 +1,4 @@
+const G: f64 = 9.8;
 mod error;
 use error::Error;
 
@@ -74,8 +75,7 @@ impl Depth for ArrayDepth {
    if k <= 0.0 {
       return Err(Error::ArgumentOutOfBounds);
    }
-   let g = 9.8; // relocate this?
-   Ok( (g / 2.0) * ( ((k*d).tanh() + (k*d)/(k*d).cosh().powi(2)) / (k*g*(k*d).tanh()).sqrt() ) ) // TODO: test with deep and shallow water cases
+   Ok( (G / 2.0) * ( ((k*d).tanh() + (k*d)/(k*d).cosh().powi(2)) / (k*G*(k*d).tanh()).sqrt() ) ) // TODO: test with deep and shallow water cases
  }
 
  /// Takes current state and calculates derivatives
