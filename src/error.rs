@@ -1,5 +1,5 @@
 #[derive(Debug, thiserror::Error)]
-pub enum Error {
+pub(crate) enum Error {
    #[error("Undefined error")]
    /// The ode_solvers integrate method can return an error.
    Undefined,
