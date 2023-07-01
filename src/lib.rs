@@ -1,11 +1,5 @@
-
-#[derive(Debug, thiserror::Error)]
-pub enum Error {
-   #[error("Undefined error")]
-   Undefined,
-   #[error("Argument passed was out of bounds")]
-   ArgumentOutOfBounds
-}
+mod error;
+use error::Error;
 
 // TODO: have this function accept stepper as an argument
 use std::io::Write;
@@ -73,7 +67,7 @@ impl Depth for ArrayDepth {
 /// 
 /// returns no current, constant h, general equation
 /// 
- pub fn group_velocity(k: f64, d: f64) -> Result<f64, Error> {
+ pub(crate) fn group_velocity(k: f64, d: f64) -> Result<f64, Error> {
    if d < 0.0 {
       return Ok(f64::NAN); // FIXME: should this also return an error?
    }
