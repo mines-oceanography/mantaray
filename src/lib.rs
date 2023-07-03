@@ -25,6 +25,9 @@ use ode_solvers::*;
 use std::io::Write;
 use std::fs::File;
 
+mod depth;
+use depth::{Depth, ConstantDepth, ArrayDepth};
+
 mod error;
 
 mod interpolator;
@@ -85,44 +88,6 @@ fn output_to_file(system: WaveRayPath, t0: f64, y0: State, tf: f64, step_size: f
    Ok(file)
 
 }
-
-trait Depth {
-    fn calculate(&self, x: f64, y: f64) -> f64;
-}
-
-impl<'a> WaveRayPath<'a> {
-   pub fn new(depth_data: &'a Box<dyn Depth>) -> Self {
-      WaveRayPath { data: depth_data }
-   }
-   pub fn depth(&self, x: f64, y: f64) -> f64 {
-      self.data.calculate(x, y)
-   }
-}
-
-struct ConstantDepth {
-   d: f64,
-}
-
-impl Depth for ConstantDepth {
-   fn calculate(&self, _x: f64, _y: f64) -> f64 {
-       self.d
-   }
-}
-
-struct ArrayDepth {
-   array: Vec<Vec<f64>>,
-}
-
-// FIXME: the program is not crashing, but NAN isn't that useful. maybe use option: some or none
-impl Depth for ArrayDepth {
-   fn calculate(&self, x: f64, y: f64) -> f64 {
-      if x as usize >= self.array.len() || y as usize >= self.array.len() {
-         return f64::NAN;
-      }
-       self.array[x as usize][y as usize] // FIXME: since x and y are floats, they are truncated or rounded to a usize. I probably want a better interpolation estimate
-   }
-}
-
 
 /// Calculates the group velocity
 /// 
@@ -212,6 +177,12 @@ struct WaveRayPath<'a> {
    /// A reference to a pointer to a struct that implements the depth trait. The
    /// lifetime of WaveRayPath is restricted to the lifetime of this variable.
    data: &'a Box<dyn Depth>,
+}
+
+impl<'a> WaveRayPath<'a> {
+   pub fn new(depth_data: &'a Box<dyn Depth>) -> Self {
+      WaveRayPath { data: depth_data }
+   }
 }
 
 impl<'a> ode_solvers::System<State> for WaveRayPath<'a> {
