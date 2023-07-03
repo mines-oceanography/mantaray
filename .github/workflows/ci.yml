@@ -59,3 +59,23 @@ jobs:
         with:
           command: test
           args: --no-fail-fast
+
+  publish:
+    name: Publish (dry-run)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v2
+
+      - name: Install stable toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+
+      - name: Make sure we can publish
+        uses: actions-rs/cargo@v1
+        with:
+          command: publish
+          args: --dry-run
