@@ -152,7 +152,10 @@ use ode_solvers::*;
 type State = Vector4<f64>;
 type Time = f64;
 
+/// A struct that stores the bathymetry/depth data related to an individual ray.
 struct WaveRayPath<'a> {
+   /// A reference to a pointer to a struct that implements the depth trait. The
+   /// lifetime of WaveRayPath is restricted to the lifetime of this variable.
    data: &'a Box<dyn Depth>,
 }
 
