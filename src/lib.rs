@@ -66,10 +66,31 @@ impl Depth for ArrayDepth {
 }
 
 
-/// This function takes in the states and returns group velocity:
+/// Calculates the group velocity
 /// 
-/// returns no current, constant h, general equation
+/// # Arguments
 /// 
+/// `k` : `f64`
+/// - The wavenumber \[m^-1\] should always be positive.
+/// 
+/// `d` : `f64`
+/// - The depth \[m\] in this case should be positive.
+/// 
+/// # Returns
+/// 
+/// `Result<f64, Error>`
+/// 
+/// - `Ok(f64)` : returns the calculated group velocity as a float. Note: if `d`
+///   is less then 0, it will return `f64::NAN`. In the future, this will return
+///   either an error or warning.
+/// 
+/// - Err(Error::ArgumentOutOfBounds) : returns this error if k <= 0.
+/// 
+/// # Errors
+/// 
+/// `Error::ArgumentOutOfBounds`
+/// - If k is negative, group velocity will return this error. 
+///
  pub(crate) fn group_velocity(k: f64, d: f64) -> Result<f64, Error> {
    if d < 0.0 {
       return Ok(f64::NAN); // FIXME: should this also return an error?
