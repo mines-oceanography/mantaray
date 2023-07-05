@@ -1,6 +1,9 @@
 mod error;
 use error::Error;
 
+// Define constant gravity
+const G: f64 = 9.8;
+
 // TODO: have this function accept stepper as an argument
 use std::io::Write;
 fn output_to_file(system: WaveRayPath, t0: f64, y0: State, tf: f64, step_size: f64) -> Result<File, Error> {
@@ -30,8 +33,8 @@ trait Depth {
 }
 
 impl<'a> WaveRayPath<'a> {
-   pub fn new(gravity: f64, depth_data: &'a Box<dyn Depth>) -> Self {
-      WaveRayPath { g: gravity, data: depth_data }
+   pub fn new(depth_data: &'a Box<dyn Depth>) -> Self {
+      WaveRayPath { data: depth_data }
    }
    pub fn depth(&self, x: f64, y: f64) -> f64 {
       self.data.calculate(x, y)
@@ -74,8 +77,7 @@ impl Depth for ArrayDepth {
    if k <= 0.0 {
       return Err(Error::ArgumentOutOfBounds);
    }
-   let g = 9.8; // relocate this?
-   Ok( (g / 2.0) * ( ((k*d).tanh() + (k*d)/(k*d).cosh().powi(2)) / (k*g*(k*d).tanh()).sqrt() ) ) // TODO: test with deep and shallow water cases
+   Ok( (G / 2.0) * ( ((k*d).tanh() + (k*d)/(k*d).cosh().powi(2)) / (k*G*(k*d).tanh()).sqrt() ) ) // TODO: test with deep and shallow water cases
  }
 
  /// Takes current state and calculates derivatives
@@ -109,7 +111,6 @@ type State = Vector4<f64>;
 type Time = f64;
 
 struct WaveRayPath<'a> {
-   g: f64,
    data: &'a Box<dyn Depth>,
 }
 
@@ -180,7 +181,7 @@ mod test_constant_cg {
    #[should_panic]
    fn test_zero_k() {
       let data : Box<dyn Depth> = Box::new(ConstantDepth { d: 1000.0 });
-      let system = WaveRayPath::new(9.8, &data);
+      let system = WaveRayPath::new(&data);
       let y0 = State::new(0.0, 0.0, 0.0, 0.0);
 
       let t0 = 0.0;
@@ -227,7 +228,7 @@ mod test_constant_cg {
    // if any of the input is NAN, the output should be none, even if k is zero
    fn test_nan() {
       let data : Box<dyn Depth> = Box::new(ConstantDepth { d: 1000.0 });
-      let system = WaveRayPath::new(9.8, &data);
+      let system = WaveRayPath::new(&data);
       let nan = f64::NAN;
       let y0 = State::new(0.0, nan, 0.0, 0.0);
 
@@ -261,7 +262,7 @@ mod test_constant_cg {
          vec![1000.0, 1000.0],
          vec![1000.0, 1000.0]
       ] });
-      let system = WaveRayPath::new(9.8, &data);
+      let system = WaveRayPath::new(&data);
       let y0 = State::new(0.0, 0.0, 0.0, 1.0);
    
       let t0 = 0.0;
@@ -282,7 +283,7 @@ mod test_constant_cg {
    // test writing a file
    fn write_file() {
       let data : Box<dyn Depth> = Box::new(ConstantDepth { d: 1000.0 });
-      let system = WaveRayPath::new(9.8, &data);
+      let system = WaveRayPath::new(&data);
       let y0 = State::new(0.0, 0.0, 1.0, -1.0);
    
       let t0 = 0.0;
@@ -297,7 +298,7 @@ mod test_constant_cg {
 
 fn run_check_ode_solvers(depth_data: Box<dyn Depth>, check_axis: [(f64, f64, f64, f64); 4]) {
    for (kx, ky, xf, yf) in check_axis {
-      let system = WaveRayPath::new(9.8, &depth_data);
+      let system = WaveRayPath::new(&depth_data);
       let y0 = State::new(0.0, 0.0, kx, ky);
       let mut stepper = Rk4::new(system, 0.0, y0, 1.0, 1.0);
       if stepper.integrate().is_ok() {
