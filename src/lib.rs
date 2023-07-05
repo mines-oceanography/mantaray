@@ -1,6 +1,8 @@
-const G: f64 = 9.8;
 mod error;
 use error::Error;
+
+// Define constant gravity
+const G: f64 = 9.8;
 
 // TODO: have this function accept stepper as an argument
 use std::io::Write;
