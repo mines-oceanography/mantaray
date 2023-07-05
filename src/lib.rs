@@ -101,9 +101,30 @@ impl Depth for ArrayDepth {
    Ok( (G / 2.0) * ( ((k*d).tanh() + (k*d)/(k*d).cosh().powi(2)) / (k*G*(k*d).tanh()).sqrt() ) ) // TODO: test with deep and shallow water cases
  }
 
- /// Takes current state and calculates derivatives
+ /// Calculates system of odes from the given state
  /// 
- /// returns the odes
+ /// The state is defined by x, y, kx, and ky. Then, the group velocity, depth,
+ /// and depth gradient are calculated. The derivatives of the inputs are
+ /// calculated using the equations in notes.md.
+ /// 
+ /// # Arguments // FIXME: change the function to accept x, y, kx, ky
+ /// 
+ /// `kx` : `f64`
+ /// - x component of wavenumber vector
+ /// 
+ /// `ky` : `f64`
+ /// - y component of wavenumber vector
+ /// 
+ /// `h` : f64
+ /// - depth of water
+ /// 
+ /// # Returns
+ /// `(f64, f64, f64, f64)`
+ /// - A tuple of floats corresponding to (dxdt, dydt, dkxdt, dkydt).
+ /// 
+ /// # Panics
+ /// `group_velocity` will panic if it attempts to unwrap an Err, but this
+ /// should never happen for real inputs.
  ///  
  pub fn odes(kx: f64, ky: f64, h: f64) -> (f64, f64, f64, f64) {
 
