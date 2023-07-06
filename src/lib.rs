@@ -24,8 +24,36 @@ use error::Error;
 // Define constant gravity
 const G: f64 = 9.8;
 
-// TODO: have this function accept stepper as an argument
+
 use std::io::Write;
+/// Run the Rk4 stepper.integrate() and save the results to a space separated file
+/// 
+/// # Arguments
+/// `system` : `WaveRayPath`
+/// - struct that calculates the derivatives for each state
+/// 
+/// `t0` : `f64`
+/// - initial time
+/// 
+/// `y0` : `State`
+/// - initial state
+/// 
+/// `tf` : `f64`
+/// - final time
+/// 
+/// `step_size` : `f64`
+/// - size of time increment delta t
+/// 
+/// # Returns
+/// `Result<File, Error>`
+/// - `Ok(File)` : return the file created
+/// - `Err(Error::Undefined)` : error during integration
+/// 
+/// # Errors
+/// `Error::Undefined` : this is a placeholder for an integration error during the Rk4 algorithm.
+/// 
+/// # Panics
+/// The function will panic if it can not read or write to the file.
 fn output_to_file(system: WaveRayPath, t0: f64, y0: State, tf: f64, step_size: f64) -> Result<File, Error> {
 
    let mut stepper = Rk4::new(system, t0, y0, tf, step_size);
