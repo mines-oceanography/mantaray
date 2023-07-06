@@ -1,3 +1,23 @@
+//! Ray tracing ocean waves
+//! 
+//! This library uses ode_solvers and thiserror.
+//! 
+//! As of 2023-07-06, the library can create a `WaveRayPath` struct that
+//! contains either a ConstantDepth or an ArrayDepth. The struct also implements
+//! the ode_solvers system function, and it defines this function with the
+//! helper functions group_velocity and odes. The Depth trait gives
+//! ConstantDepth and ArrayDepth the ability to calculate the depth at a given x
+//! and y value, but in the future, they will also have the ability to calculate
+//! the depth gradient and interpolate. The Rk4 is used similar to the
+//! [examples](https://srenevey.github.io/ode-solvers/examples/kepler_orbit.html).
+//! 
+//! There is also a file output_to_file, which runs the Rk4, then saves the
+//! output to a file. There will be a folder named support that will contain the
+//! python file plot_ode_solvers.
+//! 
+//! This only does one ray at the moment and for constant depth waves, but in
+//! the future, it will include variable depth, ray bundles, and current.
+
 mod error;
 use error::Error;
 
