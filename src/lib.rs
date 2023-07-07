@@ -25,6 +25,8 @@ use ode_solvers::*;
 use std::io::Write;
 use std::fs::File;
 
+mod etopo;
+
 mod error;
 
 mod interpolator;
