@@ -18,6 +18,9 @@
 //! This only does one ray at the moment and for constant depth waves, but in
 //! the future, it will include variable depth, ray bundles, and current.
 
+// enforce documentation
+#![deny(missing_docs)]
+
 use ode_solvers::*;
 use std::io::Write;
 use std::fs::File;
