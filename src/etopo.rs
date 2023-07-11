@@ -59,11 +59,7 @@ mod test_netcdf {
     /// These should be the exact same because the inputs are taken from the
     /// file.
     fn test_closest_index() {
-        let mut file_reader: FileReader = FileReader::open(r"C:\Users\bairv\ray_tracing_etopo5\src\etopo5.nc").unwrap();
-        
-        let etopo05_y = file_reader.read_var_f64("ETOPO05_Y").unwrap();
-        let etopo05_x = file_reader.read_var_f64("ETOPO05_X").unwrap();
-        let rose = file_reader.read_var_f32("ROSE").unwrap();
+        let (etopo05_y, etopo05_x, rose) = open_variables();
 
         let i = 2000;
         let j = 100;
