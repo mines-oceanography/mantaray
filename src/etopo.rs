@@ -5,6 +5,9 @@
 
 mod etopo {
 
+    use std::{collections::HashMap,};
+    use netcdf3::{FileReader, DataSet, DataVector, DataType, Version, DimensionType};
+
     /// find the closest value to a given latitude or longitude using a simple
     /// linear search. This is very slow and takes linear time, where using a tree approach could make it run much faster.
     pub(crate) fn closest_value_index(target: f64, arr: &Vec<f64>) -> usize {
@@ -22,9 +25,15 @@ mod etopo {
         closest_index
     }
 
+    /// a function to open the etopo5.nc file and return pointers to variables
+    pub(crate) fn open_variables() -> (Box<Vec<f64>>, Box<Vec<f64>>, Box<Vec<f32>>) {
+        let mut file_reader: FileReader = FileReader::open(r"C:\Users\bairv\ray_tracing_etopo5\src\etopo5.nc").unwrap();
 
-    
-    fn main() {
+        let etopo05_y = file_reader.read_var_f64("ETOPO05_Y").unwrap();
+        let etopo05_x = file_reader.read_var_f64("ETOPO05_X").unwrap();
+        let rose = file_reader.read_var_f32("ROSE").unwrap();
+
+        (Box::new(etopo05_y), Box::new(etopo05_x), Box::new(rose))
     }
 
 }
@@ -35,7 +44,14 @@ mod test_netcdf {
     use std::{collections::HashMap};
     use netcdf3::{FileReader, DataSet, DataVector, DataType, Version, DimensionType};
 
-    use super::etopo::closest_value_index;
+    use super::etopo::{closest_value_index, open_variables};
+
+    #[test]
+    /// test access to variables created by open_variables
+    fn test_open_variables() {
+        let (lat, lon, depth) = open_variables();
+        println!("{}, {}, {}", lat[0], lon[0], depth[0]);
+    }
 
     #[test]
     /// This function will get the latitude, longitude, and depth from the file.
