@@ -120,15 +120,6 @@ mod etopo {
         depth_data.variables
     }
 
-    /// a function to view the file data
-    pub(crate) fn view_file_data() {
-        let mut file_reader: FileReader = FileReader::open(r"C:\Users\bairv\ray_tracing_etopo5\data\test_bathy_3.nc").unwrap();
-
-        for var in file_reader.data_set().get_vars() {
-            println!("{}", var.name());
-        }
-    }
-
     /// this function creates the dataset and calls the nearest function
     pub(crate) fn get_nearest() -> usize {
         let depth_data = test_bathy_3_data();
@@ -141,13 +132,7 @@ mod etopo {
 mod test_netcdf {
 
     use crate::etopo::etopo::get_nearest;
-    use super::etopo::{open_variables, view_file_data};
-
-    #[test]
-    /// view the variable names in the file
-    fn test_view_file_data() {
-        view_file_data();
-    }
+    use super::etopo::{open_variables};
 
     #[test]
     /// test access to variables created by open_variables
