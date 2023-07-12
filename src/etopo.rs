@@ -1,81 +1,164 @@
 //! Module to read a netcdf file with bathymetry data.
 //! 
-//! The module is currently only tested for etopo5.nc from oceansdb python library.
+//! The module is currently only tested for test_bathy_3.nc.
 //! 
+//! Requires netcdf3 crate. Will be using a interpolation crate in the future.
 
 mod etopo {
 
-    use std::{collections::HashMap,};
+    use std::path::Path;
     use netcdf3::{FileReader, DataSet, DataVector, DataType, Version, DimensionType};
 
-    /// find the closest value to a given latitude or longitude using a simple
-    /// linear search. This is very slow and takes linear time, where using a tree approach could make it run much faster.
-    pub(crate) fn closest_value_index(target: f64, arr: &Vec<f64>) -> usize {
-        let mut closest_index = 0;
-        let mut closest_distance = (target - arr[0]).abs();
+    /// A struct that stores a netcdf dataset with methods to access and find nearest values
+    pub(crate) struct BathyData {
+        path: String,
+        xname: String,
+        yname: String,
+        depth_name: String,
+        data: FileReader,
+        variables: (Vec<f32>, Vec<f32>, Vec<f64>),
+    }
 
-        for i in 1..arr.len() {
-            let distance = (target - arr[i]).abs();
-
-            if distance < closest_distance {
-                closest_index = i;
-                closest_distance = distance;
-            }
+    impl BathyData {
+        /// Construct BathyData
+        /// 
+        /// # Arguments
+        /// `path` : `String`
+        /// - a path to the location of the netcdf file
+        /// 
+        /// `xname` : `String`
+        /// - name of the x variable in the netcdf file
+        /// 
+        /// `yname` : `String`
+        /// - name of the y variable in the netcdf file
+        /// 
+        /// `depth_name` : `String`
+        /// - name of the depth variable in the netcdf file
+        /// 
+        /// # Returns
+        /// `Self` : an initialized BathyData
+        /// 
+        /// # Panics
+        /// `new` will panic if the data type is invalid or if any of the names are invalid.
+        fn new(path: String, xname: String, yname: String, depth_name: String) -> Self {
+            let mut data = FileReader::open(Path::new(&path)).unwrap();
+            let variables = (
+                data.read_var_f32(&xname).unwrap(),
+                data.read_var_f32(&yname).unwrap(),
+                data.read_var_f64(&depth_name).unwrap()
+            );
+            BathyData { path, xname, yname, depth_name, data, variables }
         }
-        closest_index
+        /// Find nearest point
+        /// 
+        /// # Arguments
+        /// `target` : `f64`
+        /// - the value to find
+        /// 
+        /// `direction` : `&str`
+        /// - `"x"` or `"y"`
+        /// 
+        /// # Returns
+        /// `usize` : index of closest value
+        /// 
+        /// # Panics
+        /// This function will panic if direction is not either `"x"` or `"y"`
+        fn nearest(&self, target: f64, direction: &str) -> usize {
+            let arr = match direction {
+                "x" => &self.variables.0,
+                "y" => &self.variables.1,
+                _ => todo!("Input a valid option"),
+            };
+
+            let target = target as f32;
+
+            let mut closest_index = 0;
+            let mut closest_distance = (target - arr[0]).abs();
+    
+            for i in 1..arr.len() {
+                let distance = (target - arr[i]).abs();
+    
+                if distance < closest_distance {
+                    closest_index = i;
+                    closest_distance = distance;
+                }
+            }
+            closest_index
+        }
+        /// Get four adjecent points
+        /// 
+        /// 
+        fn four_corners() -> [(f64, f64); 4] {
+            todo!()
+        }
+        /// Interpolate the depth
+        /// 
+        /// 
+        fn interpolate() -> f64 {
+            todo!()
+        }
+        /// Return the depth at x, y
+        fn depth(x: f64, y: f64) -> f64 {
+            todo!()
+        }
+
+    }
+
+    /// this function creates a pointer to the struct and returns it.
+    pub(crate) fn test_bathy_3_data() -> Box<BathyData> {
+        let path = String::from("C:\\Users\\bairv\\ray_tracing_etopo5\\data\\test_bathy_3.nc");
+        let xname = String::from("x");
+        let yname =String::from("y");
+        let depth_name = String::from("depth");
+        Box::new(BathyData::new(path, xname, yname, depth_name))
     }
 
     /// a function to open the etopo5.nc file and return pointers to variables
-    pub(crate) fn open_variables() -> (Box<Vec<f64>>, Box<Vec<f64>>, Box<Vec<f32>>) {
-        let mut file_reader: FileReader = FileReader::open(r"C:\Users\bairv\ray_tracing_etopo5\src\etopo5.nc").unwrap();
+    pub(crate) fn open_variables() -> (Vec<f32>, Vec<f32>, Vec<f64>) {
+        let depth_data = test_bathy_3_data();
 
-        let etopo05_y = file_reader.read_var_f64("ETOPO05_Y").unwrap();
-        let etopo05_x = file_reader.read_var_f64("ETOPO05_X").unwrap();
-        let rose = file_reader.read_var_f32("ROSE").unwrap();
-
-        (Box::new(etopo05_y), Box::new(etopo05_x), Box::new(rose))
+        depth_data.variables
     }
 
+    /// a function to view the file data
+    pub(crate) fn view_file_data() {
+        let mut file_reader: FileReader = FileReader::open(r"C:\Users\bairv\ray_tracing_etopo5\data\test_bathy_3.nc").unwrap();
+
+        for var in file_reader.data_set().get_vars() {
+            println!("{}", var.name());
+        }
+    }
+
+    /// this function creates the dataset and calls the nearest function
+    pub(crate) fn get_nearest() -> usize {
+        let depth_data = test_bathy_3_data();
+
+        depth_data.nearest(5499.0, "x")
+    }
 }
 
 #[cfg(test)]
 mod test_netcdf {
 
-    use std::{collections::HashMap};
-    use netcdf3::{FileReader, DataSet, DataVector, DataType, Version, DimensionType};
+    use crate::etopo::etopo::get_nearest;
+    use super::etopo::{open_variables, view_file_data};
 
-    use super::etopo::{closest_value_index, open_variables};
+    #[test]
+    /// view the variable names in the file
+    fn test_view_file_data() {
+        view_file_data();
+    }
 
     #[test]
     /// test access to variables created by open_variables
     fn test_open_variables() {
-        let (lat, lon, depth) = open_variables();
-        println!("{}, {}, {}", lat[0], lon[0], depth[0]);
+        let vars = open_variables();
+        println!("{}", vars.2[0])
     }
 
     #[test]
-    /// This function will get the latitude, longitude, and depth from the file.
-    /// Then, it will use the closest_value_index to find the closest values.
-    /// These should be the exact same because the inputs are taken from the
-    /// file.
-    fn test_closest_index() {
-        let (etopo05_y, etopo05_x, rose) = open_variables();
-
-        let i = 2000;
-        let j = 100;
-        let target_lat = etopo05_y[i];
-        let target_lon = etopo05_x[j];
-        let test_index = i * etopo05_x.len() + j;
-
-
-        let res_lat_i = closest_value_index(target_lat, &etopo05_y);
-        let res_lon_i = closest_value_index(target_lon, &etopo05_x);
-
-        let depth_index = res_lat_i * etopo05_x.len() + res_lon_i;
-        println!("{depth_index}");
-
-        println!("latitude: {}, longitude: {}, depth: {}", etopo05_y[res_lat_i], etopo05_x[res_lon_i], rose[depth_index]);
-
-        assert_eq!(depth_index, test_index)
+    fn test_nearest() {
+        println!("{}", get_nearest())
     }
+
 }
