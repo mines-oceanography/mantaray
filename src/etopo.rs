@@ -120,7 +120,7 @@ mod etopo {
 
     /// this function creates a pointer to the struct and returns it.
     pub(crate) fn test_bathy_3_data() -> Box<BathyData> {
-        let path = String::from("C:\\Users\\bairv\\ray_tracing_etopo5\\data\\test_bathy_3.nc");
+        let path = String::from("data/test_bathy_3.nc");
         let xname = String::from("x");
         let yname =String::from("y");
         let depth_name = String::from("depth");
