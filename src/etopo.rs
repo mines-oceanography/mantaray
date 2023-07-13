@@ -87,9 +87,23 @@ mod etopo {
         }
         /// Get four adjecent points
         /// 
+        /// # Arguments
+        /// `indx` : `usize`
+        /// - index of the x location
         /// 
-        fn four_corners() -> [(f64, f64); 4] {
-            todo!()
+        /// `indy` : `usize`
+        /// - index of the y location
+        /// 
+        /// # Returns
+        /// `Vec<(f64, f64)>`
+        fn four_corners(&self, indx: usize, indy: usize) -> Vec<(f32, f32)> {
+            let mut corners = Vec::new();
+            corners.push((self.variables.1[indy-1], self.variables.0[indx]));
+            corners.push((self.variables.1[indy], self.variables.0[indx-1]));
+            corners.push((self.variables.1[indy+1], self.variables.0[indx]));
+            corners.push((self.variables.1[indy], self.variables.0[indx+1]));
+
+            corners
         }
         /// Interpolate the depth
         /// 
@@ -126,12 +140,20 @@ mod etopo {
 
         depth_data.nearest(5499.0, "x")
     }
+
+    /// this function creates the dataset and returns the four corners around a point
+    pub(crate) fn get_corners() -> Vec<(f32, f32)> {
+        let depth_data = test_bathy_3_data();
+        depth_data.four_corners(10, 10)
+    }
+
+
 }
 
 #[cfg(test)]
 mod test_netcdf {
 
-    use crate::etopo::etopo::get_nearest;
+    use crate::etopo::etopo::{get_nearest, get_corners};
     use super::etopo::{open_variables};
 
     #[test]
@@ -146,4 +168,8 @@ mod test_netcdf {
         println!("{}", get_nearest())
     }
 
+    #[test]
+    fn test_corners() {
+        println!("{:?}", get_corners())
+    }
 }
