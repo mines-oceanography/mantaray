@@ -86,7 +86,6 @@ mod etopo {
                 _ => todo!("Input a valid option"),
             };
 
-
             let mut closest_index = 0;
             let mut closest_distance = (target - arr[0]).abs();
     
@@ -203,4 +202,21 @@ mod test_netcdf {
     fn test_corners() {
         println!("{:?}", get_corners())
     }
+
+    #[test]
+    /// This test works for values in the range of etopo5.nc
+    fn nearest_bathymetry() {
+        // Mines, Golden, CO 39.7510, 254.7774
+        let lat = 39.7510;
+        let lon = 254.7774;
+        let path = String::from("data/etopo5.nc");
+        let xname = String::from("ETOPO05_X");
+        let yname =String::from("ETOPO05_Y");
+        let depth_name = String::from("ROSE");
+        let etopo_data = Etopo5::new(path, xname, yname, depth_name);
+        dbg!(&etopo_data.get_depth_nearest(&lat, &lon));
+        assert!((etopo_data.get_depth_nearest(&lat, &lon) - 1747.0).abs() < f64::EPSILON)
+    }
+
+
 }
