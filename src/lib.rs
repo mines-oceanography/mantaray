@@ -27,6 +27,8 @@ use std::fs::File;
 
 mod etopo;
 
+mod netcdf4_work;
+
 mod error;
 
 mod interpolator;
