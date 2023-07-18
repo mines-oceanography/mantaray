@@ -100,6 +100,12 @@ mod etopo {
             }
             closest_index
         }
+        /// Returns the nearest x index, y index point to given lat, lon
+        fn nearest_point(&self, lat: &f64, lon: &f64) -> (usize, usize) {
+            let indy = self.nearest(*lat, "y");
+            let indx = self.nearest(*lon, "x");
+            (indx, indy)
+        }
         /// Get four adjecent points
         /// 
         /// # Arguments
