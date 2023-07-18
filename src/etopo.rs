@@ -23,7 +23,7 @@ mod etopo {
         yname: String,
         depth_name: String,
         data: FileReader,
-        variables: (Vec<f32>, Vec<f32>, Vec<f64>),
+        variables: (Vec<f64>, Vec<f64>, Vec<f32>),
     }
 
     impl BathymetryData for Etopo5 {
@@ -59,9 +59,9 @@ mod etopo {
         pub(crate) fn new(path: String, xname: String, yname: String, depth_name: String) -> Self {
             let mut data = FileReader::open(Path::new(&path)).unwrap();
             let variables = (
-                data.read_var_f32(&xname).unwrap(),
-                data.read_var_f32(&yname).unwrap(),
-                data.read_var_f64(&depth_name).unwrap()
+                data.read_var_f64(&xname).unwrap(),
+                data.read_var_f64(&yname).unwrap(),
+                data.read_var_f32(&depth_name).unwrap()
             );
             Etopo5 { path, xname, yname, depth_name, data, variables }
         }
@@ -86,7 +86,6 @@ mod etopo {
                 _ => todo!("Input a valid option"),
             };
 
-            let target = target as f32;
 
             let mut closest_index = 0;
             let mut closest_distance = (target - arr[0]).abs();
@@ -133,8 +132,8 @@ mod etopo {
             todo!()
         }
         /// Access values in flattened array as you would a 2d array
-        fn depth_from_arr(&self, indx: usize, indy: usize) -> f64 {
-            let index = self.variables.1.len() * indy + indx;
+        fn depth_from_arr(&self, indx: usize, indy: usize) -> f32 {
+            let index = self.variables.0.len() * indy + indx;
             self.variables.2[index]
         }
         /// Return the depth at x, y
@@ -154,7 +153,7 @@ mod etopo {
     }
 
     /// a function to open the etopo5.nc file and return pointers to variables
-    pub(crate) fn open_variables() -> (Vec<f32>, Vec<f32>, Vec<f64>) {
+    pub(crate) fn open_variables() -> (Vec<f64>, Vec<f64>, Vec<f32>) {
         let depth_data = test_bathy_3_data();
 
         depth_data.variables
