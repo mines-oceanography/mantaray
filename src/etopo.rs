@@ -95,21 +95,31 @@ mod etopo {
         /// - index of the y location
         /// 
         /// # Returns
-        /// `Vec<(f64, f64)>`
-        fn four_corners(&self, indx: usize, indy: usize) -> Vec<(f32, f32)> {
+        /// `Vec<(usize, usize)>` : indices for the four corners surrounding the
+        /// given indices.
+        /// 
+        /// # Panics
+        /// This function will not panic, but be aware that it can return values
+        /// that are out of bounds to the array.
+        fn four_corners(&self, indx: usize, indy: usize) -> Vec<(usize, usize)> {
             let mut corners = Vec::new();
-            corners.push((self.variables.1[indy-1], self.variables.0[indx]));
-            corners.push((self.variables.1[indy], self.variables.0[indx-1]));
-            corners.push((self.variables.1[indy+1], self.variables.0[indx]));
-            corners.push((self.variables.1[indy], self.variables.0[indx+1]));
+            corners.push((indy-1, indx));
+            corners.push((indy, indx-1));
+            corners.push((indy+1, indx));
+            corners.push((indy, indx+1));
 
             corners
         }
         /// Interpolate the depth
         /// 
         /// 
-        fn interpolate() -> f64 {
-            todo!()
+        fn interpolate(&self, points: Vec<(usize, usize)>) -> f64 {
+            
+        }
+        /// Access values in flattened array as you would a 2d array
+        fn depth_from_arr(&self, indx: usize, indy: usize) -> f64 {
+            let index = self.variables.1.len() * indy + indx;
+            self.variables.2[index]
         }
         /// Return the depth at x, y
         fn depth(x: f64, y: f64) -> f64 {
@@ -142,7 +152,7 @@ mod etopo {
     }
 
     /// this function creates the dataset and returns the four corners around a point
-    pub(crate) fn get_corners() -> Vec<(f32, f32)> {
+    pub(crate) fn get_corners() -> Vec<(usize, usize)> {
         let depth_data = test_bathy_3_data();
         depth_data.four_corners(10, 10)
     }
