@@ -114,7 +114,7 @@ mod etopo {
         /// 
         /// 
         fn interpolate(&self, points: Vec<(usize, usize)>) -> f64 {
-            
+            todo!()
         }
         /// Access values in flattened array as you would a 2d array
         fn depth_from_arr(&self, indx: usize, indy: usize) -> f64 {
