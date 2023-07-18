@@ -1,6 +1,6 @@
 //! Module to read a netcdf file with bathymetry data.
 //! 
-//! The module is currently only tested for test_bathy_3.nc.
+//! The module is currently only tested for etopo5.nc.
 //! 
 //! Requires netcdf3 crate. Will be using a interpolation crate in the future.
 
@@ -100,6 +100,20 @@ mod etopo {
             closest_index
         }
         /// Returns the nearest x index, y index point to given lat, lon
+        /// 
+        /// # Arguments
+        /// `lat`: `&f64`
+        /// - latitude (y) coordinate in range -90.0 to 90.0
+        /// 
+        /// `lon`: `&f64`
+        /// - longitude (x) coordinate in range 0.0 to 359.92
+        /// 
+        /// # Returns
+        /// `(usize, usize)`: a tuple of x index and y index
+        /// 
+        /// # Panics
+        /// This function will never panic, but if given an out of bounds point,
+        /// it will return the closest edge.
         fn nearest_point(&self, lat: &f64, lon: &f64) -> (usize, usize) {
             let indy = self.nearest(*lat, "y");
             let indx = self.nearest(*lon, "x");
@@ -150,10 +164,10 @@ mod etopo {
 
     /// this function creates a pointer to the struct and returns it.
     pub(crate) fn test_bathy_3_data() -> Box<Etopo5> {
-        let path = String::from("data/test_bathy_3.nc");
-        let xname = String::from("x");
-        let yname =String::from("y");
-        let depth_name = String::from("depth");
+        let path = String::from("data/etopo5.nc");
+        let xname = String::from("ETOPO05_X");
+        let yname =String::from("ETOPO05_Y");
+        let depth_name = String::from("ROSE");
         Box::new(Etopo5::new(path, xname, yname, depth_name))
     }
 
