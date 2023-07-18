@@ -4,10 +4,17 @@
 //! 
 //! Requires netcdf3 crate. Will be using a interpolation crate in the future.
 
+trait BathymetryData {
+    /// Returns the nearest depth for the given lat, lon coordinate.
+    fn get_depth_nearest(&self, lat: &f64, lon: &f64) -> f64;
+}
+
 mod etopo {
 
     use std::path::Path;
     use netcdf3::{FileReader, DataSet, DataVector, DataType, Version, DimensionType};
+
+    use super::BathymetryData;
 
     /// A struct that stores a netcdf dataset with methods to access and find nearest values
     pub(crate) struct BathyData {
