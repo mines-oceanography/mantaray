@@ -17,7 +17,7 @@ mod etopo {
     use super::BathymetryData;
 
     /// A struct that stores a netcdf dataset with methods to access and find nearest values
-    pub(crate) struct BathyData {
+    pub(crate) struct Etopo5 {
         path: String,
         xname: String,
         yname: String,
@@ -26,7 +26,16 @@ mod etopo {
         variables: (Vec<f32>, Vec<f32>, Vec<f64>),
     }
 
-    impl BathyData {
+    impl BathymetryData for Etopo5 {
+        fn get_depth_nearest(&self, lat: &f64, lon: &f64) -> f64 {
+            // get the index position for the nearest
+            let (x, y) = self.nearest_point(lat, lon);
+            // then get actual bathymetry
+            self.depth_from_arr(x, y) as f64
+        }
+    }
+
+    impl Etopo5 {
         /// Construct BathyData
         /// 
         /// # Arguments
@@ -47,14 +56,14 @@ mod etopo {
         /// 
         /// # Panics
         /// `new` will panic if the data type is invalid or if any of the names are invalid.
-        fn new(path: String, xname: String, yname: String, depth_name: String) -> Self {
+        pub(crate) fn new(path: String, xname: String, yname: String, depth_name: String) -> Self {
             let mut data = FileReader::open(Path::new(&path)).unwrap();
             let variables = (
                 data.read_var_f32(&xname).unwrap(),
                 data.read_var_f32(&yname).unwrap(),
                 data.read_var_f64(&depth_name).unwrap()
             );
-            BathyData { path, xname, yname, depth_name, data, variables }
+            Etopo5 { path, xname, yname, depth_name, data, variables }
         }
         /// Find nearest point
         /// 
@@ -136,12 +145,12 @@ mod etopo {
     }
 
     /// this function creates a pointer to the struct and returns it.
-    pub(crate) fn test_bathy_3_data() -> Box<BathyData> {
+    pub(crate) fn test_bathy_3_data() -> Box<Etopo5> {
         let path = String::from("data/test_bathy_3.nc");
         let xname = String::from("x");
         let yname =String::from("y");
         let depth_name = String::from("depth");
-        Box::new(BathyData::new(path, xname, yname, depth_name))
+        Box::new(Etopo5::new(path, xname, yname, depth_name))
     }
 
     /// a function to open the etopo5.nc file and return pointers to variables
@@ -171,7 +180,7 @@ mod etopo {
 mod test_netcdf {
 
     use crate::etopo::etopo::{get_nearest, get_corners};
-    use super::etopo::{open_variables};
+    use super::{etopo::{open_variables, Etopo5}, BathymetryData};
 
     #[test]
     /// test access to variables created by open_variables
