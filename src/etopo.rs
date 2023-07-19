@@ -2,16 +2,28 @@
 //! 
 //! The module is currently only tested for etopo5.nc.
 //! 
-//! Requires netcdf3 crate. Will be using a interpolation crate in the future.
+//! It contains a trait to define depth related functions to allow for using
+//! different file types in the future. This trait will likely be moved into
+//! it's own module. There is also a struct Etopo5, that does opening and
+//! reading of the etopo5.nc file.
+//! 
+//! Requires netcdf3.
+//! 
+//! Future additions:
+//! - interpolation
+//! 
+//! Also note there are some errors: 
+//! - logic error in the four_corners method
+//! - use path instead of &str for new function
 
+use std::path::Path;
+use netcdf3::FileReader;
+
+/// A trait used to give the function get_nearest_depth
 trait BathymetryData {
     /// Returns the nearest depth for the given lat, lon coordinate.
     fn get_depth_nearest(&self, lat: &f64, lon: &f64) -> f64;
 }
-
-
-use std::path::Path;
-use netcdf3::FileReader;
 
 /// A struct that stores a netcdf dataset with methods to access and find nearest values
 pub(crate) struct Etopo5 {
@@ -129,6 +141,9 @@ impl Etopo5 {
     /// # Panics
     /// This function will not panic, but be aware that it can return values
     /// that are out of bounds to the array.
+    /// 
+    /// # Note
+    /// There is a logic error in this function
     fn four_corners(&self, indx: usize, indy: usize) -> Vec<(usize, usize)> {
         let corners = vec![
             (indx-1, indy),
