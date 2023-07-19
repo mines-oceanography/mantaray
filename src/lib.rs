@@ -1,11 +1,67 @@
+//! Ray tracing ocean waves
+//! 
+//! This library uses ode_solvers and thiserror.
+//! 
+//! As of 2023-07-06, the library can create a `WaveRayPath` struct that
+//! contains either a ConstantDepth or an ArrayDepth. The struct also implements
+//! the ode_solvers system function, and it defines this function with the
+//! helper functions group_velocity and odes. The Depth trait gives
+//! ConstantDepth and ArrayDepth the ability to calculate the depth at a given x
+//! and y value, but in the future, they will also have the ability to calculate
+//! the depth gradient and interpolate. The Rk4 is used similar to the
+//! [examples](https://srenevey.github.io/ode-solvers/examples/kepler_orbit.html).
+//! 
+//! There is also a file output_to_file, which runs the Rk4, then saves the
+//! output to a file. There will be a folder named support that will contain the
+//! python file plot_ode_solvers.
+//! 
+//! This only does one ray at the moment and for constant depth waves, but in
+//! the future, it will include variable depth, ray bundles, and current.
+
+// enforce documentation
+#![deny(missing_docs)]
+
+use ode_solvers::*;
+use std::io::Write;
+use std::fs::File;
+
 mod error;
+
 use error::Error;
+
 
 // Define constant gravity
 const G: f64 = 9.8;
 
-// TODO: have this function accept stepper as an argument
-use std::io::Write;
+
+/// Run the Rk4 stepper.integrate() and save the results to a space separated file
+/// 
+/// # Arguments
+/// `system` : `WaveRayPath`
+/// - struct that calculates the derivatives for each state
+/// 
+/// `t0` : `f64`
+/// - initial time
+/// 
+/// `y0` : `State`
+/// - initial state
+/// 
+/// `tf` : `f64`
+/// - final time
+/// 
+/// `step_size` : `f64`
+/// - size of time increment delta t
+/// 
+/// # Returns
+/// `Result<File, Error>`
+/// - `Ok(File)` : return the file created
+/// - `Err(Error::Undefined)` : error during integration
+/// 
+/// # Errors
+/// `Error::Undefined` : this is a placeholder for an integration error during the Rk4 algorithm.
+/// 
+/// # Panics
+/// The function will panic if it can not read or write to the file.
 fn output_to_file(system: WaveRayPath, t0: f64, y0: State, tf: f64, step_size: f64) -> Result<File, Error> {
 
    let mut stepper = Rk4::new(system, t0, y0, tf, step_size);
@@ -66,10 +122,31 @@ impl Depth for ArrayDepth {
 }
 
 
-/// This function takes in the states and returns group velocity:
+/// Calculates the group velocity
 /// 
-/// returns no current, constant h, general equation
+/// # Arguments
 /// 
+/// `k` : `f64`
+/// - The wavenumber \[m^-1\] should always be positive.
+/// 
+/// `d` : `f64`
+/// - The depth \[m\] in this case should be positive.
+/// 
+/// # Returns
+/// 
+/// `Result<f64, Error>`
+/// 
+/// - `Ok(f64)` : returns the calculated group velocity as a float. Note: if `d`
+///   is less then 0, it will return `f64::NAN`. In the future, this will return
+///   either an error or warning.
+/// 
+/// - Err(Error::ArgumentOutOfBounds) : returns this error if k <= 0.
+/// 
+/// # Errors
+/// 
+/// `Error::ArgumentOutOfBounds`
+/// - If k is negative, group velocity will return this error. 
+///
  pub(crate) fn group_velocity(k: f64, d: f64) -> Result<f64, Error> {
    if d < 0.0 {
       return Ok(f64::NAN); // FIXME: should this also return an error?
@@ -80,9 +157,30 @@ impl Depth for ArrayDepth {
    Ok( (G / 2.0) * ( ((k*d).tanh() + (k*d)/(k*d).cosh().powi(2)) / (k*G*(k*d).tanh()).sqrt() ) ) // TODO: test with deep and shallow water cases
  }
 
- /// Takes current state and calculates derivatives
+ /// Calculates system of odes from the given state
  /// 
- /// returns the odes
+ /// The state is defined by x, y, kx, and ky. Then, the group velocity, depth,
+ /// and depth gradient are calculated. The derivatives of the inputs are
+ /// calculated using the equations in notes.md.
+ /// 
+ /// # Arguments // FIXME: change the function to accept x, y, kx, ky
+ /// 
+ /// `kx` : `f64`
+ /// - x component of wavenumber vector
+ /// 
+ /// `ky` : `f64`
+ /// - y component of wavenumber vector
+ /// 
+ /// `h` : f64
+ /// - depth of water
+ /// 
+ /// # Returns
+ /// `(f64, f64, f64, f64)`
+ /// - A tuple of floats corresponding to (dxdt, dydt, dkxdt, dkydt).
+ /// 
+ /// # Panics
+ /// `group_velocity` will panic if it attempts to unwrap an Err, but this
+ /// should never happen for real inputs.
  ///  
  pub fn odes(kx: f64, ky: f64, h: f64) -> (f64, f64, f64, f64) {
 
@@ -103,14 +201,14 @@ impl Depth for ArrayDepth {
  }
 
 
-use std::fs::File;
-
-use ode_solvers::*;
 
 type State = Vector4<f64>;
 type Time = f64;
 
+/// A struct that stores the bathymetry/depth data related to an individual ray.
 struct WaveRayPath<'a> {
+   /// A reference to a pointer to a struct that implements the depth trait. The
+   /// lifetime of WaveRayPath is restricted to the lifetime of this variable.
    data: &'a Box<dyn Depth>,
 }
 
@@ -128,12 +226,14 @@ impl<'a> ode_solvers::System<State> for WaveRayPath<'a> {
 
 
 #[cfg(test)]
+/// tests for constant depth, constant group velocity
 mod test_constant_cg {
-
+   use crate::{State, WaveRayPath};
+   use ode_solvers::*;
    use crate::{group_velocity, odes, ConstantDepth, ArrayDepth, output_to_file, Depth, run_check_ode_solvers};
 
-   // testing group velocity function against values generated by wolfram alpha
     #[test]
+    /// testing group velocity function against values generated by wolfram alpha
     fn test_group_velocity() {
       let results = [
          (1.0, 1.565247584249853),
@@ -147,13 +247,14 @@ mod test_constant_cg {
     }
 
     #[test]
+    /// verifying a negative k passed to group_velocity will return an error.
     fn test_negative_k() {
          assert!(group_velocity(-1.0, 1000.0).is_err());
          assert!(group_velocity(-12.0, 1000.0).is_err())
       }
 
-   // testing ode on simple cases worked out by hand
    #[test]
+   /// testing ode on simple cases worked out by hand
    fn test_odes() {
       let results = [
          // (kx, ky, dxdt, dydt)
@@ -174,11 +275,9 @@ mod test_constant_cg {
       }
    }
 
-   use crate::{State, WaveRayPath};
-   use ode_solvers::*;
-
    #[test]
    #[should_panic]
+   /// stepper.integrate() should panic if k starts out negative
    fn test_zero_k() {
       let data : Box<dyn Depth> = Box::new(ConstantDepth { d: 1000.0 });
       let system = WaveRayPath::new(&data);
@@ -193,7 +292,7 @@ mod test_constant_cg {
    }
 
    #[test]
-   // Testing the ode_solvers Rk4 function only in the kx or ky direction
+   /// Testing the ode_solvers Rk4 function only in the kx or ky direction
    fn test_axis() {
       let data : Box<dyn Depth> = Box::new(ConstantDepth { d: 1000.0 });
       // answers should be the square root of gravity
@@ -208,6 +307,7 @@ mod test_constant_cg {
    }
 
    #[test]
+   /// check that function accepts array
    fn test_array_as_parameter() {
       let data: Box<dyn Depth> = Box::new(ArrayDepth { array: vec![
          vec![1000.0, 1000.0],
@@ -225,7 +325,7 @@ mod test_constant_cg {
    }
 
    #[test]
-   // if any of the input is NAN, the output should be none, even if k is zero
+   /// if any of the input is NAN, the output should be none, even if k is zero
    fn test_nan() {
       let data : Box<dyn Depth> = Box::new(ConstantDepth { d: 1000.0 });
       let system = WaveRayPath::new(&data);
@@ -242,12 +342,12 @@ mod test_constant_cg {
    }
 
    #[test]
-   // test when d / wavelenth < 1 / 20
+   /// test when d / wavelenth < 1 / 20
    fn test_shallow() {
       let data : Box<dyn Depth> = Box::new(ConstantDepth { d: 0.1 });
-      // answers should be the square root of gravity * h, but are not, they get closer as d approaches 0.
+      // the approximation is the square root of gravity * h, but are not, they get closer as d approaches 0.
       let check_axis = [
-         (0.0, 1.0, 0.0, 0.9850257444023037), // should be 0.9899494936611665
+         (0.0, 1.0, 0.0, 0.9850257444023037), // the approximation is 0.9899494936611665
          (1.0, 0.0, 0.9850257444023037, 0.0),
          (0.0, -1.0, 0.0, -0.9850257444023037),
          (-1.0, 0.0, -0.9850257444023037, 0.0)
@@ -257,6 +357,7 @@ mod test_constant_cg {
    }
 
    #[test]
+   /// If the bathymetry array index is out of range, it will return nan.
    fn out_of_range_give_nan() {
       let data: Box<dyn Depth> = Box::new(ArrayDepth { array: vec![
          vec![1000.0, 1000.0],
@@ -280,7 +381,7 @@ mod test_constant_cg {
    }
 
    #[test]
-   // test writing a file
+   /// test writing a file
    fn write_file() {
       let data : Box<dyn Depth> = Box::new(ConstantDepth { d: 1000.0 });
       let system = WaveRayPath::new(&data);
@@ -295,7 +396,17 @@ mod test_constant_cg {
 
 }
 
-
+/// Runs ode solvers on the given check cases
+/// 
+/// # Arguments
+/// `depth_data` : `Box<dyn depth>`
+/// - either ConstantDepth or ArrayDepth
+/// 
+/// `check_axis` : `[(f64, f64, f64, f64); 4]`
+/// - these are an array of kx, ky, x_final, y_final
+/// 
+/// # Panics
+/// If there is an error during integration of ode_solvers, this function will panic
 fn run_check_ode_solvers(depth_data: Box<dyn Depth>, check_axis: [(f64, f64, f64, f64); 4]) {
    for (kx, ky, xf, yf) in check_axis {
       let system = WaveRayPath::new(&depth_data);
