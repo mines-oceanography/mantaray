@@ -203,14 +203,16 @@ mod test_netcdf {
     #[test]
     /// This test works for values in the range of etopo5.nc
     fn nearest_bathymetry() {
-        // Mines, Golden, CO 39.7510, 254.7774
-        let lat = 39.7510;
-        let lon = 254.7774;
+        // Mines, Golden, CO 39.7510, 254.7774 @ 1747 meters
+        // Atacama observatory, -22.9586, 292.2125 @ 4724 meters
+        // Titanic, 41.72583043, 310.05917043 @ -3780 meters
+        let lat = 41.72583043;
+        let lon = 310.05917043;
         // open etopo5 data set
         let etopo_data = Etopo5::new("data/etopo5.nc");
         // use trait function
         dbg!(&etopo_data.get_depth_nearest(&lat, &lon));
-        assert!((etopo_data.get_depth_nearest(&lat, &lon) - 1747.0).abs() < f64::EPSILON)
+        assert!((etopo_data.get_depth_nearest(&lat, &lon) - -3780.0).abs() < f64::EPSILON)
     }
 
 
