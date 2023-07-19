@@ -20,7 +20,11 @@ pub(crate) struct Etopo5 {
 
 impl BathymetryData for Etopo5 {
     fn get_depth_nearest(&self, lat: &f64, lon: &f64) -> f64 {
-        // add panic check for out of bounds lat and lon
+        assert!(
+            *lat >= -90.0 && *lat <= 90.0
+            && *lon >= 0.0 && *lon <= 359.92,
+            "Out of bounds error: Expected -90 < lat < 90, recieved {}. Expected 0 < lon < 359.92, received {}", *lat, *lon
+        );
         // get the index position for the nearest
         let (x, y) = self.nearest_point(lat, lon);
         // then get actual bathymetry
