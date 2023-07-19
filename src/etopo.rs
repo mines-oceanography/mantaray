@@ -125,11 +125,12 @@ mod etopo {
         /// This function will not panic, but be aware that it can return values
         /// that are out of bounds to the array.
         fn four_corners(&self, indx: usize, indy: usize) -> Vec<(usize, usize)> {
-            let mut corners = Vec::new();
-            corners.push((indy-1, indx));
-            corners.push((indy, indx-1));
-            corners.push((indy+1, indx));
-            corners.push((indy, indx+1));
+            let corners = vec![
+                (indx-1, indy),
+                (indx, indy-1),
+                (indx+1, indy),
+                (indx, indy+1)
+            ];
 
             corners
         }
