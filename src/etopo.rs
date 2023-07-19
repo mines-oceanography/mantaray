@@ -12,17 +12,12 @@ trait BathymetryData {
 mod etopo {
 
     use std::path::Path;
-    use netcdf3::{FileReader, DataSet, DataVector, DataType, Version, DimensionType};
+    use netcdf3::FileReader;
 
     use super::BathymetryData;
 
     /// A struct that stores a netcdf dataset with methods to access and find nearest values
     pub(crate) struct Etopo5 {
-        path: String,
-        xname: String,
-        yname: String,
-        depth_name: String,
-        data: FileReader,
         variables: (Vec<f64>, Vec<f64>, Vec<f32>),
     }
 
@@ -63,7 +58,7 @@ mod etopo {
                 data.read_var_f64(&yname).unwrap(),
                 data.read_var_f32(&depth_name).unwrap()
             );
-            Etopo5 { path, xname, yname, depth_name, data, variables }
+            Etopo5 { variables }
         }
         /// Find nearest point
         /// 
