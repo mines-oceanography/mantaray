@@ -31,32 +31,24 @@ mod etopo {
     }
 
     impl Etopo5 {
-        /// Construct BathyData
+        /// Construct Etopo5
         /// 
         /// # Arguments
-        /// `path` : `String`
+        /// `path` : `&str`
         /// - a path to the location of the netcdf file
-        /// 
-        /// `xname` : `String`
-        /// - name of the x variable in the netcdf file
-        /// 
-        /// `yname` : `String`
-        /// - name of the y variable in the netcdf file
-        /// 
-        /// `depth_name` : `String`
-        /// - name of the depth variable in the netcdf file
         /// 
         /// # Returns
         /// `Self` : an initialized BathyData
         /// 
         /// # Panics
-        /// `new` will panic if the data type is invalid or if any of the names are invalid.
-        pub(crate) fn new(path: String, xname: String, yname: String, depth_name: String) -> Self {
-            let mut data = FileReader::open(Path::new(&path)).unwrap();
+        /// `new` will panic if the data type is invalid or if any of the names
+        /// are invalid. But this should never panic for etopo5.nc
+        pub(crate) fn new(path: &str) -> Self {
+            let mut data = FileReader::open(Path::new(path)).unwrap();
             let variables = (
-                data.read_var_f64(&xname).unwrap(),
-                data.read_var_f64(&yname).unwrap(),
-                data.read_var_f32(&depth_name).unwrap()
+                data.read_var_f64("ETOPO05_X").unwrap(),
+                data.read_var_f64("ETOPO05_Y").unwrap(),
+                data.read_var_f32("ROSE").unwrap()
             );
             Etopo5 { variables }
         }
@@ -159,11 +151,7 @@ mod etopo {
 
     /// this function creates a pointer to the struct and returns it.
     pub(crate) fn test_bathy_3_data() -> Box<Etopo5> {
-        let path = String::from("data/etopo5.nc");
-        let xname = String::from("ETOPO05_X");
-        let yname =String::from("ETOPO05_Y");
-        let depth_name = String::from("ROSE");
-        Box::new(Etopo5::new(path, xname, yname, depth_name))
+        Box::new(Etopo5::new("data/etopo5.nc"))
     }
 
     /// a function to open the etopo5.nc file and return pointers to variables
@@ -218,11 +206,9 @@ mod test_netcdf {
         // Mines, Golden, CO 39.7510, 254.7774
         let lat = 39.7510;
         let lon = 254.7774;
-        let path = String::from("data/etopo5.nc");
-        let xname = String::from("ETOPO05_X");
-        let yname =String::from("ETOPO05_Y");
-        let depth_name = String::from("ROSE");
-        let etopo_data = Etopo5::new(path, xname, yname, depth_name);
+        // open etopo5 data set
+        let etopo_data = Etopo5::new("data/etopo5.nc");
+        // use trait function
         dbg!(&etopo_data.get_depth_nearest(&lat, &lon));
         assert!((etopo_data.get_depth_nearest(&lat, &lon) - 1747.0).abs() < f64::EPSILON)
     }
