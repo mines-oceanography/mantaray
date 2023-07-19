@@ -106,6 +106,8 @@ mod etopo {
             let indx = self.nearest(*lon, "x");
             (indx, indy)
         }
+        /// Function to convert input coordinates to etopo5 range
+        fn convert_coordinates(lat: &f64, lon: &f64) {todo!()}
         /// Get four adjecent points
         /// 
         /// # Arguments
