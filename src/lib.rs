@@ -29,6 +29,10 @@ mod error;
 
 mod interpolator;
 
+mod cartesian_coor;
+
+mod bathymetry_data;
+
 use error::Error;
 
 

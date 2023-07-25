@@ -25,7 +25,7 @@
 /// The points must be in correct order since the function assumes they are. It
 /// will not give any error, but will return a value that is incorrect. In the
 /// future, this function will enforce order of the points.
-fn bilinear(points: &Vec<(i32, i32, f64)>, target: &(f64, f64)) -> f64 {
+pub(crate) fn bilinear(points: &Vec<(i32, i32, f64)>, target: &(f64, f64)) -> f64 {
     // verify quadrilateral input
     assert!(points.len() == 4);
 
