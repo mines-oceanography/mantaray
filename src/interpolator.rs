@@ -1,4 +1,4 @@
-//! Bilinear interpolator
+//! Module containing interpolators
 //! 
 //! Contains the bilinear_interpolator function
 
@@ -24,7 +24,7 @@
 /// The points must be in correct order since the function assumes they are. It
 /// will not give any error, but will return a value that is incorrect. In the
 /// future, this function will enforce order of the points.
-fn bilinear_interpolator(points: &mut Vec<(i32, i32, f64)>, target: &(f64, f64)) -> f64 {
+fn bilinear(points: &mut Vec<(i32, i32, f64)>, target: &(f64, f64)) -> f64 {
     // verify quadrilateral input
     assert!(points.len() == 4);
 
@@ -76,18 +76,21 @@ fn bilinear_interpolator(points: &mut Vec<(i32, i32, f64)>, target: &(f64, f64))
 /// test single cases of the function against https://www.omnicalculator.com/math/bilinear-interpolation
 fn test_interp() {
     // points must be in clockwise (relative) order to each other with respect to the center of the square.
-    let q11 = 10.0;
-    let q21 = -10.0;
-    let q12 = -10.0;
-    let q22 = 10.0;
 
-    let mut points = vec![
-        (0, 0, q11),
-        (5, 5, q21),
-        (10, 0, q22),
-        (5, -5, q12),
+    let check_interp = [
+        (20.0, 23.0, -77, -19, 123, 145, 10.0, 20.0, 30.0, 40.0, 1230, 19.971951219512192),
     ];
-    let target = (5.0, 0.0);
-    let ans = bilinear_interpolator(&mut  points, &target);
-    assert!((ans - 0.0).abs() < f64::EPSILON, "actual value: {}", ans);
+
+    for (x, y, x1, y1, x2, y2, q11, q21, q12, q22, t, val) in check_interp {
+        let mut points = vec![
+            (x1 + t, y1 + t, q11),
+            (x1 + t, y2 + t, q12),
+            (x2 + t, y2 + t, q22),
+            (x2 + t, y1 + t, q21),
+        ];
+
+        let target = (x + t as f64, y + t as f64);
+        let ans = bilinear(&mut  points, &target);
+        assert!((ans - val).abs() < f64::EPSILON, "expected: {}. actual value: {}", val, ans);
+    }
 }
