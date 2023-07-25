@@ -27,6 +27,8 @@ use std::fs::File;
 
 mod error;
 
+mod interpolator;
+
 use error::Error;
 
 
