@@ -2,12 +2,13 @@
 //! 
 //! Contains the bilinear_interpolator function
 
+#[allow(dead_code)]
 /// Bilinear interpolation 
 /// 
 /// Performs operations to calculate bilinear interpolation at target point t
 /// 
 /// # Arguments
-/// `points` : `&mut Vec<(i32, i32, f64)>`
+/// `points` : `&Vec<(i32, i32, f64)>`
 /// - the known points with depth values. points must be in clockwise (relative)
 ///   order to each other with respect to the center of the square.
 /// 
@@ -24,7 +25,7 @@
 /// The points must be in correct order since the function assumes they are. It
 /// will not give any error, but will return a value that is incorrect. In the
 /// future, this function will enforce order of the points.
-fn bilinear(points: &mut Vec<(i32, i32, f64)>, target: &(f64, f64)) -> f64 {
+fn bilinear(points: &Vec<(i32, i32, f64)>, target: &(f64, f64)) -> f64 {
     // verify quadrilateral input
     assert!(points.len() == 4);
 
@@ -33,13 +34,6 @@ fn bilinear(points: &mut Vec<(i32, i32, f64)>, target: &(f64, f64)) -> f64 {
     let b = points[1];
     let c = points[2];
     let d = points[3];
-
-    // commented below: to order the points from a random set does NOT work! maybe check logic again later:
-    // let a = points.remove(0);
-    // let b = *points.iter().min_by_key(|p| (p.0 - a.0).pow(2) + (p.1 - a.1).pow(2)).unwrap();
-    // let c = *points.iter().max_by_key(|p| (p.0 - a.0).pow(2) + (p.1 - a.1).pow(2)).unwrap();
-    // let d = *points.iter().find(|p| !(p.0 == a.0 && p.1 == a.1) && !(p.0 == b.0 && p.1 == b.1) && !(p.0 == c.0 && p.1 == c.1)).unwrap();
-    // println!("{:?}, {:?}, {:?}, {:?}", a, b, c, d);
 
     // translate points and target with respect to a:
     let at = (0.0 , 0.0, a.2);
@@ -82,7 +76,7 @@ fn test_interp() {
     ];
 
     for (x, y, x1, y1, x2, y2, q11, q21, q12, q22, t, val) in check_interp {
-        let mut points = vec![
+        let points = vec![
             (x1 + t, y1 + t, q11),
             (x1 + t, y2 + t, q12),
             (x2 + t, y2 + t, q22),
@@ -90,7 +84,7 @@ fn test_interp() {
         ];
 
         let target = (x + t as f64, y + t as f64);
-        let ans = bilinear(&mut  points, &target);
+        let ans = bilinear(&points, &target);
         assert!((ans - val).abs() < f64::EPSILON, "expected: {}. actual value: {}", val, ans);
     }
 }
