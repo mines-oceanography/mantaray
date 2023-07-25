@@ -29,6 +29,13 @@ fn bilinear(points: &Vec<(i32, i32, f64)>, target: &(f64, f64)) -> f64 {
     // verify quadrilateral input
     assert!(points.len() == 4);
 
+    // check if target is coincident with a point
+    for point in points {
+        if target.0 == point.0 as f64 && target.1 == point.1 as f64 {
+            return point.2;
+        }
+    }
+
     // points are already in order
     let a = points[0];
     let b = points[1];
@@ -73,6 +80,31 @@ fn test_interp() {
 
     let check_interp = [
         (20.0, 23.0, -77, -19, 123, 145, 10.0, 20.0, 30.0, 40.0, 1230, 19.971951219512192),
+    ];
+
+    for (x, y, x1, y1, x2, y2, q11, q21, q12, q22, t, val) in check_interp {
+        let points = vec![
+            (x1 + t, y1 + t, q11),
+            (x1 + t, y2 + t, q12),
+            (x2 + t, y2 + t, q22),
+            (x2 + t, y1 + t, q21),
+        ];
+
+        let target = (x + t as f64, y + t as f64);
+        let ans = bilinear(&points, &target);
+        assert!((ans - val).abs() < f64::EPSILON, "expected: {}. actual value: {}", val, ans);
+    }
+}
+
+#[test]
+/// test if the target is coincident with one of the input points
+fn test_edges() {
+    // x, y, x1, y1, x2, y2, q11, q21, q12, q22, t, val
+    let check_interp = [
+        (0.0, 0.0, 0, 0, 10, 10, 0.0, 5.0, 10.0, 15.0, 0, 0.0),
+        (10.0, 0.0, 0, 0, 10, 10, 0.0, 5.0, 10.0, 15.0, 0, 5.0),
+        (0.0, 10.0, 0, 0, 10, 10, 0.0, 5.0, 10.0, 15.0, 0, 10.0),
+        (10.0, 10.0, 0, 0, 10, 10, 0.0, 5.0, 10.0, 15.0, 0, 15.0),
     ];
 
     for (x, y, x1, y1, x2, y2, q11, q21, q12, q22, t, val) in check_interp {
