@@ -11,5 +11,11 @@ pub(crate) enum Error {
    Undefined,
    #[error("Argument passed was out of bounds")]
    /// The value k = |(kx, ky)| can only be positive. If k <=0, the function will pass ArgumentOutOfBounds.
-   ArgumentOutOfBounds
+   ArgumentOutOfBounds,
+   #[error("Index passed was out of bounds")]
+   /// The index is out of bounds of the array and would panic if attempted to access array.
+   IndexOutOfBounds,
+   #[error("Argument passed was not a valid option")]
+   /// The argument passed was not a valid option
+   InvalidArgument,
 }
