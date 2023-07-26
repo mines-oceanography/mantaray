@@ -3,7 +3,7 @@
 /// A trait used to give the function get_depth
 pub(crate) trait BathymetryData {
     /// Returns the nearest depth for the given lat, lon coordinate.
-    fn get_depth(&self, x: &f32, y: &f32) -> f64;
+    fn get_depth(&self, x: &f32, y: &f32) -> f32;
 }
 
 /// Read data from test_bathy_3.nc netcdf3 file that contains x, y, and depth
@@ -15,11 +15,11 @@ mod cartesian {
 
     /// A struct that stores a netcdf3 dataset named test_bathy_3.nc with methods to access and find nearest values
     pub(crate) struct CartesianFile {
-        variables: (Vec<f32>, Vec<f32>, Vec<f64>),
+        variables: (Vec<f32>, Vec<f32>, Vec<f32>),
     }
 
     impl BathymetryData for CartesianFile {
-        fn get_depth(&self, x: &f32, y: &f32) -> f64 {
+        fn get_depth(&self, x: &f32, y: &f32) -> f32 {
             self.depth(x, y)
         }
     }
@@ -44,10 +44,11 @@ mod cartesian {
         /// correct.
         pub(crate) fn new(path: &Path) -> Self {
             let mut data = FileReader::open(path).unwrap();
+
             let variables = (
                 data.read_var_f32("x").unwrap(),
                 data.read_var_f32("y").unwrap() ,
-                data.read_var_f64("depth").unwrap()
+                data.read_var_f64("depth").unwrap().iter().map(|x| *x as f32).collect()
             );
             CartesianFile { variables }
         }
@@ -149,7 +150,7 @@ mod cartesian {
         /// # Panics
         /// This function will panic if a point in points is out of bounds of the
         /// array. This function will also panic if `interpolator::bilinear` panics.
-        fn interpolate(&self, points: &Vec<(usize, usize)>, target: &(f64, f64)) -> f64 {
+        fn interpolate(&self, points: &Vec<(usize, usize)>, target: &(f32, f32)) -> f32 {
             let pts = vec![
                 (points[0].0 as i32, points[0].1 as i32, self.depth_from_arr(&points[0].0, &points[0].1)),
                 (points[1].0 as i32, points[1].1 as i32, self.depth_from_arr(&points[1].0, &points[1].1)),
@@ -173,7 +174,7 @@ mod cartesian {
         /// 
         /// # Panics
         /// This function will panic if combined index is out of bounds.
-        fn depth_from_arr(&self, indx: &usize, indy: &usize) -> f64 {
+        fn depth_from_arr(&self, indx: &usize, indy: &usize) -> f32 {
             let index = self.variables.0.len() * indy + indx;
             self.variables.2[index]
         }
@@ -196,10 +197,10 @@ mod cartesian {
         /// # Panics
         /// This will panic if the functions `nearest_point`, `four_corners`, or
         /// `interpolate` panic.
-        fn depth(&self, x: &f32, y: &f32) -> f64 {
+        fn depth(&self, x: &f32, y: &f32) -> f32 {
             let nearest_pt = self.nearest_point(x, y);
             let edge_points = self.four_corners(&nearest_pt.0, &nearest_pt.1);
-            let depth = self.interpolate(&edge_points, &(*x as f64, *y as f64));
+            let depth = self.interpolate(&edge_points, &(*x, *y));
             depth
         }
 
