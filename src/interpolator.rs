@@ -2,10 +2,12 @@
 //! 
 //! Contains the bilinear_interpolator function
 
+use crate::error::Error;
+
 #[allow(dead_code)]
 /// Bilinear interpolation 
 /// 
-/// Performs operations to calculate bilinear interpolation at target point t
+/// Performs operations to calculate bilinear interpolation at target point
 /// 
 /// # Arguments
 /// `points` : `&Vec<(i32, i32, f64)>`
@@ -15,24 +17,29 @@
 /// `target` : `&(f64, f64)`
 /// - the target point must be contained within the square of the points.
 /// 
-/// # Panics
-/// There are two ways for the function to panic, which should only happen due
-/// to incorrect arguments passed.
-/// - if the length of the inputted points vector is not 4.
-/// - if the determinant is 0.
+/// # Returns
+/// `Result<f32, Error>`
+/// - `Ok(f32)` : interpolated depth
+/// - `Err(Error)` : argument passed `points` is invalid
+/// 
+/// # Errors
+/// `Error::InvalidArgument` : either the number of points is not equal to 4, or
+/// the determinant of the change of basis matrix equals zero.
 /// 
 /// # Note
 /// The points must be in correct order since the function assumes they are. It
 /// will not give any error, but will return a value that is incorrect. In the
 /// future, this function will enforce order of the points.
-pub(crate) fn bilinear(points: &Vec<(i32, i32, f32)>, target: &(f32, f32)) -> f32 {
+pub(crate) fn bilinear(points: &Vec<(i32, i32, f32)>, target: &(f32, f32)) -> Result<f32, Error> {
     // verify quadrilateral input
-    assert!(points.len() == 4);
+    if points.len() != 4 {
+        return Err(Error::InvalidArgument);
+    }
 
     // check if target is coincident with a point
     for point in points {
         if target.0 == point.0 as f32 && target.1 == point.1 as f32 {
-            return point.2;
+            return Ok(point.2);
         }
     }
 
@@ -51,7 +58,9 @@ pub(crate) fn bilinear(points: &Vec<(i32, i32, f32)>, target: &(f32, f32)) -> f3
 
     // change basis of target point
     let det_bd = ((bt.0 * dt.1) - (dt.0 * bt.1)) as f32;
-    assert!(det_bd != 0.0);
+    if det_bd == 0.0 {
+        return Err(Error::InvalidArgument);
+    }
     // create inverse change of basis matrix
     let cbm = vec![
         vec![dt.1 as f32 / det_bd, -(dt.0 as f32 / det_bd)],
@@ -67,7 +76,7 @@ pub(crate) fn bilinear(points: &Vec<(i32, i32, f32)>, target: &(f32, f32)) -> f3
     let a01 = d.2 - a.2;  // change in the function's values at the points on the top and bottom at the same x
     let a11 = c.2 - a.2 - a10 - a01;  // change in x times the change in y
 
-    a00 + a10 * x + a01 * y + a11 * x * y
+    Ok(a00 + a10 * x + a01 * y + a11 * x * y)
 
 }
 
@@ -89,7 +98,7 @@ fn test_interp() {
         ];
 
         let target = (x + t as f32, y + t as f32);
-        let ans = bilinear(&points, &target);
+        let ans = bilinear(&points, &target).unwrap();
         assert!((ans - val).abs() < f32::EPSILON, "expected: {}. actual value: {}", val, ans);
     }
 }
@@ -114,7 +123,7 @@ fn test_edges() {
         ];
 
         let target = (x + t as f32, y + t as f32);
-        let ans = bilinear(&points, &target);
+        let ans = bilinear(&points, &target).unwrap();
         assert!((ans - val).abs() < f32::EPSILON, "expected: {}. actual value: {}", val, ans);
     }
 }

@@ -224,7 +224,7 @@ mod cartesian {
                 (points[2].0 as i32, points[2].1 as i32, self.depth_from_arr(&points[2].0, &points[2].1)?),
                 (points[3].0 as i32, points[3].1 as i32, self.depth_from_arr(&points[3].0, &points[3].1)?),
             ];
-            Ok(interpolator::bilinear(&pts, target))
+            Ok(interpolator::bilinear(&pts, target)?)
         }
         
         /// Access values in flattened array as you would a 2d array
