@@ -141,11 +141,11 @@ mod cartesian {
         /// `points`: `&Vec<(usize, usize)>`
         /// - a vector of defined points in the depth grid
         /// 
-        /// `target`: `&(f64, f64)`
+        /// `target`: `&(f32, f32)`
         /// - interpolate this point
         /// 
         /// # Returns
-        /// `f64` : the depth at the target point
+        /// `f32` : the depth at the target point
         /// 
         /// # Panics
         /// This function will panic if a point in points is out of bounds of the
@@ -170,7 +170,7 @@ mod cartesian {
         /// - index of location in y array
         /// 
         /// # Returns
-        /// `f64` : depth
+        /// `f32` : depth
         /// 
         /// # Panics
         /// This function will panic if combined index is out of bounds.
@@ -192,7 +192,7 @@ mod cartesian {
         /// - y coordinate
         /// 
         /// # Returns
-        /// `f64` : depth at the point
+        /// `f32` : depth at the point
         /// 
         /// # Panics
         /// This will panic if the functions `nearest_point`, `four_corners`, or
