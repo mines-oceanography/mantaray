@@ -21,9 +21,12 @@ mod cartesian {
     /// # Note
     /// Currently, the methods do not know the difference between an out of
     /// bounds point and a just inside the bounds point. The nearest to each of
-    /// these will be on the edge, so it will return an out of bounds error for
-    /// both. In the future, the methods should be able to distinguish these two
-    /// cases.
+    /// these will be on the edge, so it will return None for both. In the
+    /// future, the methods should be able to distinguish these two cases.
+    /// 
+    /// In this struct, None is used when the current function will not panic,
+    /// but the value is not useful to the other structs. Error is used when the
+    /// function would panic, so instead, it returns an error.
     pub(crate) struct CartesianFile {
         variables: (Vec<f32>, Vec<f32>, Vec<f32>),
     }
@@ -45,13 +48,9 @@ mod cartesian {
         /// 
         /// # Errors
         /// - `Error::IndexOutOfBounds` : this error is returned when the
-        /// `x` and `y` input give an out of bounds output.
-        /// - `Error::InvalidArgument` : Currently
-        /// as hard-coded, this function should never return this error.
-        /// 
-        /// # Panics
-        /// This should only panic if the inputted `x` and `y` are out of
-        /// bounds.
+        /// `x` or `y` input give an out of bounds output.
+        /// - `Error::InvalidArgument` : this error is returned from
+        ///   `interpolator::bilinear` due to incorrect argument passed.
         fn get_depth(&self, x: &f32, y: &f32) -> Result<f32, Error> {
             self.depth(x, y)
         }
@@ -92,24 +91,12 @@ mod cartesian {
         /// `target` : `f32`
         /// - the value to find
         /// 
-        /// `direction` : `&str`
-        /// - `"x"` or `"y"`
+        /// `arr` : `&Vec<f32>`
+        /// - the array that will be used when searching for the closest value.
         /// 
         /// # Returns
-        /// `Result<usize, Error>`
-        /// - `Ok(usize)` - index of closest value
-        /// - `Err(Error)` - invalid `&str` passed for
-        ///   `direction`
-        /// 
-        /// # Errors
-        /// `Error::InvalidArgument` : this error is returned when `direction`
-        /// is anything other than `"x"` or `"y"`.
-        fn nearest(&self, target: &f32, direction: &str) -> Result<usize, Error> {
-            let arr = match direction {
-                "x" => &self.variables.0,
-                "y" => &self.variables.1,
-                _ => return Err(Error::InvalidArgument),
-            };
+        /// `usize`: index of closest value
+        fn nearest(&self, target: &f32, arr: &Vec<f32>) -> usize {
 
             let mut closest_index = 0;
             let mut closest_distance = (target - arr[0]).abs();
@@ -122,7 +109,7 @@ mod cartesian {
                     closest_distance = distance;
                 }
             }
-            Ok(closest_index)
+            closest_index
         }
 
         /// Returns the nearest x index, y index point to given x, y coordinate
@@ -135,58 +122,48 @@ mod cartesian {
         /// - y coordinate
         /// 
         /// # Returns
-        /// `Result<(usize, usize), Error>`
-        /// - `Ok((usize, usize))` : the nearest point to the given `x`, `y`
+        /// `Option<(usize, usize)>`
+        /// - `Some((usize, usize))` : the nearest point to the given `x`, `y`
         ///   input.
-        /// - `Error` : the passed `x` and `y` arguments create an index that is
-        ///   out of bounds.
-        /// 
-        /// # Errors
-        /// - `Error::IndexOutOfBounds` : this error is returned when the
-        /// nearest_point is on the edge.
-        /// - `Error::InvalidArgument` : Currently
-        /// as hard-coded, this function should never return this error.
+        /// - `None` : based on the calculated nearest point, the given `x` and
+        ///   `y` are assumed to be out of bounds, so a value does not exist.
         /// 
         /// # Note
         /// This function will never panic, but if given an out of bounds point,
         /// it will return the closest edge. To attempt to fix this problem,
-        /// `nearest_point` should error on points that are on the edges.
-        fn nearest_point(&self, x: &f32, y: &f32) -> Result<(usize, usize), Error> {
-            let indy = self.nearest(y, "y")?;
-            let indx = self.nearest(x, "x")?;
+        /// `nearest_point` should return `None` on points that are on the edges.
+        fn nearest_point(&self, x: &f32, y: &f32) -> Option<(usize, usize)> {
+            let indx = self.nearest(x, &self.variables.0);
+            let indy = self.nearest(y, &self.variables.1);
 
             if indx <= 0 || indy <= 0 || indx >= self.variables.0.len()-1 || indy >= self.variables.1.len() {
-                return Err(Error::IndexOutOfBounds);
+                return None;
             }
 
-            Ok((indx, indy))
+            Some((indx, indy))
         }
 
         /// Get four adjecent points
         /// 
         /// # Arguments
-        /// `indx` : `usize`
+        /// `indx` : `&usize`
         /// - index of the x location
         /// 
-        /// `indy` : `usize`
+        /// `indy` : `&usize`
         /// - index of the y location
         /// 
         /// # Returns
-        /// `Result<Vec<(usize, usize)>, Error>`
-        /// - `Ok(Vec<(usize, usize)>)` : indices for the four corners
-        /// surrounding the given indices in clockwise order.
-        /// - `Err(Error::IndexOutOfBounds)` : the input indexes are out of
-        ///   bounds of the depth array.
-        /// 
-        /// # Errors
-        /// `Err(Error::IndexOutOfBounds)` : either `indx` or `indy` are out of bounds of the array.
-        fn four_corners(&self, indx: &usize, indy: &usize) -> Result<Vec<(usize, usize)>, Error> {
+        /// `Option<Vec<(usize, usize)>>`
+        /// - `Some(Vec<(usize, usize)>)` : corner points in surrounding given
+        ///   `indx` and `indy` in clockwise order.
+        /// - `None` : `indx` or `indy` is out of range and no value exists.
+        fn four_corners(&self, indx: &usize, indy: &usize) -> Option<Vec<(usize, usize)>> {
             if *indx <= 0 || *indy <= 0 || 
             *indx >= self.variables.0.len()-1 || *indy >= self.variables.1.len()-1 {
-                return Err(Error::IndexOutOfBounds);
+                return None;
             }
             // clockwise in order
-            Ok(
+            Some(
                 vec![
                 (*indx, indy+1),
                 (indx+1, *indy),
@@ -203,7 +180,7 @@ mod cartesian {
         /// - a vector of defined points in the depth grid
         /// 
         /// `target`: `&(f32, f32)`
-        /// - interpolate this point
+        /// - interpolate the depth at this point
         /// 
         /// # Returns
         /// `Result<f32, Error>`
@@ -212,11 +189,10 @@ mod cartesian {
         ///   `points` vector.
         /// 
         /// # Errors
-        /// `Error::IndexOutOfBounds` : one or more of the points passed to
-        /// `points` is out of bounds.
-        /// 
-        /// # Panics
-        /// This function will panic if `interpolator::bilinear` panics.
+        /// - `Error::IndexOutOfBounds` : one or more of the points passed to
+        /// `points` is out of bounds. 
+        /// - `Error::InvalidArgument` : error during
+        /// execution of `interpolator::bilinear` due to invalid arguments.
         fn interpolate(&self, points: &Vec<(usize, usize)>, target: &(f32, f32)) -> Result<f32, Error> {
             let pts = vec![
                 (points[0].0 as i32, points[0].1 as i32, self.depth_from_arr(&points[0].0, &points[0].1)?),
@@ -271,16 +247,19 @@ mod cartesian {
         /// - `Err(Error)` : 
         /// 
         /// # Errors
-        /// - `Error::IndexOutOfBounds` : this error is returned when the
-        /// `x` and `y` input give an out of bounds output.
-        /// - `Error::InvalidArgument` : Currently
-        /// as hard-coded, this function should never return this error.
-        /// 
-        /// # Panics
-        /// This will only panic if the `interpolator::bilinear` function in `self.interpolate` panics.
+        /// - `Error::IndexOutOfBounds` : this error is returned when the `x`
+        /// and `y` input give an out of bounds output.
+        /// - `Error::InvalidArgument` : this error is returned from
+        ///   `interpolator::bilinear` due to incorrect argument passed.
         fn depth(&self, x: &f32, y: &f32) -> Result<f32, Error> {
-            let nearest_pt = self.nearest_point(x, y)?;
-            let edge_points = self.four_corners(&nearest_pt.0, &nearest_pt.1)?;
+            let nearest_pt = match self.nearest_point(x, y) {
+                Some(p) => p,
+                None => return Err(Error::IndexOutOfBounds), // TODO: for none should it error or NAN or something else?
+            };
+            let edge_points = match self.four_corners(&nearest_pt.0, &nearest_pt.1) {
+                Some(p) => p,
+                None => return Err(Error::IndexOutOfBounds) // TODO: same as above comment
+            };
             let depth = self.interpolate(&edge_points, &(*x, *y))?;
             Ok(depth)
         }
@@ -298,8 +277,8 @@ mod cartesian {
     // test the and view the nearest function
     fn test_get_nearest() {
         let data = CartesianFile::new(Path::new("data/test_bathy_3.nc"));
-        dbg!(data.nearest(&5499.0, "x").unwrap());
-        assert!(data.nearest(&5499.0, "x").unwrap() == 11);
+        dbg!(data.nearest(&5499.0, &data.variables.0));
+        assert!(data.nearest(&5499.0, &data.variables.0) == 11);
     }
 
     #[test]
@@ -319,7 +298,10 @@ mod cartesian {
         assert!(data.get_depth(&30099.0, &15099.0).unwrap() == 15.0);
     }
 
+
     #[test]
+    /// tests if an IndexOutOfBounds error is returned when accessing depth that
+    /// is out of bounds
     fn test_out_of_bounds() {
         let data = CartesianFile::new(Path::new("data/test_bathy_3.nc"));
         if let Error::IndexOutOfBounds = data.get_depth(&-500.1, &-500.1).unwrap_err() {
