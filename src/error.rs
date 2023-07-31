@@ -11,5 +11,8 @@ pub(crate) enum Error {
    Undefined,
    #[error("Argument passed was out of bounds")]
    /// The value k = |(kx, ky)| can only be positive. If k <=0, the function will pass ArgumentOutOfBounds.
-   ArgumentOutOfBounds
+   ArgumentOutOfBounds,
+   #[error("There was an error when computing the projection")]
+   /// The projection should convert between latitude and longitude in degrees and x and y in meters.
+   ProjectionError,
 }

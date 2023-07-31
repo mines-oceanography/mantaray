@@ -26,6 +26,7 @@ use std::io::Write;
 use std::fs::File;
 
 mod error;
+mod step;
 
 use error::Error;
 
