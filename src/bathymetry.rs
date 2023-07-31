@@ -52,8 +52,19 @@ mod cartesian {
         /// - `Error::InvalidArgument` : this error is returned from
         ///   `interpolator::bilinear` due to incorrect argument passed.
         fn get_depth(&self, x: &f32, y: &f32) -> Result<f32, Error> {
-            self.depth(x, y)
+
+            let nearest_pt = match self.nearest_point(x, y) {
+                Some(p) => p,
+                None => return Err(Error::IndexOutOfBounds), // TODO: for none should it error or NAN or something else?
+            };
+            let edge_points = match self.four_corners(&nearest_pt.0, &nearest_pt.1) {
+                Some(p) => p,
+                None => return Err(Error::IndexOutOfBounds) // TODO: same as above comment
+            };
+            let depth = self.interpolate(&edge_points, &(*x, *y))?;
+            Ok(depth)
         }
+
     }
 
     impl CartesianFile {
@@ -227,41 +238,6 @@ mod cartesian {
                 return Err(Error::IndexOutOfBounds);
             }
             Ok(self.variables.2[index])
-        }
-        
-        /// Return the depth at x, y
-        /// 
-        /// Calculates the nearest point, finds surrounding edge points, then
-        /// interpolates the depth at x,y.
-        /// 
-        /// # Arguments
-        /// `x` : `&f32`
-        /// - x coordinate
-        /// 
-        /// `y` : `&f32`
-        /// - y coordinate
-        /// 
-        /// # Returns
-        /// `Result<f32, Error>`
-        /// - `Ok(f32)` : depth at the point
-        /// - `Err(Error)` : 
-        /// 
-        /// # Errors
-        /// - `Error::IndexOutOfBounds` : this error is returned when the `x`
-        /// and `y` input give an out of bounds output.
-        /// - `Error::InvalidArgument` : this error is returned from
-        ///   `interpolator::bilinear` due to incorrect argument passed.
-        fn depth(&self, x: &f32, y: &f32) -> Result<f32, Error> {
-            let nearest_pt = match self.nearest_point(x, y) {
-                Some(p) => p,
-                None => return Err(Error::IndexOutOfBounds), // TODO: for none should it error or NAN or something else?
-            };
-            let edge_points = match self.four_corners(&nearest_pt.0, &nearest_pt.1) {
-                Some(p) => p,
-                None => return Err(Error::IndexOutOfBounds) // TODO: same as above comment
-            };
-            let depth = self.interpolate(&edge_points, &(*x, *y))?;
-            Ok(depth)
         }
 
     }
