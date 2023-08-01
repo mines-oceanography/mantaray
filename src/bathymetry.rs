@@ -246,22 +246,25 @@ mod cartesian {
     // test accessing and viewing variables
     fn test_vars() {
         let data = CartesianFile::new(Path::new("data/test_bathy_3.nc"));
-        dbg!(data.variables.0[10]);
+        assert!(data.variables.0[10] == 5000.0)
     }
 
     #[test]
     // test the and view the nearest function
     fn test_get_nearest() {
         let data = CartesianFile::new(Path::new("data/test_bathy_3.nc"));
-        dbg!(data.nearest(&5499.0, &data.variables.0));
         assert!(data.nearest(&5499.0, &data.variables.0) == 11);
     }
 
     #[test]
-    // view the output from four_corners function
+    // check the output from four_corners function
     fn test_get_corners() {
         let data = CartesianFile::new(Path::new("data/test_bathy_3.nc"));
-        dbg!(data.four_corners(&10, &10).unwrap());
+        let corners = data.four_corners(&10, &10).unwrap();
+        assert!(corners[0].0 == 10 && corners[0].1 == 11);
+        assert!(corners[1].0 == 11 && corners[1].1 == 10);
+        assert!(corners[2].0 == 10 && corners[2].1 == 9);
+        assert!(corners[3].0 == 9 && corners[3].1 == 10);
     }
 
     #[test]
@@ -277,15 +280,26 @@ mod cartesian {
 
     #[test]
     /// tests if an IndexOutOfBounds error is returned when accessing depth that
-    /// is out of bounds
-    fn test_out_of_bounds() {
+    /// is out of bounds in the x direction
+    fn test_x_out_of_bounds() {
         let data = CartesianFile::new(Path::new("data/test_bathy_3.nc"));
-        if let Error::IndexOutOfBounds = data.get_depth(&-500.1, &-500.1).unwrap_err() {
+        if let Error::IndexOutOfBounds = data.get_depth(&-500.1, &500.1).unwrap_err() {
             assert!(true);
         } else {
             assert!(false);
         }
+    }
 
+    #[test]
+    /// tests if an IndexOutOfBounds error is returned when accessing depth that
+    /// is out of bounds in the y direction
+    fn test_y_out_of_bounds() {
+        let data = CartesianFile::new(Path::new("data/test_bathy_3.nc"));
+        if let Error::IndexOutOfBounds = data.get_depth(&500.1, &-500.1).unwrap_err() {
+            assert!(true);
+        } else {
+            assert!(false);
+        }
     }
 
 }
