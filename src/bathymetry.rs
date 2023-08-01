@@ -206,10 +206,10 @@ mod cartesian {
         /// execution of `interpolator::bilinear` due to invalid arguments.
         fn interpolate(&self, points: &Vec<(usize, usize)>, target: &(f32, f32)) -> Result<f32, Error> {
             let pts = vec![
-                (points[0].0 as i32, points[0].1 as i32, self.depth_from_arr(&points[0].0, &points[0].1)?),
-                (points[1].0 as i32, points[1].1 as i32, self.depth_from_arr(&points[1].0, &points[1].1)?),
-                (points[2].0 as i32, points[2].1 as i32, self.depth_from_arr(&points[2].0, &points[2].1)?),
-                (points[3].0 as i32, points[3].1 as i32, self.depth_from_arr(&points[3].0, &points[3].1)?),
+                (points[0].0 as f32, points[0].1 as f32, self.depth_from_arr(&points[0].0, &points[0].1)?),
+                (points[1].0 as f32, points[1].1 as f32, self.depth_from_arr(&points[1].0, &points[1].1)?),
+                (points[2].0 as f32, points[2].1 as f32, self.depth_from_arr(&points[2].0, &points[2].1)?),
+                (points[3].0 as f32, points[3].1 as f32, self.depth_from_arr(&points[3].0, &points[3].1)?),
             ];
             Ok(interpolator::bilinear(&pts, target)?)
         }
