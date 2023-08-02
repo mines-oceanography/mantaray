@@ -242,6 +242,92 @@ mod cartesian {
 
     }
 
+    /// Create a test file like the test_bathy.nc
+    fn create_file(x_len: usize, y_len: usize, x_step: f32, y_step: f32) {
+        
+        use std::convert::TryInto;
+
+        let x_data: Vec<f32> = (0..x_len).map(|x| x as f32 * x_step).collect();
+        let y_data: Vec<f32> = (0..y_len).map(|y| y as f32 * y_step).collect();
+
+        let mut depth_data: Vec<f64> = Vec::new();
+        for y in &y_data {
+            for x in &x_data {
+                if *x <  25000.0 {
+                    if *y < 12500.0 {
+                        depth_data.push(20.0);
+                    } else {
+                        depth_data.push(10.0);
+                    }
+                } else {
+                    if *y < 12500.0 {
+                        depth_data.push(5.0);
+                    } else {
+                        depth_data.push(15.0);
+                    }
+                }
+            }
+        }
+
+        // most below copied from the docs
+        use std::path::Path;
+
+        let output_file_path = Path::new("data/tmp_bathy.nc");
+
+        use netcdf3::{FileWriter, DataSet, Version};
+        let Y_DIM_NAME: &str = "y";
+        let Y_VAR_NAME: &str = Y_DIM_NAME;
+        let Y_VAR_LEN: usize = y_len;
+        
+        let X_DIM_NAME: &str = "x";
+        let X_VAR_NAME: &str = X_DIM_NAME;
+        let X_VAR_LEN: usize = x_len;
+        
+        let DEPTH_VAR_NAME: &str = "depth";
+        let DEPTH_DATA: [f64; 16] = [5., 5., 10., 10., 5., 5., 10., 10., 15., 15., 20., 20., 15., 15., 20., 20.];
+        let DEPTH_VAR_LEN: usize = depth_data.len();
+        
+        // Create the NetCDF-3 definition
+        // ------------------------------
+        let data_set: DataSet = {
+            let mut data_set: DataSet = DataSet::new();
+            // Define the dimensions
+            data_set.add_fixed_dim(Y_DIM_NAME, Y_VAR_LEN).unwrap();
+            data_set.add_fixed_dim(X_DIM_NAME, X_VAR_LEN).unwrap();
+            // Define the variable
+            data_set.add_var_f32(Y_VAR_NAME, &[Y_DIM_NAME]).unwrap();
+            data_set.add_var_f32(X_VAR_NAME, &[X_VAR_NAME]).unwrap();
+            data_set.add_var_f64(DEPTH_VAR_NAME, &[Y_DIM_NAME, X_VAR_NAME]).unwrap();
+        
+            data_set
+        };
+        
+        // ...
+        
+        // Create and write the NetCDF-3 file
+        // ----------------------------------
+        assert_eq!(false,                                   output_file_path.exists());
+        let mut file_writer: FileWriter = FileWriter::create_new(&output_file_path).unwrap();
+        // Set the NetCDF-3 definition
+        file_writer.set_def(&data_set, Version::Classic, 0).unwrap();
+        assert_eq!(DEPTH_VAR_LEN,                     X_VAR_LEN * Y_VAR_LEN);
+        file_writer.write_var_f32(Y_VAR_NAME, &y_data[..]).unwrap();
+        file_writer.write_var_f32(X_VAR_NAME, &x_data[..]).unwrap();
+        file_writer.write_var_f64(DEPTH_VAR_NAME, &depth_data[..]).unwrap();
+        file_writer.close().unwrap();
+        assert_eq!(true,                                    output_file_path.exists());
+        // end of copied from docs
+
+    }
+
+    #[test]
+    /// There are still currently assert statements in create_file function, but
+    /// I will change that to move the testing into this test function.
+    fn test_create_bia() {
+        // it will create a file 'data/tmp_bathy.nc'
+        create_file(101, 51, 500.0, 500.0);
+    }
+
     #[test]
     // test accessing and viewing variables
     fn test_vars() {
