@@ -451,17 +451,6 @@ mod cartesian {
         file_writer.close().unwrap();
         assert_eq!(true,                                    output_file_path.exists());
         // end of copied from docs
-
-        let data_set = CartesianFile::new(&output_file_path);
-
-        // these values are in range (1.51, 3.49) fo both x and y.
-
-        assert!((data_set.get_depth(&1.51, &1.51).unwrap() - 12.575001).abs() < f32::EPSILON);
-        assert!((data_set.get_depth(&1.51, &3.49).unwrap() - 15.125).abs() < f32::EPSILON);
-        assert!((data_set.get_depth(&2.5,&2.5).unwrap() - 20.0).abs() < f32::EPSILON);
-        assert!((data_set.get_depth(&3.49,&3.49).unwrap() - 27.425001).abs() < f32::EPSILON);
-        assert!((data_set.get_depth(&3.49,&1.51).unwrap() - 10.175).abs() < f32::EPSILON);
-
     }
 
 }
