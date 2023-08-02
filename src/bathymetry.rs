@@ -302,4 +302,72 @@ mod cartesian {
         }
     }
 
+
+    #[test]
+    /// test create file
+    fn test_create_file() {
+
+        // most below copied from the docs
+        use std::path::Path;
+
+        let output_file_path = Path::new("data/tmp.nc");
+
+        use netcdf3::{FileWriter, DataSet, Version};
+        const X_DIM_NAME: &str = "x";
+        const X_VAR_NAME: &str = X_DIM_NAME;
+        const X_VAR_DATA: [f32; 4] = [1.0, 2.0, 3.0, 4.0];
+        const X_VAR_LEN: usize = X_VAR_DATA.len();
+        
+        const Y_DIM_NAME: &str = "y";
+        const Y_VAR_NAME: &str = Y_DIM_NAME;
+        const Y_VAR_DATA: [f32; 4] = [1.0, 2.0, 3.0, 4.0];
+        const Y_VAR_LEN: usize = Y_VAR_DATA.len();
+        
+        const DEPTH_VAR_NAME: &str = "depth";
+        const DEPTH_DATA: [f64; 16] = [5., 5., 10., 10., 5., 5., 10., 10., 15., 15., 20., 20., 15., 15., 20., 20.];
+        const DEPTH_VAR_LEN: usize = DEPTH_DATA.len();
+        
+        // Create the NetCDF-3 definition
+        // ------------------------------
+        let data_set: DataSet = {
+            let mut data_set: DataSet = DataSet::new();
+            // Define the dimensions
+            data_set.add_fixed_dim(X_DIM_NAME, X_VAR_LEN).unwrap();
+            data_set.add_fixed_dim(Y_DIM_NAME, Y_VAR_LEN).unwrap();
+            // Define the variable
+            data_set.add_var_f32(X_VAR_NAME, &[X_DIM_NAME]).unwrap();
+            data_set.add_var_f32(Y_VAR_NAME, &[Y_VAR_NAME]).unwrap();
+            data_set.add_var_f64(DEPTH_VAR_NAME, &[X_DIM_NAME, Y_VAR_NAME]).unwrap();
+        
+            data_set
+        };
+        
+        // ...
+        
+        // Create and write the NetCDF-3 file
+        // ----------------------------------
+        assert_eq!(false,                                   output_file_path.exists());
+        let mut file_writer: FileWriter = FileWriter::create_new(&output_file_path).unwrap();
+        // Set the NetCDF-3 definition
+        file_writer.set_def(&data_set, Version::Classic, 0).unwrap();
+        assert_eq!(DEPTH_VAR_LEN,                     X_VAR_LEN * Y_VAR_LEN);
+        file_writer.write_var_f32(X_VAR_NAME, &X_VAR_DATA[..]).unwrap();
+        file_writer.write_var_f32(Y_VAR_NAME, &Y_VAR_DATA[..]).unwrap();
+        file_writer.write_var_f64(DEPTH_VAR_NAME, &DEPTH_DATA[..]).unwrap();
+        file_writer.close().unwrap();
+        assert_eq!(true,                                    output_file_path.exists());
+        // end of copied from docs
+
+        let data_set = CartesianFile::new(&output_file_path);
+
+        // these values are in range (1.51, 3.49) fo both x and y.
+
+        assert!((data_set.get_depth(&1.51, &1.51).unwrap() - 12.575001).abs() < f32::EPSILON);
+        assert!((data_set.get_depth(&1.51, &3.49).unwrap() - 15.125).abs() < f32::EPSILON);
+        assert!((data_set.get_depth(&2.5,&2.5).unwrap() - 20.0).abs() < f32::EPSILON);
+        assert!((data_set.get_depth(&3.49,&3.49).unwrap() - 27.425001).abs() < f32::EPSILON);
+        assert!((data_set.get_depth(&3.49,&1.51).unwrap() - 10.175).abs() < f32::EPSILON);
+
+    }
+
 }
