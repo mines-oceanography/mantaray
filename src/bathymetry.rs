@@ -327,21 +327,27 @@ mod cartesian {
     #[test]
     // test accessing and viewing variables
     fn test_vars() {
-        let data = CartesianFile::new(Path::new("data/test_bathy_3.nc"));
+        create_file(101, 51, 500.0, 500.0);
+
+        let data = CartesianFile::new(Path::new("data/tmp_bathy.nc"));
         assert!(data.variables.0[10] == 5000.0)
     }
 
     #[test]
     // test the and view the nearest function
     fn test_get_nearest() {
-        let data = CartesianFile::new(Path::new("data/test_bathy_3.nc"));
+        create_file(101, 51, 500.0, 500.0);
+
+        let data = CartesianFile::new(Path::new("data/tmp_bathy.nc"));
         assert!(data.nearest(&5499.0, &data.variables.0) == 11);
     }
 
     #[test]
     // check the output from four_corners function
     fn test_get_corners() {
-        let data = CartesianFile::new(Path::new("data/test_bathy_3.nc"));
+        create_file(101, 51, 500.0, 500.0);
+
+        let data = CartesianFile::new(Path::new("data/tmp_bathy.nc"));
         let corners = data.four_corners(&10, &10).unwrap();
         assert!(corners[0].0 == 10 && corners[0].1 == 11);
         assert!(corners[1].0 == 11 && corners[1].1 == 10);
@@ -352,7 +358,9 @@ mod cartesian {
     #[test]
     // check values inside the four quadrants but not on grid points
     fn test_depth() {
-        let data = CartesianFile::new(Path::new("data/test_bathy_3.nc"));
+        create_file(101, 51, 500.0, 500.0);
+
+        let data = CartesianFile::new(Path::new("data/tmp_bathy.nc"));
         assert!(data.get_depth(&10099.0, &5099.0).unwrap() == 20.0);
         assert!(data.get_depth(&30099.0, &5090.0).unwrap() == 5.0);
         assert!(data.get_depth(&10099.0, &15099.0).unwrap() == 10.0);
@@ -364,7 +372,9 @@ mod cartesian {
     /// tests if an IndexOutOfBounds error is returned when accessing depth that
     /// is out of bounds in the x direction
     fn test_x_out_of_bounds() {
-        let data = CartesianFile::new(Path::new("data/test_bathy_3.nc"));
+        create_file(101, 51, 500.0, 500.0);
+
+        let data = CartesianFile::new(Path::new("data/tmp_bathy.nc"));
         if let Error::IndexOutOfBounds = data.get_depth(&-500.1, &500.1).unwrap_err() {
             assert!(true);
         } else {
@@ -376,7 +386,9 @@ mod cartesian {
     /// tests if an IndexOutOfBounds error is returned when accessing depth that
     /// is out of bounds in the y direction
     fn test_y_out_of_bounds() {
-        let data = CartesianFile::new(Path::new("data/test_bathy_3.nc"));
+        create_file(101, 51, 500.0, 500.0);
+
+        let data = CartesianFile::new(Path::new("data/tmp_bathy.nc"));
         if let Error::IndexOutOfBounds = data.get_depth(&500.1, &-500.1).unwrap_err() {
             assert!(true);
         } else {
