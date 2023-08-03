@@ -245,182 +245,188 @@ mod cartesian {
 
     }
 
-    /// Create a test file like the test_bathy.nc
-    fn create_file(path: &Path, x_len: usize, y_len: usize, x_step: f32, y_step: f32) {
-        
-        let x_data: Vec<f32> = (0..x_len).map(|x| x as f32 * x_step).collect();
-        let y_data: Vec<f32> = (0..y_len).map(|y| y as f32 * y_step).collect();
+    mod test_cartesian_file {
 
-        let mut depth_data: Vec<f64> = Vec::new();
-        for y in &y_data {
-            for x in &x_data {
-                if *x <  25000.0 {
-                    if *y < 12500.0 {
-                        depth_data.push(20.0);
+        use std::path::Path;
+        use crate::{bathymetry::{cartesian::CartesianFile, BathymetryData}, error::Error};
+        
+        /// Create a test file like the test_bathy.nc
+        fn create_file(path: &Path, x_len: usize, y_len: usize, x_step: f32, y_step: f32) {
+            
+            let x_data: Vec<f32> = (0..x_len).map(|x| x as f32 * x_step).collect();
+            let y_data: Vec<f32> = (0..y_len).map(|y| y as f32 * y_step).collect();
+
+            let mut depth_data: Vec<f64> = Vec::new();
+            for y in &y_data {
+                for x in &x_data {
+                    if *x <  25000.0 {
+                        if *y < 12500.0 {
+                            depth_data.push(20.0);
+                        } else {
+                            depth_data.push(10.0);
+                        }
                     } else {
-                        depth_data.push(10.0);
-                    }
-                } else {
-                    if *y < 12500.0 {
-                        depth_data.push(5.0);
-                    } else {
-                        depth_data.push(15.0);
+                        if *y < 12500.0 {
+                            depth_data.push(5.0);
+                        } else {
+                            depth_data.push(15.0);
+                        }
                     }
                 }
             }
+
+            // most below copied from the docs
+            use netcdf3::{FileWriter, DataSet, Version};
+            let y_dim_name: &str = "y";
+            let y_var_name: &str = y_dim_name;
+            let y_var_len: usize = y_len;
+            
+            let x_dim_name: &str = "x";
+            let x_var_name: &str = x_dim_name;
+            let x_var_len: usize = x_len;
+            
+            let depth_var_name: &str = "depth";
+            let depth_var_len: usize = depth_data.len();
+            
+            // Create the NetCDF-3 definition
+            // ------------------------------
+            let data_set: DataSet = {
+                let mut data_set: DataSet = DataSet::new();
+                // Define the dimensions
+                data_set.add_fixed_dim(y_dim_name, y_var_len).unwrap();
+                data_set.add_fixed_dim(x_dim_name, x_var_len).unwrap();
+                // Define the variable
+                data_set.add_var_f32(y_var_name, &[y_dim_name]).unwrap();
+                data_set.add_var_f32(x_var_name, &[x_var_name]).unwrap();
+                data_set.add_var_f64(depth_var_name, &[y_dim_name, x_var_name]).unwrap();
+            
+                data_set
+            };
+            
+            // ...
+            
+            // Create and write the NetCDF-3 file
+            // ----------------------------------
+            let mut file_writer: FileWriter = FileWriter::open(path).unwrap();
+            // Set the NetCDF-3 definition
+            file_writer.set_def(&data_set, Version::Classic, 0).unwrap();
+            assert_eq!(depth_var_len,                     x_var_len * y_var_len);
+            file_writer.write_var_f32(y_var_name, &y_data[..]).unwrap();
+            file_writer.write_var_f32(x_var_name, &x_data[..]).unwrap();
+            file_writer.write_var_f64(depth_var_name, &depth_data[..]).unwrap();
+            // file_writer.close().unwrap();
+            // end of copied from docs
+
         }
 
-        // most below copied from the docs
-        use netcdf3::{FileWriter, DataSet, Version};
-        let y_dim_name: &str = "y";
-        let y_var_name: &str = y_dim_name;
-        let y_var_len: usize = y_len;
-        
-        let x_dim_name: &str = "x";
-        let x_var_name: &str = x_dim_name;
-        let x_var_len: usize = x_len;
-        
-        let depth_var_name: &str = "depth";
-        let depth_var_len: usize = depth_data.len();
-        
-        // Create the NetCDF-3 definition
-        // ------------------------------
-        let data_set: DataSet = {
-            let mut data_set: DataSet = DataSet::new();
-            // Define the dimensions
-            data_set.add_fixed_dim(y_dim_name, y_var_len).unwrap();
-            data_set.add_fixed_dim(x_dim_name, x_var_len).unwrap();
-            // Define the variable
-            data_set.add_var_f32(y_var_name, &[y_dim_name]).unwrap();
-            data_set.add_var_f32(x_var_name, &[x_var_name]).unwrap();
-            data_set.add_var_f64(depth_var_name, &[y_dim_name, x_var_name]).unwrap();
-        
-            data_set
-        };
-        
-        // ...
-        
-        // Create and write the NetCDF-3 file
-        // ----------------------------------
-        let mut file_writer: FileWriter = FileWriter::open(path).unwrap();
-        // Set the NetCDF-3 definition
-        file_writer.set_def(&data_set, Version::Classic, 0).unwrap();
-        assert_eq!(depth_var_len,                     x_var_len * y_var_len);
-        file_writer.write_var_f32(y_var_name, &y_data[..]).unwrap();
-        file_writer.write_var_f32(x_var_name, &x_data[..]).unwrap();
-        file_writer.write_var_f64(depth_var_name, &depth_data[..]).unwrap();
-        // file_writer.close().unwrap();
-        // end of copied from docs
+        #[test]
+        /// This test checks that the file was created.
+        fn test_create_test_bathy() {
+            // create temporary file
+            use lockfile::Lockfile;
+            let lockfile = Lockfile::create(Path::new("tmp_bathy1.nc")).unwrap();
 
-    }
+            create_file(lockfile.path(), 101, 51, 500.0, 500.0);
 
-    #[test]
-    /// There are still currently assert statements in create_file function, but
-    /// I will change that to move the testing into this test function.
-    fn test_create_bia() {
-        // create temporary file
-        use lockfile::Lockfile;
-        let lockfile = Lockfile::create(Path::new("tmp_bathy1.nc")).unwrap();
-
-        create_file(lockfile.path(), 101, 51, 500.0, 500.0);
-
-        assert_eq!(lockfile.path(), Path::new("tmp_bathy1.nc"))
-    }
-
-    #[test]
-    // test accessing and viewing variables
-    fn test_vars() {
-        // create temporary file
-        use lockfile::Lockfile;
-        let lockfile = Lockfile::create(Path::new("tmp_bathy2.nc")).unwrap();
-        
-        create_file(lockfile.path(), 101, 51, 500.0, 500.0);
-
-        let data = CartesianFile::new(Path::new(lockfile.path()));
-        assert!((data.variables.0[10] - 5000.0).abs() < f32::EPSILON)
-    }
-
-    #[test]
-    // test the and view the nearest function
-    fn test_get_nearest() {
-        // create temporary file
-        use lockfile::Lockfile;
-        let lockfile = Lockfile::create(Path::new("tmp_bathy3.nc")).unwrap();
-        
-        create_file(lockfile.path(), 101, 51, 500.0, 500.0);
-
-        let data = CartesianFile::new(Path::new(lockfile.path()));
-        assert!(data.nearest(&5499.0, &data.variables.0) == 11);
-    }
-
-    #[test]
-    // check the output from four_corners function
-    fn test_get_corners() {
-        // create temporary file
-        use lockfile::Lockfile;
-        let lockfile = Lockfile::create(Path::new("tmp_bathy4.nc")).unwrap();
-        
-        create_file(lockfile.path(), 101, 51, 500.0, 500.0);
-
-        let data = CartesianFile::new(Path::new(lockfile.path()));
-        let corners = data.four_corners(&10, &10).unwrap();
-        assert!(corners[0].0 == 10 && corners[0].1 == 11);
-        assert!(corners[1].0 == 11 && corners[1].1 == 10);
-        assert!(corners[2].0 == 10 && corners[2].1 == 9);
-        assert!(corners[3].0 == 9 && corners[3].1 == 10);
-    }
-
-    #[test]
-    // check values inside the four quadrants but not on grid points
-    fn test_depth() {
-        // create temporary file
-        use lockfile::Lockfile;
-        let lockfile = Lockfile::create(Path::new("tmp_bathy5.nc")).unwrap();
-        
-        create_file(lockfile.path(), 101, 51, 500.0, 500.0);
-
-        let data = CartesianFile::new(Path::new(lockfile.path()));
-        assert!((data.get_depth(&10099.0, &5099.0).unwrap() - 20.0).abs() < f32::EPSILON);
-        assert!((data.get_depth(&30099.0, &5090.0).unwrap() - 5.0).abs() < f32::EPSILON);
-        assert!((data.get_depth(&10099.0, &15099.0).unwrap() - 10.0).abs() < f32::EPSILON);
-        assert!((data.get_depth(&30099.0, &15099.0).unwrap() - 15.0).abs() < f32::EPSILON);
-    }
-
-
-    #[test]
-    /// tests if an IndexOutOfBounds error is returned when accessing depth that
-    /// is out of bounds in the x direction
-    fn test_x_out_of_bounds() {
-        // create temporary file
-        use lockfile::Lockfile;
-        let lockfile = Lockfile::create(Path::new("tmp_bathy6.nc")).unwrap();
-        
-        create_file(lockfile.path(), 101, 51, 500.0, 500.0);
-
-        let data = CartesianFile::new(Path::new(lockfile.path()));
-        if let Error::IndexOutOfBounds = data.get_depth(&-500.1, &500.1).unwrap_err() {
-            assert!(true);
-        } else {
-            assert!(false);
+            assert_eq!(lockfile.path(), Path::new("tmp_bathy1.nc"))
         }
-    }
 
-    #[test]
-    /// tests if an IndexOutOfBounds error is returned when accessing depth that
-    /// is out of bounds in the y direction
-    fn test_y_out_of_bounds() {
-        // create temporary file
-        use lockfile::Lockfile;
-        let lockfile = Lockfile::create(Path::new("tmp_bathy7.nc")).unwrap();
-        
-        create_file(lockfile.path(), 101, 51, 500.0, 500.0);
+        #[test]
+        // test accessing and viewing variables
+        fn test_vars() {
+            // create temporary file
+            use lockfile::Lockfile;
+            let lockfile = Lockfile::create(Path::new("tmp_bathy2.nc")).unwrap();
+            
+            create_file(lockfile.path(), 101, 51, 500.0, 500.0);
 
-        let data = CartesianFile::new(Path::new(lockfile.path()));
-        if let Error::IndexOutOfBounds = data.get_depth(&500.1, &-500.1).unwrap_err() {
-            assert!(true);
-        } else {
-            assert!(false);
+            let data = CartesianFile::new(Path::new(lockfile.path()));
+            assert!((data.variables.0[10] - 5000.0).abs() < f32::EPSILON)
         }
+
+        #[test]
+        // test the and view the nearest function
+        fn test_get_nearest() {
+            // create temporary file
+            use lockfile::Lockfile;
+            let lockfile = Lockfile::create(Path::new("tmp_bathy3.nc")).unwrap();
+            
+            create_file(lockfile.path(), 101, 51, 500.0, 500.0);
+
+            let data = CartesianFile::new(Path::new(lockfile.path()));
+            assert!(data.nearest(&5499.0, &data.variables.0) == 11);
+        }
+
+        #[test]
+        // check the output from four_corners function
+        fn test_get_corners() {
+            // create temporary file
+            use lockfile::Lockfile;
+            let lockfile = Lockfile::create(Path::new("tmp_bathy4.nc")).unwrap();
+            
+            create_file(lockfile.path(), 101, 51, 500.0, 500.0);
+
+            let data = CartesianFile::new(Path::new(lockfile.path()));
+            let corners = data.four_corners(&10, &10).unwrap();
+            assert!(corners[0].0 == 10 && corners[0].1 == 11);
+            assert!(corners[1].0 == 11 && corners[1].1 == 10);
+            assert!(corners[2].0 == 10 && corners[2].1 == 9);
+            assert!(corners[3].0 == 9 && corners[3].1 == 10);
+        }
+
+        #[test]
+        // check values inside the four quadrants but not on grid points
+        fn test_depth() {
+            // create temporary file
+            use lockfile::Lockfile;
+            let lockfile = Lockfile::create(Path::new("tmp_bathy5.nc")).unwrap();
+            
+            create_file(lockfile.path(), 101, 51, 500.0, 500.0);
+
+            let data = CartesianFile::new(Path::new(lockfile.path()));
+            assert!((data.get_depth(&10099.0, &5099.0).unwrap() - 20.0).abs() < f32::EPSILON);
+            assert!((data.get_depth(&30099.0, &5090.0).unwrap() - 5.0).abs() < f32::EPSILON);
+            assert!((data.get_depth(&10099.0, &15099.0).unwrap() - 10.0).abs() < f32::EPSILON);
+            assert!((data.get_depth(&30099.0, &15099.0).unwrap() - 15.0).abs() < f32::EPSILON);
+        }
+
+
+        #[test]
+        /// tests if an IndexOutOfBounds error is returned when accessing depth that
+        /// is out of bounds in the x direction
+        fn test_x_out_of_bounds() {
+            // create temporary file
+            use lockfile::Lockfile;
+            let lockfile = Lockfile::create(Path::new("tmp_bathy6.nc")).unwrap();
+            
+            create_file(lockfile.path(), 101, 51, 500.0, 500.0);
+
+            let data = CartesianFile::new(Path::new(lockfile.path()));
+            if let Error::IndexOutOfBounds = data.get_depth(&-500.1, &500.1).unwrap_err() {
+                assert!(true);
+            } else {
+                assert!(false);
+            }
+        }
+
+        #[test]
+        /// tests if an IndexOutOfBounds error is returned when accessing depth that
+        /// is out of bounds in the y direction
+        fn test_y_out_of_bounds() {
+            // create temporary file
+            use lockfile::Lockfile;
+            let lockfile = Lockfile::create(Path::new("tmp_bathy7.nc")).unwrap();
+            
+            create_file(lockfile.path(), 101, 51, 500.0, 500.0);
+
+            let data = CartesianFile::new(Path::new(lockfile.path()));
+            if let Error::IndexOutOfBounds = data.get_depth(&500.1, &-500.1).unwrap_err() {
+                assert!(true);
+            } else {
+                assert!(false);
+            }
+        }
+    
     }
 
 }
