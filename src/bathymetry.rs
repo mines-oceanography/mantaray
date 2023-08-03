@@ -245,6 +245,7 @@ mod cartesian {
 
     }
 
+    #[cfg(test)]
     mod test_cartesian_file {
 
         use std::path::Path;
