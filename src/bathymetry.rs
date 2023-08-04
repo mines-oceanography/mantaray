@@ -189,6 +189,10 @@ mod cartesian {
         
         /// Interpolate the depth using crate::interpolator::bilinear
         /// 
+        /// First, the index points are converted to the x and y values at those
+        /// indexes, then the depth at that index is taken. Finally, these are
+        /// used as arguments to `interpolator::bilinear`.
+        /// 
         /// # Arguments
         /// `points`: `&Vec<(usize, usize)>`
         /// - a vector of defined points in the depth grid
@@ -205,14 +209,14 @@ mod cartesian {
         /// # Errors
         /// - `Error::IndexOutOfBounds` : one or more of the points passed to
         /// `points` is out of bounds. 
-        /// - `Error::InvalidArgument` : error during
-        /// execution of `interpolator::bilinear` due to invalid arguments.
+        /// - `Error::InvalidArgument` : error during execution of
+        /// `interpolator::bilinear` due to invalid arguments.
         fn interpolate(&self, points: &Vec<(usize, usize)>, target: &(f32, f32)) -> Result<f32, Error> {
             let pts = vec![
-                (points[0].0 as f32, points[0].1 as f32, self.depth_from_arr(&points[0].0, &points[0].1)?),
-                (points[1].0 as f32, points[1].1 as f32, self.depth_from_arr(&points[1].0, &points[1].1)?),
-                (points[2].0 as f32, points[2].1 as f32, self.depth_from_arr(&points[2].0, &points[2].1)?),
-                (points[3].0 as f32, points[3].1 as f32, self.depth_from_arr(&points[3].0, &points[3].1)?),
+                (self.variables.0[points[0].0], self.variables.1[points[0].1], self.depth_from_arr(&points[0].0, &points[0].1)?),
+                (self.variables.0[points[1].0], self.variables.1[points[1].1], self.depth_from_arr(&points[1].0, &points[1].1)?),
+                (self.variables.0[points[2].0], self.variables.1[points[2].1], self.depth_from_arr(&points[2].0, &points[2].1)?),
+                (self.variables.0[points[3].0], self.variables.1[points[3].1], self.depth_from_arr(&points[3].0, &points[3].1)?),
             ];
             Ok(interpolator::bilinear(&pts, target)?)
         }
@@ -428,6 +432,27 @@ mod cartesian {
             }
         }
     
+        #[test]
+        // test edge cases and center with different depth points. These are
+        // using grid points so that it is easy to verify them as the average of
+        // the nearest 4 corners.
+        fn test_more_depths() {
+            // create temporary file
+            use lockfile::Lockfile;
+            let lockfile = Lockfile::create(Path::new("tmp_bathy8.nc")).unwrap();
+            
+            create_file(lockfile.path(), 101, 51, 500.0, 500.0);
+
+            let data = CartesianFile::new(Path::new(lockfile.path()));
+
+            assert!((data.get_depth(&23000.0, &20000.0).unwrap() - 10.0).abs() < f32::EPSILON, "Expected {}, but got {}", 10.0, data.get_depth(&23000.0, &20000.0).unwrap());
+            assert!((data.get_depth(&10000.0, &12500.0).unwrap() - 12.5).abs() < f32::EPSILON, "Expected {}, but got {}", 12.5, data.get_depth(&10000.0, &12500.0).unwrap());
+            assert!((data.get_depth(&25000.0, &5000.0).unwrap() - 8.75).abs() < f32::EPSILON, "Expected {}, but got {}", 8.75, data.get_depth(&25000.0, &5000.0).unwrap());
+            assert!((data.get_depth(&40000.0, &12500.0).unwrap() - 12.5).abs() < f32::EPSILON, "Expected {}, but got {}", 12.5, data.get_depth(&40000.0, &12500.0).unwrap());
+            assert!((data.get_depth(&25000.0, &12500.0).unwrap() - 11.25).abs() < f32::EPSILON, "Expected {}, but got {}", 11.25, data.get_depth(&25000.0, &12500.0).unwrap())
+
+        }
+
     }
 
 }
