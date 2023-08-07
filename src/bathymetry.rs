@@ -55,6 +55,9 @@ mod cartesian {
         /// - `Error::InvalidArgument` : this error is returned from
         ///   `interpolator::bilinear` due to incorrect argument passed.
         fn get_depth(&self, x: &f32, y: &f32) -> Result<f32, Error> {
+            if x.is_nan() || y.is_nan() {
+                return Ok(f32::NAN);
+            }
 
             let nearest_pt = match self.nearest_point(x, y) {
                 Some(p) => p,
@@ -450,6 +453,24 @@ mod cartesian {
             assert!((data.get_depth(&25000.0, &5000.0).unwrap() - 8.75).abs() < f32::EPSILON, "Expected {}, but got {}", 8.75, data.get_depth(&25000.0, &5000.0).unwrap());
             assert!((data.get_depth(&40000.0, &12500.0).unwrap() - 12.5).abs() < f32::EPSILON, "Expected {}, but got {}", 12.5, data.get_depth(&40000.0, &12500.0).unwrap());
             assert!((data.get_depth(&25000.0, &12500.0).unwrap() - 11.25).abs() < f32::EPSILON, "Expected {}, but got {}", 11.25, data.get_depth(&25000.0, &12500.0).unwrap())
+
+        }
+
+        #[test]
+        fn test_nan() {
+            // create temporary file
+            use lockfile::Lockfile;
+            let lockfile = Lockfile::create(Path::new("tmp_bathy9.nc")).unwrap();
+            
+            create_file(lockfile.path(), 101, 51, 500.0, 500.0);
+
+            let data = CartesianFile::new(Path::new(lockfile.path()));
+
+            let nan = f32::NAN;
+
+            assert!(data.get_depth(&nan, &nan).unwrap().is_nan());
+            assert!(data.get_depth(&10000.0, &nan).unwrap().is_nan());
+            assert!(data.get_depth(&nan, &10000.0).unwrap().is_nan());
 
         }
 
