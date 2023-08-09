@@ -29,6 +29,8 @@ mod error;
 
 mod interpolator;
 
+mod bathymetry;
+
 use error::Error;
 
 

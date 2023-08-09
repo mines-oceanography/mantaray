@@ -9,7 +9,17 @@ pub(crate) enum Error {
    /// Two known errors that are currently undefined but need their own instance
    /// in the future are an index out of bounds error and an integration error.
    Undefined,
+
    #[error("Argument passed was out of bounds")]
    /// The value k = |(kx, ky)| can only be positive. If k <=0, the function will pass ArgumentOutOfBounds.
-   ArgumentOutOfBounds
+   ArgumentOutOfBounds,
+
+   #[error("Argument passed was not a valid option")]
+   /// The argument passed was not a valid option
+   InvalidArgument,
+   
+   #[error("Index passed was out of bounds")]
+   /// The index is out of bounds of the array and would panic if attempted to access array.
+   IndexOutOfBounds,
+
 }
