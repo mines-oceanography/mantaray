@@ -34,6 +34,8 @@ mod interpolator;
 
 mod bathymetry;
 
+mod ray;
+
 use error::Error;
 
 // Define constant gravity
@@ -97,19 +99,21 @@ impl<'a> WaveRayPath<'a> {
    }
 
    pub fn depth(&self, x: &f32, y: &f32) -> f32 {
-      self.data.get_depth(x, y).unwrap()
+      let depth = self.data.get_depth(x, y).unwrap();
+      println!("{:?}", depth);
+      depth
    }
 
    pub fn gradient(&self, x: &f32, y: &f32, dx: &f32, dy: &f32) -> (f32, f32) {
 
       let x_grad: f32;
       let y_grad: f32;
-      if *x==0.0 {
+      if *dx==0.0 {
          x_grad = 0.0;
       } else {
          x_grad = (self.data.get_depth(&(x + dx), &y).unwrap() - self.data.get_depth(&(x - dx), y).unwrap()) / (2.0 * dx); // FIXME: divide by zero error
       }
-      if *y==0.0 {
+      if *dy==0.0 {
          y_grad = 0.0;
       } else {
          y_grad = (self.data.get_depth(&x, &(y + dy)).unwrap() - self.data.get_depth(&x, &(y - dy)).unwrap()) / (2.0 * dy); // FIXME: divide by zero error
@@ -252,14 +256,14 @@ struct WaveRayPath<'a> {
 }
 
 impl<'a> ode_solvers::System<State> for WaveRayPath<'a> {
-   fn system(&self, _x: Time, y: &State, dy: &mut State) {
+   fn system(&self, _t: Time, s: &State, ds: &mut State) { // FIXME
 
-       let (dxdt, dydt, dkxdt, dkydt) = self.odes(&y[0], &y[1], &y[2], &y[3]);
+       let (dxdt, dydt, dkxdt, dkydt) = self.odes(&s[0], &s[1], &s[2], &s[3]);
        
-       dy[0] = dxdt as f64;
-       dy[1] = dydt as f64;
-       dy[2] = dkxdt as f64;
-       dy[3] = dkydt as f64;
+       ds[0] = dxdt as f64;
+       ds[1] = dydt as f64;
+       ds[2] = dkxdt as f64;
+       ds[3] = dkydt as f64;
    }
 }
 
