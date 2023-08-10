@@ -112,10 +112,11 @@ fn output_to_tsv_file(file_name: &str, x_out: &Vec<f64>, y_out: &Vec<OVector<f64
  
  }
 
-
+#[cfg(test)]
  mod test_single_wave {
 
     use std::path::Path;
+    use lockfile::Lockfile;
 
     use crate::bathymetry::{cartesian, BathymetryData};
 
@@ -236,27 +237,33 @@ fn output_to_tsv_file(file_name: &str, x_out: &Vec<f64>, y_out: &Vec<OVector<f64
         #[test]
         // this test does not check anything yet, but outputs the result to a space separated file
         fn test_constant_wave() {
+            let lockfile = Lockfile::create(Path::new("constant_depth.nc")).unwrap();
+            create_constant_depth_file(&lockfile.path(), 100, 100, 1.0, 1.0);
+
             let wave = SingleRay::new();
         
-            let bathymetry_data: &dyn BathymetryData = &cartesian::CartesianFile::new(Path::new("constant_depth.nc"));
+            let bathymetry_data: &dyn BathymetryData = &cartesian::CartesianFile::new(&lockfile.path());
         
             // make sure the starting point is at least 2 steps away from the edge.
             let res = wave.trace_individual(bathymetry_data, &10.0, &50.0, &0.12, &0.0, &0.0, &18.0, &1.0).unwrap();
         
-            let _ = output_to_tsv_file("y_out.txt",&res.0, &res.1);
+            let _ = output_to_tsv_file("constant_depth_out.txt",&res.0, &res.1);
         }
 
         #[test]
         // this test does not check anything yet, but outputs the result to a space separated file
         fn test_two_depth_wave() {
+            let lockfile = Lockfile::create(Path::new("two_depth.nc")).unwrap();
+            create_two_depth_file(&lockfile.path(), 100, 100, 1.0, 1.0);
+            
             let wave = SingleRay::new();
         
-            let bathymetry_data: &dyn BathymetryData = &cartesian::CartesianFile::new(Path::new("two_depth.nc"));
+            let bathymetry_data: &dyn BathymetryData = &cartesian::CartesianFile::new(&lockfile.path());
         
             // make sure the starting point is at least 2 steps away from the edge.
             let res = wave.trace_individual(bathymetry_data, &10.0, &50.0, &0.12, &0.0, &0.0, &18.0, &1.0).unwrap();
         
-            let _ = output_to_tsv_file("y_out.txt",&res.0, &res.1);
+            let _ = output_to_tsv_file("two_depth_out.txt",&res.0, &res.1);
         }
 
  }
