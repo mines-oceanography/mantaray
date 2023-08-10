@@ -341,14 +341,22 @@ struct WaveRayPath<'a> {
 }
 
 impl<'a> ode_solvers::System<State> for WaveRayPath<'a> {
-   fn system(&self, _t: Time, s: &State, ds: &mut State) { // FIXME
+   fn system(&self, t: Time, s: &State, ds: &mut State) { 
 
-       let (dxdt, dydt, dkxdt, dkydt) = self.odes(&s[0], &s[1], &s[2], &s[3]).unwrap();
+       let (dxdt, dydt, dkxdt, dkydt) = 
+       match self.odes(&s[0], &s[1], &s[2], &s[3]) {
+         Err(e) => {
+            println!("ERROR at time {}: \"{}\". Setting all further output to NaN.", t, e);
+            (f64::NAN, f64::NAN, f64::NAN, f64::NAN)
+         }
+         Ok(v) => v,
+       };
        
-       ds[0] = dxdt as f64;
-       ds[1] = dydt as f64;
-       ds[2] = dkxdt as f64;
-       ds[3] = dkydt as f64;
+       ds[0] = dxdt;
+       ds[1] = dydt;
+       ds[2] = dkxdt;
+       ds[3] = dkydt;
+
    }
 }
 
@@ -408,8 +416,7 @@ mod test_constant_cg {
    }
 
    #[test]
-   #[should_panic]
-   /// stepper.integrate() should panic if k starts out negative
+   /// all outputs should be NaN if k starts out of bounds
    fn test_zero_k() {
       let data : &dyn BathymetryData = &ConstantDepth { d: 1000.0 };
       let system = WaveRayPath::new(data, 1.0);
@@ -421,6 +428,12 @@ mod test_constant_cg {
 
       let mut stepper = Rk4::new(system, t0, y0, tf, step_size);
       let _ = stepper.integrate();
+
+      assert!(stepper.y_out().last().unwrap().x.is_nan());
+      assert!(stepper.y_out().last().unwrap().y.is_nan());
+      assert!(stepper.y_out().last().unwrap().z.is_nan());
+      assert!(stepper.y_out().last().unwrap().w.is_nan());
+   
    }
 
    #[test]
