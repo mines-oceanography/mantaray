@@ -1,24 +1,24 @@
 //! Ray tracing ocean waves
 //! 
-//! This library uses ode_solvers and thiserror.
+//! This library uses ode_solvers, netcdf3, nalgebra, and thiserror.
 //! 
-//! As of 2023-08-09, the library can create a `WaveRayPath` struct that
-//! contains either a ConstantDepth, ArrayDepth, or CartesianFile. The struct
-//! also implements the ode_solvers system function, and it defines this
-//! function with the helper functions group_velocity, odes, gradient, and
-//! dk_vector_dt. The Depth trait gives ConstantDepth and ArrayDepth the ability
-//! to calculate the depth at a given x and y value, but in the future, they
-//! will also have the ability to calculate the depth gradient and interpolate.
-//! The Rk4 is used similar to the
+//! As of 2023-08-10, the library contains a module `ray.rs` that has a struct
+//! `SingleRay`. `SingleRay` has a method `trace_individual` to create a `WaveRayPath`, perform `ode_solvers`
+//! Runge-Kutta4 algorithm, and return the result. This `lib.rs` module contains a `WaveRayPath`
+//! struct that contains either a ConstantDepth, ArrayDepth, or CartesianFile.
+//! The struct implements the ode_solvers `system` method, which is defined with
+//! the helper function `odes`. The `odes` function uses the `group_velocity`,
+//! `gradient`, and `dk_vector_dt` to calculate the derivatives at the current
+//! state. The Rk4 is used similar to the
 //! [examples](https://srenevey.github.io/ode-solvers/examples/kepler_orbit.html).
 //! 
 //! There is also a file output_to_file, which runs the Rk4, then saves the
-//! output to a file. There will be a folder named support that contains the
-//! python file plot_ode_solvers, which plots a single ray. This will also
-//! contain a plotting tool for many rays in the future.
+//! output to a file. There is a folder named support that contains the python
+//! file plot_ode_solvers, which plots a single ray. This will also contain a
+//! plotting tool for many rays in the future.
 //! 
-//! This only does one ray at the moment and for constant depth waves, but in
-//! the future, it will include variable depth, ray bundles, and current.
+//! This only does one ray at the moment and verified for constant depth waves,
+//! but in the future, it will include variable depth, ray bundles, and current.
 
 // enforce documentation
 #![deny(missing_docs)]
@@ -94,32 +94,94 @@ fn output_to_file(system: WaveRayPath, t0: f64, y0: State, tf: f64, step_size: f
 
 impl<'a> WaveRayPath<'a> {
 
+/// Construct a new `WaveRayPath`
+/// 
+/// # Arguments:
+/// 
+/// `depth_data`: `&'a dyn BathymetryData`
+/// - a variable that implements the `BathymetryData` trait's `get_depth`
+///   methods. Note that the lifetime requires that the `WaveRayPath` struct
+///   will only live as long as the `BathymetryData` is available.
+/// 
+/// `step_size`: `f64`
+/// - the change in time step used during Rk4 integration.
+/// 
+/// Returns:
+/// `Self` : the newly created `WaveRayPath`
    pub fn new(depth_data: &'a dyn BathymetryData, step_size: f64) -> Self {
       WaveRayPath { data: depth_data, step_size: step_size }
    }
 
-   pub fn depth(&self, x: &f32, y: &f32) -> f32 {
-      let depth = self.data.get_depth(x, y).unwrap();
+   /// Get the depth at the point x, y
+   /// 
+   /// # Arguments
+   /// `x` : `&f32`
+   /// - the x point in meters
+   /// 
+   /// `y` : `&f32`
+   /// - the y point in meters
+   /// 
+   /// # Returns
+   /// `Result<f32, Error>`
+   /// - `Ok(f32)` : the depth at the x, y point
+   /// - `Err(Error)` : an error while getting the depth
+   /// 
+   /// # Errors
+   /// - `Error::IndexOutOfBounds` : this error is returned when the
+   /// `x` or `y` input give an out of bounds output.
+   /// - `Error::InvalidArgument` : this error is returned from
+   ///   `interpolator::bilinear` due to incorrect argument passed.
+   pub fn depth(&self, x: &f32, y: &f32) -> Result<f32, Error> {
+      let depth = self.data.get_depth(x, y)?;
       println!("{:?}", depth);
-      depth
+      Ok(depth)
    }
 
-   pub fn gradient(&self, x: &f32, y: &f32, dx: &f32, dy: &f32) -> (f32, f32) {
+   /// calculates the depth gradient at a given x, y using finite differences.
+   /// 
+   /// # Arguments:
+   /// `x`: `&f32`
+   /// -  x-coordinate of the point
+   /// 
+   /// `y`: `&f32`
+   /// - y-coordinate of the point
+   /// 
+   /// `dx`: `&f32`
+   /// - change in the x direction
+   /// 
+   /// `dy`: `&f32`
+   /// - change in the y direction
+   /// 
+   /// # Returns:
+   /// `Result<(f32, f32), Error`
+   /// - `Ok((f32,f32))` : values representing the depth gradient (dh/dx, dh/dy)
+   /// -`Err(Error)` : there was an error when getting the depth
+   /// 
+   /// # Errors
+   /// - `Error::IndexOutOfBounds` : this error is returned when the `x` or `y`
+   /// input give an out of bounds output.
+   /// - `Error::InvalidArgument` : this error is returned from
+   ///   `interpolator::bilinear` due to incorrect argument passed.
+   /// 
+   /// # Note
+   /// It would be more efficient to calculate the gradient while calculating
+   /// the depth in the first place. That way the data is only looped over once.
+   pub fn gradient(&self, x: &f32, y: &f32, dx: &f32, dy: &f32) -> Result<(f32, f32), Error> {
 
       let x_grad: f32;
       let y_grad: f32;
       if *dx==0.0 {
          x_grad = 0.0;
       } else {
-         x_grad = (self.data.get_depth(&(x + dx), &y).unwrap() - self.data.get_depth(&(x - dx), y).unwrap()) / (2.0 * dx); // FIXME: divide by zero error
+         x_grad = (self.data.get_depth(&(x + dx), &y)? - self.data.get_depth(&(x - dx), y)?) / (2.0 * dx);
       }
       if *dy==0.0 {
          y_grad = 0.0;
       } else {
-         y_grad = (self.data.get_depth(&x, &(y + dy)).unwrap() - self.data.get_depth(&x, &(y - dy)).unwrap()) / (2.0 * dy); // FIXME: divide by zero error
+         y_grad = (self.data.get_depth(&x, &(y + dy))? - self.data.get_depth(&x, &(y - dy))?) / (2.0 * dy);
       }
 
-      (x_grad, y_grad)
+      Ok((x_grad, y_grad))
 
    }
 
@@ -130,32 +192,38 @@ impl<'a> WaveRayPath<'a> {
    /// calculated using the equations in notes.md.
    /// 
    /// # Arguments
+   /// `x` : `&f64`
+   /// - the x coordinate in meters
    /// 
-   /// `kx` : `f64`
+   /// `y` : `&f64`
+   /// - the y coordinate in meters
+   /// 
+   /// `kx` : `&f64`
    /// - x component of wavenumber vector
    /// 
-   /// `ky` : `f64`
+   /// `ky` : `&f64`
    /// - y component of wavenumber vector
    /// 
-   /// `h` : f64
-   /// - depth of water
-   /// 
    /// # Returns
-   /// `(f64, f64, f64, f64)`
-   /// - A tuple of floats corresponding to (dxdt, dydt, dkxdt, dkydt).
+   /// `Result<(f64, f64, f64, f64), Error>`
+   /// - `Ok((f64, f64, f64, f64))` : a tuple of floats corresponding to (dxdt, dydt, dkxdt, dkydt).
+   /// - `Err(Error)` : an error occured either getting the depth, or calculating the group velocity.
    /// 
-   /// # Panics
-   /// `group_velocity` will panic if it attempts to unwrap an Err, but this
-   /// should never happen for real inputs.
-   ///  
-   pub fn odes(&self, x: &f64, y: &f64, kx: &f64, ky: &f64) -> (f64, f64, f64, f64) {
+   /// # Errors
+   /// - `Error::IndexOutOfBounds` : this error is returned when the
+   /// `x` or `y` input give an out of bounds output.
+   /// - `Error::InvalidArgument` : this error is returned from
+   ///   `interpolator::bilinear` due to incorrect argument passed.
+   /// `Error::ArgumentOutOfBounds`
+   /// - If k is negative, group velocity will return this error. 
+   pub fn odes(&self, x: &f64, y: &f64, kx: &f64, ky: &f64) -> Result<(f64, f64, f64, f64), Error> {
 
-      let h = self.depth(&(*x as f32), &(*y as f32)) as f64;
+      let h = self.depth(&(*x as f32), &(*y as f32))? as f64;
 
       let k_mag = (kx*kx + ky*ky).sqrt();
       let k_dir = ky.atan2(*kx);
 
-      let cg = group_velocity(&k_mag, &h).unwrap();
+      let cg = group_velocity(&k_mag, &h)?;
       let cgx = cg * k_dir.cos();
       let cgy = cg * k_dir.sin();
 
@@ -165,11 +233,11 @@ impl<'a> WaveRayPath<'a> {
       let dx = (dxdt * self.step_size).abs();
       let dy = (dydt * self.step_size).abs();
 
-      let grad_of_h = self.gradient(&(*x as f32), &(*y as f32), &(dx as f32), &(dy as f32));
+      let grad_of_h = self.gradient(&(*x as f32), &(*y as f32), &(dx as f32), &(dy as f32))?;
 
       let (dkxdt, dkydt) = dk_vector_dt(&k_mag, &h, &(grad_of_h.0 as f64), &(grad_of_h.1 as f64));
 
-      (dxdt, dydt, dkxdt, dkydt)
+      Ok((dxdt, dydt, dkxdt, dkydt))
    }
 
 }
@@ -179,7 +247,7 @@ struct ConstantDepth {
 }
 
 impl BathymetryData for ConstantDepth {
-   fn get_depth(&self, x: &f32, y: &f32) -> Result<f32, Error> {
+   fn get_depth(&self, _x: &f32, _y: &f32) -> Result<f32, Error> {
        Ok(self.d)
    }
 }
@@ -203,10 +271,10 @@ impl BathymetryData for ArrayDepth {
 /// 
 /// # Arguments
 /// 
-/// `k` : `f64`
+/// `k` : `&f64`
 /// - The wavenumber \[m^-1\] should always be positive.
 /// 
-/// `d` : `f64`
+/// `h` : `&f64`
 /// - The depth \[m\] in this case should be positive.
 /// 
 /// # Returns
@@ -217,25 +285,41 @@ impl BathymetryData for ArrayDepth {
 ///   is less then 0, it will return `f64::NAN`. In the future, this will return
 ///   either an error or warning.
 /// 
-/// - Err(Error::ArgumentOutOfBounds) : returns this error if k <= 0.
+/// - `Err(Error::ArgumentOutOfBounds)` : returns this error if k <= 0.
 /// 
 /// # Errors
 /// 
 /// `Error::ArgumentOutOfBounds`
 /// - If k is negative, group velocity will return this error. 
 ///
- pub(crate) fn group_velocity(k: &f64, d: &f64) -> Result<f64, Error> {
-   if *d < 0.0 {
+ pub(crate) fn group_velocity(k: &f64, h: &f64) -> Result<f64, Error> {
+   if *h < 0.0 {
       return Ok(f64::NAN); // FIXME: should this also return an error?
    }
    if *k <= 0.0 {
       return Err(Error::ArgumentOutOfBounds);
    }
-   Ok( (G / 2.0) * ( ((k*d).tanh() + (k*d)/(k*d).cosh().powi(2)) / (k*G*(k*d).tanh()).sqrt() ) )
+   Ok( (G / 2.0) * ( ((k*h).tanh() + (k*h)/(k*h).cosh().powi(2)) / (k*G*(k*h).tanh()).sqrt() ) )
  }
 
 
 /// calculate the derivative of the wavenumber vector with respect to time
+/// 
+/// # Arguments
+/// `k_mag` : `&f64`
+/// - the magnitude of the wavenumber
+/// 
+/// `h` : &f64`
+/// - the depth of the water
+/// 
+/// `dhdx` : `&f64`
+/// - the partial of depth with respect to x
+/// 
+/// `dhdy` : `&f64`
+/// - the partial of depth with respect to y
+/// 
+/// # Returns
+/// `(f64, f64)` : values cooresponding to (dkx/dt, dky/dt)
 fn dk_vector_dt(k_mag: &f64, h: &f64, dhdx: &f64, dhdy: &f64) -> (f64, f64) {
    let dkxdt = (-0.5 * G * k_mag / ( k_mag * h ).tanh().sqrt()) * dhdx;
    let dkydt = (-0.5 * G * k_mag / ( k_mag * h ).tanh().sqrt()) * dhdy;
@@ -252,13 +336,14 @@ struct WaveRayPath<'a> {
    /// A reference to a pointer to a struct that implements the depth trait. The
    /// lifetime of WaveRayPath is restricted to the lifetime of this variable.
    data: &'a dyn BathymetryData,
+   /// the size of delta t used during Rk4 integration.
    step_size: f64,
 }
 
 impl<'a> ode_solvers::System<State> for WaveRayPath<'a> {
    fn system(&self, _t: Time, s: &State, ds: &mut State) { // FIXME
 
-       let (dxdt, dydt, dkxdt, dkydt) = self.odes(&s[0], &s[1], &s[2], &s[3]);
+       let (dxdt, dydt, dkxdt, dkydt) = self.odes(&s[0], &s[1], &s[2], &s[3]).unwrap();
        
        ds[0] = dxdt as f64;
        ds[1] = dydt as f64;
@@ -312,7 +397,7 @@ mod test_constant_cg {
       let system = WaveRayPath::new(data, 1.0);
 
       for (kx, ky, ans_dxdt, ans_dydt) in results {
-         let (dxdt, dydt, _, _) = system.odes(&0.0, &0.0, &kx, &ky);
+         let (dxdt, dydt, _, _) = system.odes(&0.0, &0.0, &kx, &ky).unwrap();
          assert!(
             (ans_dxdt - dxdt).abs() < 1.0e-4
             && (ans_dydt -dydt).abs() < 1.0e-4,
