@@ -1,4 +1,5 @@
-//! This module makes it easier to use the Rk4 ray tracing by encapsulating it with the SingleRay struct
+//! This module makes it easier to use the Rk4 ray tracing by encapsulating it
+//! with the SingleRay struct
 
 use ode_solvers::{Rk4, OVector};
 
@@ -13,49 +14,58 @@ type XOut = Vec<f64>;
 type YOut = Vec<OVector<f64, nalgebra::base::dimension::Const<4>>>;
 
 // A struct with methods for tracing an individual wave and returning the result.
-struct SingleRay;
+struct SingleRay<'a> {
+    bathymetry_data: &'a dyn BathymetryData,
+    initial_conditions: (f64, f64, f64, f64)
+}
 
-impl SingleRay {
-    /// construct a `SingleRay`.
-    pub fn new() -> Self {
-        SingleRay {}
+impl<'a> SingleRay<'a> {
+    
+    /// construct a `SingleRay`
+    /// 
+    /// # Arguments
+    /// `bathymetry_data` : `&'a dyn BathymetryData`
+    /// - a struct that implements the `get_depth` function
+    /// 
+    /// # Arguments
+    /// `x0` : `f64`
+    /// - the initial x coordinate
+    /// 
+    /// `y0` : `f64`
+    /// - the initial y coordinate
+    /// 
+    /// `kx0` : `f64`
+    /// - the initial kx value
+    /// 
+    /// `ky0` : `f64`
+    /// - the initial ky value
+    /// 
+    /// # Returns
+    /// `Self` : the new `SingleRay` struct
+    pub fn new(bathymetry_data: &'a dyn BathymetryData, x0: f64, y0: f64, kx0: f64, ky0: f64) -> Self {
+        SingleRay {
+            bathymetry_data,
+            initial_conditions: (x0, y0, kx0, ky0)
+        }
     }
 
     /// computes ode_solvers Rk4 tracing and returns result
     /// 
     /// # Arguments
     /// 
-    /// `bathymetry_data`: `&'b dyn BathymetryData`
-    /// - the data type that implements `get_depth` representing the depth of
-    ///   the area.
-    /// 
-    /// `x0` : `&f64`
-    /// - the initial x position
-    /// 
-    /// `y0` : `&f64`
-    /// - the initial y position
-    /// 
-    /// `kx0` : `&f64`
-    /// - the initial kx value
-    /// 
-    /// `ky0` : `&f64`
-    /// - the initial ky value
-    /// 
-    /// `start_time` : `&f64`
+    /// `start_time` : `f64`
     /// - time to start the Rk4
     /// 
-    /// `end_time` :
+    /// `end_time` : `f64`
     /// - time to end the Rk4
     /// 
-    /// `step_size` : `&f64`
+    /// `step_size` : `f64`
     /// - delta t
     /// 
     /// # Returns
-    /// `Result<(Vec<f64>, Vec<OVector<f64,
-    /// nalgebra::base::dimension::Const<4>>>), Error>`
-    /// - `Ok((Vec<f64>, Vec<OVector<f64,
-    ///   nalgebra::base::dimension::Const<4>>>))` : a tuple of the x_out and
-    ///   y_out from the Rk4 stepper.
+    /// `Result<(XOut, YOut), Error>`
+    /// - `Ok((XOut, YOut))` : a tuple of the x_out and y_out from the Rk4
+    ///   stepper.
     /// - `Err(Error::IntegrationError)` : there was an error during Rk4
     ///   integrate method.
     /// 
@@ -64,20 +74,21 @@ impl SingleRay {
     /// the bathymetry data array during Rk4 integration.
     /// 
     /// # Note
-    /// This takes too many arguments, is confusing, and also unoptimized. I
-    /// need to move bathymetry_data to being a member variable of the struct.
+    /// This struct still copies the data when it returns, which could be an
+    /// inefficiency, but the arguments are now less.
     pub fn trace_individual( &self, 
-            bathymetry_data: &dyn BathymetryData, 
-            x0: &f64, y0: &f64, kx0: &f64, ky0: &f64, 
-            start_time: &f64, end_time: &f64,
-            step_size: &f64 ) 
+            start_time: f64, end_time: f64,
+            step_size: f64 ) 
             -> Result<(XOut, YOut), Error>
         {
 
         // do the calculations
-        let system = WaveRayPath::new(bathymetry_data, *step_size);
-        let y0 = State::new(*x0, *y0, *kx0, *ky0);
-        let mut stepper = Box::new(Rk4::new(system, *start_time, y0, *end_time, *step_size));
+        let system = WaveRayPath::new(self.bathymetry_data, 1.0);
+        let s0 = State::new(
+            self.initial_conditions.0, self.initial_conditions.1,
+            self.initial_conditions.2, self.initial_conditions.3
+        );
+        let mut stepper = Box::new(Rk4::new(system, start_time, s0, end_time, step_size));
         if stepper.integrate().is_ok() {
 
             // return the stepper results
@@ -96,6 +107,24 @@ impl SingleRay {
             Err(Error::IntegrationError)
         }
 
+    }
+
+    /// set the initial conditions
+    /// 
+    /// # Arguments
+    /// `x0` : `f64`
+    /// - the initial x coordinate
+    /// 
+    /// `y0` : `f64`
+    /// - the initial y coordinate
+    /// 
+    /// `kx0` : `f64`
+    /// - the initial kx value
+    /// 
+    /// `ky0` : `f64`
+    /// - the initial ky value
+    pub fn set_initial_conditions(&mut self, x0: f64, y0: f64, kx0: f64, ky0: f64) {
+        self.initial_conditions = (x0, y0, kx0, ky0)
     }
 
 }
@@ -243,13 +272,13 @@ fn output_to_tsv_file(file_name: &str, x_out: &XOut, y_out: &YOut) -> Result<Fil
         fn test_constant_wave() {
             let lockfile = Lockfile::create(Path::new("tmp_constant_depth.nc")).unwrap();
             create_constant_depth_file(&lockfile.path(), 100, 100, 1.0, 1.0);
-
-            let wave = SingleRay::new();
         
             let bathymetry_data: &dyn BathymetryData = &cartesian::CartesianFile::new(&lockfile.path());
         
+            let wave = SingleRay::new(bathymetry_data, 10.0, 50.0, 0.12, 0.0);
+
             // make sure the starting point is at least 2 steps away from the edge.
-            let res = wave.trace_individual(bathymetry_data, &10.0, &50.0, &0.12, &0.0, &0.0, &18.0, &1.0).unwrap();
+            let res = wave.trace_individual(0.0, 18.0, 1.0).unwrap();
         
             let _ = output_to_tsv_file("constant_depth_out.txt",&res.0, &res.1);
         }
@@ -259,13 +288,13 @@ fn output_to_tsv_file(file_name: &str, x_out: &XOut, y_out: &YOut) -> Result<Fil
         fn test_two_depth_wave() {
             let lockfile = Lockfile::create(Path::new("tmp_two_depth.nc")).unwrap();
             create_two_depth_file(&lockfile.path(), 100, 100, 1.0, 1.0);
-            
-            let wave = SingleRay::new();
-        
+                    
             let bathymetry_data: &dyn BathymetryData = &cartesian::CartesianFile::new(&lockfile.path());
         
+            let wave = SingleRay::new(bathymetry_data, 10.0, 50.0, 0.12, 0.0);
+            
             // make sure the starting point is at least 2 steps away from the edge.
-            let res = wave.trace_individual(bathymetry_data, &10.0, &50.0, &0.12, &0.0, &0.0, &18.0, &1.0).unwrap();
+            let res = wave.trace_individual(0.0, 18.0, 1.0).unwrap();
         
             let _ = output_to_tsv_file("two_depth_out.txt",&res.0, &res.1);
         }
