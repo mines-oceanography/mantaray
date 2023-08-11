@@ -8,6 +8,10 @@ use std::path::Path;
 use std::fs::File;
 use std::io::Write;
 
+// define x_out and y_out types
+type XOut = Vec<f64>;
+type YOut = Vec<OVector<f64, nalgebra::base::dimension::Const<4>>>;
+
 // A struct with methods for tracing an individual wave and returning the result.
 struct SingleRay;
 
@@ -62,12 +66,12 @@ impl SingleRay {
     /// # Note
     /// This takes too many arguments, is confusing, and also unoptimized. I
     /// need to move bathymetry_data to being a member variable of the struct.
-    pub fn trace_individual<'b>( &self, 
-            bathymetry_data: &'b dyn BathymetryData, 
+    pub fn trace_individual( &self, 
+            bathymetry_data: &dyn BathymetryData, 
             x0: &f64, y0: &f64, kx0: &f64, ky0: &f64, 
             start_time: &f64, end_time: &f64,
             step_size: &f64 ) 
-            -> Result<(Vec<f64>, Vec<OVector<f64, nalgebra::base::dimension::Const<4>>>), Error>
+            -> Result<(XOut, YOut), Error>
         {
 
         // do the calculations
@@ -77,8 +81,8 @@ impl SingleRay {
         if stepper.integrate().is_ok() {
 
             // return the stepper results
-            let x_out: &Vec<f64> = stepper.x_out();
-            let y_out: &Vec<OVector<f64, nalgebra::base::dimension::Const<4>>> = stepper.y_out();
+            let x_out: &XOut = stepper.x_out();
+            let y_out: &YOut = stepper.y_out();
 
             // FIXME: how to prevent copying this data? This will take longer,
             // since it has to copy the data over, but I don't see another way
@@ -86,10 +90,10 @@ impl SingleRay {
             // it's references will too. The solution is I need to figure out
             // the type of stepper and have it be stored inside Single as a
             // member variable.
-            return Ok((x_out.clone(), y_out.clone()));
+            Ok((x_out.clone(), y_out.clone()))
 
         } else {
-            return Err(Error::IntegrationError);
+            Err(Error::IntegrationError)
         }
 
     }
@@ -97,7 +101,7 @@ impl SingleRay {
 }
 
 // output to space separated file
-fn output_to_tsv_file(file_name: &str, x_out: &Vec<f64>, y_out: &Vec<OVector<f64, nalgebra::base::dimension::Const<4>>>) -> Result<File, Error> {
+fn output_to_tsv_file(file_name: &str, x_out: &XOut, y_out: &YOut) -> Result<File, Error> {
     
     let mut file = File::create(file_name).expect("could not open file");
     writeln!(&mut file, "t x y kx ky").expect("could not write to file");
@@ -237,7 +241,7 @@ fn output_to_tsv_file(file_name: &str, x_out: &Vec<f64>, y_out: &Vec<OVector<f64
         #[test]
         // this test does not check anything yet, but outputs the result to a space separated file
         fn test_constant_wave() {
-            let lockfile = Lockfile::create(Path::new("constant_depth.nc")).unwrap();
+            let lockfile = Lockfile::create(Path::new("tmp_constant_depth.nc")).unwrap();
             create_constant_depth_file(&lockfile.path(), 100, 100, 1.0, 1.0);
 
             let wave = SingleRay::new();
@@ -253,7 +257,7 @@ fn output_to_tsv_file(file_name: &str, x_out: &Vec<f64>, y_out: &Vec<OVector<f64
         #[test]
         // this test does not check anything yet, but outputs the result to a space separated file
         fn test_two_depth_wave() {
-            let lockfile = Lockfile::create(Path::new("two_depth.nc")).unwrap();
+            let lockfile = Lockfile::create(Path::new("tmp_two_depth.nc")).unwrap();
             create_two_depth_file(&lockfile.path(), 100, 100, 1.0, 1.0);
             
             let wave = SingleRay::new();
