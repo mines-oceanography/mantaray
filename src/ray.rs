@@ -263,8 +263,8 @@ fn output_to_tsv_file(file_name: &str, x_out: &XOut, y_out: &YOut) -> Result<Fil
 
         #[test]
         // this test does not check anything yet, but outputs the result to a space separated file
-        fn test_constant_wave_shallow() {
-            let lockfile = Lockfile::create(Path::new("tmp_constant_depth_shallow.nc")).unwrap();
+        fn test_constant_wave_shallow_x() {
+            let lockfile = Lockfile::create(Path::new("tmp_constant_depth_shallow_x.nc")).unwrap();
             create_constant_depth_file(&lockfile.path(), 100, 100, 1.0, 1.0);
         
             let bathymetry_data: &dyn BathymetryData = &cartesian::CartesianFile::new(&lockfile.path());
@@ -275,19 +275,27 @@ fn output_to_tsv_file(file_name: &str, x_out: &XOut, y_out: &YOut) -> Result<Fil
             let res = wave.trace_individual(0.0, 8.0, 1.0).unwrap();
         
             let _ = output_to_tsv_file("constant_depth_shallow_x_out.txt",&res.0, &res.1);
+        }
+
+        #[test]
+        // this test does not check anything yet, but outputs the result to a space separated file
+        fn test_constant_wave_shallow_xy() {
+            let lockfile = Lockfile::create(Path::new("tmp_constant_depth_shallow_xy.nc")).unwrap();
+            create_constant_depth_file(&lockfile.path(), 100, 100, 1.0, 1.0);
         
+            let bathymetry_data: &dyn BathymetryData = &cartesian::CartesianFile::new(&lockfile.path());
+
             // test wave 2 starting in the corner
             let wave2 = SingleRay::new(bathymetry_data, 10.0, 10.0, 0.007, 0.007);
             let res2 = wave2.trace_individual(0.0, 8.0, 1.0).unwrap();
             let _ = output_to_tsv_file("constant_depth_shallow_xy_out.txt",&res2.0, &res2.1);
         
         }
-
         
         #[test]
         // this test does not check anything yet, but outputs the result to a space separated file
-        fn test_constant_wave_deep() {
-            let lockfile = Lockfile::create(Path::new("tmp_constant_depth_deep.nc")).unwrap();
+        fn test_constant_wave_deep_x() {
+            let lockfile = Lockfile::create(Path::new("tmp_constant_depth_deep_x.nc")).unwrap();
             create_constant_depth_file(&lockfile.path(), 100, 100, 1.0, 1.0);
         
             let bathymetry_data: &dyn BathymetryData = &cartesian::CartesianFile::new(&lockfile.path());
@@ -299,7 +307,17 @@ fn output_to_tsv_file(file_name: &str, x_out: &XOut, y_out: &YOut) -> Result<Fil
             let res = wave.trace_individual(0.0, 18.0, 1.0).unwrap();
         
             let _ = output_to_tsv_file("constant_depth_deep_x_out.txt",&res.0, &res.1);
-           
+
+        }
+
+        #[test]
+        // this test does not check anything yet, but outputs the result to a space separated file
+        fn test_constant_wave_deep_xy() {
+            let lockfile = Lockfile::create(Path::new("tmp_constant_depth_deep_xy.nc")).unwrap();
+            create_constant_depth_file(&lockfile.path(), 100, 100, 1.0, 1.0);
+        
+            let bathymetry_data: &dyn BathymetryData = &cartesian::CartesianFile::new(&lockfile.path());
+        
             let wave2 = SingleRay::new(bathymetry_data, 10.0, 10.0, 0.7, 0.7);
             let res2 = wave2.trace_individual(0.0, 18.0, 1.0).unwrap();
             let _ = output_to_tsv_file("constant_depth_deep_xy_out.txt",&res2.0, &res2.1);
@@ -308,8 +326,8 @@ fn output_to_tsv_file(file_name: &str, x_out: &XOut, y_out: &YOut) -> Result<Fil
 
         #[test]
         // this test does not check anything yet, but outputs the result to a space separated file
-        fn test_two_depth_wave_shallow() {
-            let lockfile = Lockfile::create(Path::new("tmp_two_depth_shallow.nc")).unwrap();
+        fn test_two_depth_wave_shallow_x() {
+            let lockfile = Lockfile::create(Path::new("tmp_two_depth_shallow_x.nc")).unwrap();
             create_two_depth_file(&lockfile.path(), 100, 100, 1.0, 1.0);
                     
             let bathymetry_data: &dyn BathymetryData = &cartesian::CartesianFile::new(&lockfile.path());
@@ -319,19 +337,29 @@ fn output_to_tsv_file(file_name: &str, x_out: &XOut, y_out: &YOut) -> Result<Fil
             // make sure the starting point is at least 2 steps away from the edge.
             let res = wave.trace_individual(0.0, 6.0, 1.0).unwrap();
         
-            let _ = output_to_tsv_file("two_depth_shallow_out.txt",&res.0, &res.1);
-        
-            let wave2 = SingleRay::new(bathymetry_data, 10.0, 10.0, 0.007, 0.007);
-            let res2 = wave2.trace_individual(0.0, 7.0, 1.0).unwrap();
-            let _ = output_to_tsv_file("two_depth_shallow_xy_out.txt",&res2.0, &res2.1);
-
+            let _ = output_to_tsv_file("two_depth_shallow_out_x.txt",&res.0, &res.1);
 
         }
 
         #[test]
         // this test does not check anything yet, but outputs the result to a space separated file
-        fn test_two_depth_wave_deep() {
-            let lockfile = Lockfile::create(Path::new("tmp_two_depth_deep.nc")).unwrap();
+        fn test_two_depth_wave_shallow_xy() {
+            let lockfile = Lockfile::create(Path::new("tmp_two_depth_shallow_xy.nc")).unwrap();
+            create_two_depth_file(&lockfile.path(), 100, 100, 1.0, 1.0);
+                    
+            let bathymetry_data: &dyn BathymetryData = &cartesian::CartesianFile::new(&lockfile.path());
+        
+
+            let wave2 = SingleRay::new(bathymetry_data, 10.0, 10.0, 0.007, 0.007);
+            let res2 = wave2.trace_individual(0.0, 7.0, 1.0).unwrap();
+            let _ = output_to_tsv_file("two_depth_shallow_xy_out.txt",&res2.0, &res2.1);
+
+        }
+
+        #[test]
+        // this test does not check anything yet, but outputs the result to a space separated file
+        fn test_two_depth_wave_deep_x() {
+            let lockfile = Lockfile::create(Path::new("tmp_two_depth_deep_x.nc")).unwrap();
             create_two_depth_file(&lockfile.path(), 100, 100, 1.0, 1.0);
                     
             let bathymetry_data: &dyn BathymetryData = &cartesian::CartesianFile::new(&lockfile.path());
@@ -342,6 +370,16 @@ fn output_to_tsv_file(file_name: &str, x_out: &XOut, y_out: &YOut) -> Result<Fil
             let res = wave.trace_individual(0.0, 30.0, 1.0).unwrap();
         
             let _ = output_to_tsv_file("two_depth_deep_x_out.txt",&res.0, &res.1);
+        
+        }
+
+        #[test]
+        // this test does not check anything yet, but outputs the result to a space separated file
+        fn test_two_depth_wave_deep_xy() {
+            let lockfile = Lockfile::create(Path::new("tmp_two_depth_deep_xy.nc")).unwrap();
+            create_two_depth_file(&lockfile.path(), 100, 100, 1.0, 1.0);
+                    
+            let bathymetry_data: &dyn BathymetryData = &cartesian::CartesianFile::new(&lockfile.path());
         
             let wave2 = SingleRay::new(bathymetry_data, 10.0, 10.0, 0.7, 0.7);
             let res2 = wave2.trace_individual(0.0, 40.0, 1.0).unwrap();
