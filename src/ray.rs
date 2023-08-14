@@ -263,6 +263,8 @@ fn output_to_tsv_file(file_name: &str, x_out: &XOut, y_out: &YOut) -> Result<Fil
 
         #[test]
         // this test does not check anything yet, but outputs the result to a space separated file
+        /// generate an output file showing ray tracing on a constant depth
+        /// shallow wave propagating in the x direction.
         fn test_constant_wave_shallow_x() {
             let lockfile = Lockfile::create(Path::new("tmp_constant_depth_shallow_x.nc")).unwrap();
             create_constant_depth_file(&lockfile.path(), 100, 100, 1.0, 1.0);
@@ -279,6 +281,8 @@ fn output_to_tsv_file(file_name: &str, x_out: &XOut, y_out: &YOut) -> Result<Fil
 
         #[test]
         // this test does not check anything yet, but outputs the result to a space separated file
+        /// generate an output file showing ray tracing on a constant depth
+        /// shallow wave propagating at an angle in the x=y direction.
         fn test_constant_wave_shallow_xy() {
             let lockfile = Lockfile::create(Path::new("tmp_constant_depth_shallow_xy.nc")).unwrap();
             create_constant_depth_file(&lockfile.path(), 100, 100, 1.0, 1.0);
@@ -294,6 +298,8 @@ fn output_to_tsv_file(file_name: &str, x_out: &XOut, y_out: &YOut) -> Result<Fil
         
         #[test]
         // this test does not check anything yet, but outputs the result to a space separated file
+        /// generate an output file showing ray tracing on a constant depth
+        /// deep wave propagating in the x direction.
         fn test_constant_wave_deep_x() {
             let lockfile = Lockfile::create(Path::new("tmp_constant_depth_deep_x.nc")).unwrap();
             create_constant_depth_file(&lockfile.path(), 100, 100, 1.0, 1.0);
@@ -312,6 +318,8 @@ fn output_to_tsv_file(file_name: &str, x_out: &XOut, y_out: &YOut) -> Result<Fil
 
         #[test]
         // this test does not check anything yet, but outputs the result to a space separated file
+        /// generate an output file showing ray tracing on a constant depth
+        /// deep wave propagating at an angle in the x=y direction.
         fn test_constant_wave_deep_xy() {
             let lockfile = Lockfile::create(Path::new("tmp_constant_depth_deep_xy.nc")).unwrap();
             create_constant_depth_file(&lockfile.path(), 100, 100, 1.0, 1.0);
@@ -326,6 +334,8 @@ fn output_to_tsv_file(file_name: &str, x_out: &XOut, y_out: &YOut) -> Result<Fil
 
         #[test]
         // this test does not check anything yet, but outputs the result to a space separated file
+        /// generate an output file showing ray tracing on a two-depth shallow
+        /// wave propagating in the x direction. The kx increases slightly.
         fn test_two_depth_wave_shallow_x() {
             let lockfile = Lockfile::create(Path::new("tmp_two_depth_shallow_x.nc")).unwrap();
             create_two_depth_file(&lockfile.path(), 100, 100, 1.0, 1.0);
@@ -343,6 +353,10 @@ fn output_to_tsv_file(file_name: &str, x_out: &XOut, y_out: &YOut) -> Result<Fil
 
         #[test]
         // this test does not check anything yet, but outputs the result to a space separated file
+        /// generate an output file showing ray tracing on a two-depth shallow
+        /// wave propagating at an angle in the x=y direction. NOTE: as this
+        /// function is written, the output kx and ky do not change. However,
+        /// decreasing the step size will make the kx and ky change.
         fn test_two_depth_wave_shallow_xy() {
             let lockfile = Lockfile::create(Path::new("tmp_two_depth_shallow_xy.nc")).unwrap();
             create_two_depth_file(&lockfile.path(), 100, 100, 1.0, 1.0);
@@ -358,6 +372,8 @@ fn output_to_tsv_file(file_name: &str, x_out: &XOut, y_out: &YOut) -> Result<Fil
 
         #[test]
         // this test does not check anything yet, but outputs the result to a space separated file
+        /// generate an output file showing ray tracing on a two-depth deep wave
+        /// propagating in the x direction. This correcly shows no change in kx or ky.
         fn test_two_depth_wave_deep_x() {
             let lockfile = Lockfile::create(Path::new("tmp_two_depth_deep_x.nc")).unwrap();
             create_two_depth_file(&lockfile.path(), 100, 100, 1.0, 1.0);
@@ -375,6 +391,8 @@ fn output_to_tsv_file(file_name: &str, x_out: &XOut, y_out: &YOut) -> Result<Fil
 
         #[test]
         // this test does not check anything yet, but outputs the result to a space separated file
+        /// generate an output file showing ray tracing on a two-depth deep wave
+        /// propagating at an angle in the x=y direction. This correcly shows no change in kx or ky.
         fn test_two_depth_wave_deep_xy() {
             let lockfile = Lockfile::create(Path::new("tmp_two_depth_deep_xy.nc")).unwrap();
             create_two_depth_file(&lockfile.path(), 100, 100, 1.0, 1.0);
