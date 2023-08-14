@@ -112,8 +112,8 @@ impl<'a> WaveRayPath<'a> {
 /// 
 /// Returns:
 /// `Self` : the newly created `WaveRayPath`
-   pub fn new(depth_data: &'a dyn BathymetryData, step_size: f64) -> Self {
-      WaveRayPath { data: depth_data, step_size: step_size }
+   pub fn new(depth_data: &'a dyn BathymetryData) -> Self {
+      WaveRayPath { data: depth_data }
    }
 
    /// Get the depth at the point x, y
@@ -137,55 +137,15 @@ impl<'a> WaveRayPath<'a> {
    ///   `interpolator::bilinear` due to incorrect argument passed.
    pub fn depth(&self, x: &f32, y: &f32) -> Result<f32, Error> {
       let depth = self.data.get_depth(x, y)?;
-      println!("{:?}", depth);
+      //println!("{:?}", depth);
       Ok(depth)
    }
 
-   /// calculates the depth gradient at a given x, y using finite differences.
-   /// 
-   /// # Arguments:
-   /// `x`: `&f32`
-   /// -  x-coordinate of the point
-   /// 
-   /// `y`: `&f32`
-   /// - y-coordinate of the point
-   /// 
-   /// `dx`: `&f32`
-   /// - change in the x direction
-   /// 
-   /// `dy`: `&f32`
-   /// - change in the y direction
-   /// 
-   /// # Returns:
-   /// `Result<(f32, f32), Error`
-   /// - `Ok((f32,f32))` : values representing the depth gradient (dh/dx, dh/dy)
-   /// -`Err(Error)` : there was an error when getting the depth
-   /// 
-   /// # Errors
-   /// - `Error::IndexOutOfBounds` : this error is returned when the `x` or `y`
-   /// input give an out of bounds output.
-   /// - `Error::InvalidArgument` : this error is returned from
-   ///   `interpolator::bilinear` due to incorrect argument passed.
-   /// 
-   /// # Note
-   /// It would be more efficient to calculate the gradient while calculating
-   /// the depth in the first place. That way the data is only looped over once.
-   pub fn gradient(&self, x: &f32, y: &f32, dx: &f32, dy: &f32) -> Result<(f32, f32), Error> {
-
-      let x_grad = if *dx==0.0 {
-         0.0
-      } else {
-         (self.data.get_depth(&(x + dx), y)? - self.data.get_depth(&(x - dx), y)?) / (2.0 * dx)
-      };
-
-      let y_grad = if *dy==0.0 {
-         0.0
-      } else {
-         (self.data.get_depth(x, &(y + dy))? - self.data.get_depth(x, &(y - dy))?) / (2.0 * dy)
-      };
-
-      Ok((x_grad, y_grad))
-
+   /// get the depth and gradient at point x, y
+   pub fn depth_and_gradient(&self, x: &f32, y: &f32) -> Result<(f32, (f32, f32)), Error> {
+      let h_dh = self.data.get_depth_and_gradient(x, y)?;
+      //println!("The depth is: {}\nThe dh/dx is {}\nThe dh/dy is {}", h_dh.0, h_dh.1.0, h_dh.1.1);
+      Ok(h_dh)
    }
 
    /// Calculates system of odes from the given state
@@ -221,7 +181,9 @@ impl<'a> WaveRayPath<'a> {
    /// - If k is negative, group velocity will return this error. 
    pub fn odes(&self, x: &f64, y: &f64, kx: &f64, ky: &f64) -> Result<(f64, f64, f64, f64), Error> {
 
-      let h = self.depth(&(*x as f32), &(*y as f32))? as f64;
+      let (h, grad_h) = self.depth_and_gradient(&(*x as f32), &(*y as f32))?;
+
+      let h = h as f64;
 
       let k_mag = (kx*kx + ky*ky).sqrt();
       let k_dir = ky.atan2(*kx);
@@ -233,12 +195,7 @@ impl<'a> WaveRayPath<'a> {
       let dxdt = cgx;
       let dydt = cgy;
 
-      let dx = (dxdt * self.step_size).abs();
-      let dy = (dydt * self.step_size).abs();
-
-      let grad_of_h = self.gradient(&(*x as f32), &(*y as f32), &(dx as f32), &(dy as f32))?;
-
-      let (dkxdt, dkydt) = dk_vector_dt(&k_mag, &h, &(grad_of_h.0 as f64), &(grad_of_h.1 as f64));
+      let (dkxdt, dkydt) = dk_vector_dt(&k_mag, &h, &(grad_h.0 as f64), &(grad_h.1 as f64));
 
       Ok((dxdt, dydt, dkxdt, dkydt))
    }
@@ -253,6 +210,12 @@ impl BathymetryData for ConstantDepth {
    fn get_depth(&self, _x: &f32, _y: &f32) -> Result<f32, Error> {
        Ok(self.h)
    }
+
+   fn get_depth_and_gradient(&self, x: &f32, y: &f32) -> Result<(f32, (f32, f32)), Error> {
+      Ok(
+         (self.h, (0.0, 0.0))
+      )
+   }
 }
 
 struct ArrayDepth {
@@ -266,6 +229,15 @@ impl BathymetryData for ArrayDepth {
          return Ok(f32::NAN);
       }
        Ok(self.array[*x as usize][*y as usize]) // FIXME: since x and y are floats, they are truncated or rounded to a usize. I probably want a better interpolation estimate
+   }
+
+   fn get_depth_and_gradient(&self, x: &f32, y: &f32) -> Result<(f32, (f32, f32)), Error> {
+      if *x as usize >= self.array.len() || *y as usize >= self.array.len() {
+         return Ok((f32::NAN, (f32::NAN, f32::NAN)));
+      }
+       Ok(
+         (self.array[*x as usize][*y as usize], (0.0, 0.0))
+       )
    }
 }
 
@@ -302,7 +274,9 @@ impl BathymetryData for ArrayDepth {
    if *k <= 0.0 {
       return Err(Error::ArgumentOutOfBounds);
    }
-   Ok( (G / 2.0) * ( ((k*h).tanh() + (k*h)/(k*h).cosh().powi(2)) / (k*G*(k*h).tanh()).sqrt() ) )
+   let cg = (G / 2.0) * ( ((k*h).tanh() + (k*h)/(k*h).cosh().powi(2)) / (k*G*(k*h).tanh()).sqrt() );
+   // println!("The group velocity is: {}", cg);
+   Ok( cg )
  }
 
 
@@ -324,8 +298,10 @@ impl BathymetryData for ArrayDepth {
 /// # Returns
 /// `(f64, f64)` : values cooresponding to (dkx/dt, dky/dt)
 fn dk_vector_dt(k_mag: &f64, h: &f64, dhdx: &f64, dhdy: &f64) -> (f64, f64) {
-   let dkxdt = (-0.5 * G * k_mag / ( k_mag * h ).tanh().sqrt()) * dhdx;
-   let dkydt = (-0.5 * G * k_mag / ( k_mag * h ).tanh().sqrt()) * dhdy;
+   let dkxdt = (0.5) * k_mag * 1.0/(k_mag * h).sinh() * 1.0/(k_mag * h).cosh() * ( G * k_mag * (k_mag * h).tanh() ).sqrt() * dhdx;
+   let dkydt = (0.5) * k_mag * 1.0/(k_mag * h).sinh() * 1.0/(k_mag * h).cosh() * ( G * k_mag * (k_mag * h).tanh() ).sqrt() * dhdy;
+
+   //println!("The value for dkx/dt is {}", dkxdt);
 
    (dkxdt, dkydt)
 }
@@ -339,8 +315,6 @@ struct WaveRayPath<'a> {
    /// A reference to a pointer to a struct that implements the depth trait. The
    /// lifetime of WaveRayPath is restricted to the lifetime of this variable.
    data: &'a dyn BathymetryData,
-   /// the size of delta t used during Rk4 integration.
-   step_size: f64,
 }
 
 impl<'a> ode_solvers::System<State> for WaveRayPath<'a> {
@@ -384,7 +358,7 @@ mod test_constant_cg {
    /// If there is an error during integration of ode_solvers, this function will panic
    fn run_check_ode_solvers(depth_data: &dyn BathymetryData, check_axis: [(f64, f64, f64, f64); 4]) {
       for (kx, ky, xf, yf) in check_axis {
-         let system = WaveRayPath::new(depth_data, 1.0);
+         let system = WaveRayPath::new(depth_data);
          let y0 = State::new(0.0, 0.0, kx, ky);
          let mut stepper = Rk4::new(system, 0.0, y0, 1.0, 1.0);
          if stepper.integrate().is_ok() {
@@ -435,7 +409,7 @@ mod test_constant_cg {
       ];
 
       let data : &dyn BathymetryData = &ConstantDepth { h: 1000.0 };
-      let system = WaveRayPath::new(data, 1.0);
+      let system = WaveRayPath::new(data);
 
       for (kx, ky, ans_dxdt, ans_dydt) in results {
          let (dxdt, dydt, _, _) = system.odes(&0.0, &0.0, &kx, &ky).unwrap();
@@ -452,7 +426,7 @@ mod test_constant_cg {
    /// all outputs should be NaN if k starts out of bounds
    fn test_zero_k() {
       let data : &dyn BathymetryData = &ConstantDepth { h: 1000.0 };
-      let system = WaveRayPath::new(data, 1.0);
+      let system = WaveRayPath::new(data);
       let y0 = State::new(0.0, 0.0, 0.0, 0.0);
 
       let t0 = 0.0;
@@ -507,7 +481,7 @@ mod test_constant_cg {
    /// if x input is NAN, the output x should be NaN. if k is zero, it will still error.
    fn test_x_nan() {
       let data : &dyn BathymetryData = &ConstantDepth { h: 1000.0 };
-      let system = WaveRayPath::new(data, 1.0);
+      let system = WaveRayPath::new(data);
       let nan = f64::NAN;
       let y0 = State::new(nan, 0.0, 1.0, 0.0);
 
@@ -525,7 +499,7 @@ mod test_constant_cg {
    /// if y input is NAN, the output x should be NaN. if k is zero, it will still error.
    fn test_y_nan() {
       let data : &dyn BathymetryData = &ConstantDepth { h: 1000.0 };
-      let system = WaveRayPath::new(data, 1.0);
+      let system = WaveRayPath::new(data);
       let nan = f64::NAN;
       let y0 = State::new(0.0, nan, 1.0, 0.0);
 
@@ -543,7 +517,7 @@ mod test_constant_cg {
    /// if either k input is NAN, the output x and y should be NaN.
    fn test_kx_nan() {
       let data : &dyn BathymetryData = &ConstantDepth { h: 1000.0 };
-      let system = WaveRayPath::new(data, 1.0);
+      let system = WaveRayPath::new(data);
       let nan = f64::NAN;
       let y0 = State::new(0.0, 0.0, nan, 0.0);
 
@@ -562,7 +536,7 @@ mod test_constant_cg {
    /// if either k input is NAN, the output x and y should be NaN.
    fn test_ky_nan() {
       let data : &dyn BathymetryData = &ConstantDepth { h: 1000.0 };
-      let system = WaveRayPath::new(data, 1.0);
+      let system = WaveRayPath::new(data);
       let nan = f64::NAN;
       let y0 = State::new(0.0, 0.0, 0.0, nan);
 
@@ -600,7 +574,7 @@ mod test_constant_cg {
          vec![1000.0, 1000.0],
          vec![1000.0, 1000.0]
       ] };
-      let system = WaveRayPath::new(data, 1.0);
+      let system = WaveRayPath::new(data);
       let y0 = State::new(0.0, 0.0, 0.0, 1.0);
    
       let t0 = 0.0;
@@ -621,7 +595,7 @@ mod test_constant_cg {
    /// test writing a file
    fn write_file() {
       let data : &dyn BathymetryData = &ConstantDepth { h: 1000.0 };
-      let system = WaveRayPath::new(data, 1.0);
+      let system = WaveRayPath::new(data);
       let y0 = State::new(0.0, 0.0, 1.0, -1.0);
    
       let t0 = 0.0;
@@ -633,17 +607,16 @@ mod test_constant_cg {
 
    #[test]
    // test the k derivative function
-   fn test_dk() {
-      let k_mag = 150.0;
-      let h = 3.5;
+   fn test_dk_deep() {
+      let k_mag = 1000.0;
+      let h = 1000.0;
       let dhdx = 0.2;
       let dhdy = 0.2;
 
       let ans = dk_vector_dt(&k_mag, &h, &dhdx, &dhdy);
 
-      assert!((ans.0 - -147.0).abs() < f64::EPSILON, "Expected -147, got {}", ans.0);
-      assert!((ans.1 - -147.0).abs() < f64::EPSILON, "Expected -147, got {}", ans.1)
-
+      assert!((ans.0 - 0.0).abs() < f64::EPSILON, "Expected 0, got {}", ans.0);
+      assert!((ans.1 - 0.0).abs() < f64::EPSILON, "Expected 0, got {}", ans.1)
    }
 
 }
