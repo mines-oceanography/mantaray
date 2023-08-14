@@ -21,5 +21,9 @@ pub(crate) enum Error {
    #[error("Index passed was out of bounds")]
    /// The index is out of bounds of the array and would panic if attempted to access array.
    IndexOutOfBounds,
+   
+   #[error("Error during `ode_solvers` integration")]
+   /// There was an error during integration using `ode_solvers`
+   IntegrationError,
 
 }

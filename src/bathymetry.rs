@@ -11,7 +11,7 @@ pub(crate) trait BathymetryData {
 
 
 /// Read data from test_bathy_3.nc netcdf3 file that contains x, y, and depth
-mod cartesian {
+pub(crate) mod cartesian {
 
     use std::path::Path;
 
