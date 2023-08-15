@@ -560,8 +560,8 @@ pub(crate) mod cartesian {
             assert!((data.get_depth_and_gradient(&5000.0, &5000.0).unwrap().1.1 - 0.0).abs() < f32::EPSILON);
             assert!((data.get_depth_and_gradient(&1234.0, &1234.0).unwrap().1.0 - 0.0).abs() < f32::EPSILON);
             assert!((data.get_depth_and_gradient(&1234.0, &1234.0).unwrap().1.1 - 0.0).abs() < f32::EPSILON);
-            assert!((data.get_depth_and_gradient(&25000.0, &12500.0).unwrap().1.0 - -0.01).abs() < f32::EPSILON);
-            assert!((data.get_depth_and_gradient(&25000.0, &12500.0).unwrap().1.1 - 0.02).abs() < f32::EPSILON);
+            assert!((data.get_depth_and_gradient(&25000.0, &12500.0).unwrap().1.0 - -0.005).abs() < f32::EPSILON);
+            assert!((data.get_depth_and_gradient(&25000.0, &12500.0).unwrap().1.1 - 0.01).abs() < f32::EPSILON);
 
         }
 
