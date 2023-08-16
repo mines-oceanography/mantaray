@@ -78,10 +78,8 @@ fn output_to_file(
     step_size: f64,
 ) -> Result<File, Error> {
     let mut stepper = Rk4::new(system, t0, y0, tf, step_size);
-    let res = stepper.integrate();
-    if res.is_err() {
-        return Err(Error::Undefined);
-    }
+    stepper.integrate()?;
+
     let y = stepper.y_out();
 
     let mut file = File::create("y_out.txt")?;

@@ -50,10 +50,15 @@ pub(crate) mod cartesian {
         /// - `Err(Error)` : error during execution of `get_depth`.
         /// 
         /// # Errors
-        /// - `Error::IndexOutOfBounds` : this error is returned when the
-        /// `x` or `y` input give an out of bounds output.
+        /// - `Error::CornerOutOfBounds` : this error is returned when the
+        ///   `four_corners` method errors.
+        /// - `Error::IndexOutOfBounds` : this error is returned when the `x` or
+        /// `y` input give an out of bounds output during the `interpolate`
+        /// method.
         /// - `Error::InvalidArgument` : this error is returned from
         ///   `interpolator::bilinear` due to incorrect argument passed.
+        /// - `Error::NoNearestPoint` : The target point was either outside the
+        /// domain or closest to the edge of the domain.
         fn get_depth(&self, x: &f32, y: &f32) -> Result<f32, Error> {
             if x.is_nan() || y.is_nan() {
                 return Ok(f32::NAN);
@@ -61,11 +66,11 @@ pub(crate) mod cartesian {
 
             let nearest_pt = match self.nearest_point(x, y) {
                 Some(p) => p,
-                None => return Err(Error::IndexOutOfBounds), // TODO: for none should it error or NAN or something else?
+                None => return Err(Error::NoNearestPoint),
             };
             let edge_points = match self.four_corners(&nearest_pt.0, &nearest_pt.1) {
                 Some(p) => p,
-                None => return Err(Error::IndexOutOfBounds) // TODO: same as above comment
+                None => return Err(Error::CornersOutOfBounds)
             };
             let depth = self.interpolate(&edge_points, &(*x, *y))?;
             Ok(depth)
@@ -410,7 +415,7 @@ pub(crate) mod cartesian {
             create_file(lockfile.path(), 101, 51, 500.0, 500.0);
 
             let data = CartesianFile::new(Path::new(lockfile.path()));
-            if let Error::IndexOutOfBounds = data.get_depth(&-500.1, &500.1).unwrap_err() {
+            if let Error::NoNearestPoint = data.get_depth(&-500.1, &500.1).unwrap_err() {
                 assert!(true);
             } else {
                 assert!(false);
@@ -428,7 +433,7 @@ pub(crate) mod cartesian {
             create_file(lockfile.path(), 101, 51, 500.0, 500.0);
 
             let data = CartesianFile::new(Path::new(lockfile.path()));
-            if let Error::IndexOutOfBounds = data.get_depth(&500.1, &-500.1).unwrap_err() {
+            if let Error::NoNearestPoint = data.get_depth(&500.1, &-500.1).unwrap_err() {
                 assert!(true);
             } else {
                 assert!(false);
