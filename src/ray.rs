@@ -12,6 +12,49 @@ use std::path::Path;
 type XOut = Vec<f64>;
 type YOut = Vec<OVector<f64, nalgebra::base::dimension::Const<4>>>;
 
+/// a struct that creates many rays
+struct ManyRays<'a> {
+    bathymetry_data: &'a dyn BathymetryData,
+    num_rays: usize
+}
+
+impl<'a> ManyRays<'a> {
+    /// construct a new `ManyRays` from bathymetry and number of rays
+    fn new(bathymetry_data: &'a dyn BathymetryData, num_rays: usize) -> Self {
+        ManyRays { bathymetry_data, num_rays }
+    }
+
+    /// trace many rays
+    fn trace_many(&self, start_time: f64, end_time: f64, step_size: f64) -> Vec<Option<(XOut, YOut)>> {
+
+        // create a vector of SingleRays
+        let rays: Vec<SingleRay> = (0..self.num_rays)
+            .map(|i| {
+                // create the group of waves here
+                todo!("Make a function to define the initial conditions for waves.")
+            })
+            .collect();
+
+        // integrate each. I think here is where I would use `par_iter` from rayon in the future.
+        let results: Vec<Option<(XOut, YOut)>> = rays
+            .iter()
+            .map(|r| {
+                match r.trace_individual(start_time, end_time, step_size) {
+                    Ok(v) => Some(v),
+                    Err(e) => {
+                        println!("ERROR {} during intergration", e);
+                        None      
+                    }
+                }
+            })
+            .collect();
+
+        // return the results
+        results
+
+    }
+}
+
 // A struct with methods for tracing an individual wave and returning the result.
 struct SingleRay<'a> {
     bathymetry_data: &'a dyn BathymetryData,
