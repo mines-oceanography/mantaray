@@ -260,6 +260,61 @@ fn output_to_tsv_file(file_name: &str, x_out: &XOut, y_out: &YOut) -> Result<Fil
 
         }
 
+        /// create a file that has a constant slope of 0.05 in the x direction
+        fn create_slope_file(path: &Path, x_len: usize, y_len: usize, x_step: f32, y_step: f32) {
+            
+            let x_data: Vec<f32> = (0..x_len).map(|x| x as f32 * x_step).collect();
+            let y_data: Vec<f32> = (0..y_len).map(|y| y as f32 * y_step).collect();
+            let depth_data: Vec<f64> = (0..(x_len*y_len))
+                .map(|p| {
+                    let loc = 2000 - (p % x_len);
+                    loc as f64 * 0.05
+                })
+                .collect();
+
+            // most below copied from the docs
+            use netcdf3::{FileWriter, DataSet, Version};
+            let y_dim_name: &str = "y";
+            let y_var_name: &str = y_dim_name;
+            let y_var_len: usize = y_len;
+            
+            let x_dim_name: &str = "x";
+            let x_var_name: &str = x_dim_name;
+            let x_var_len: usize = x_len;
+            
+            let depth_var_name: &str = "depth";
+            let depth_var_len: usize = depth_data.len();
+            
+            // Create the NetCDF-3 definition
+            // ------------------------------
+            let data_set: DataSet = {
+                let mut data_set: DataSet = DataSet::new();
+                // Define the dimensions
+                data_set.add_fixed_dim(y_dim_name, y_var_len).unwrap();
+                data_set.add_fixed_dim(x_dim_name, x_var_len).unwrap();
+                // Define the variable
+                data_set.add_var_f32(y_var_name, &[y_dim_name]).unwrap();
+                data_set.add_var_f32(x_var_name, &[x_var_name]).unwrap();
+                data_set.add_var_f64(depth_var_name, &[y_dim_name, x_var_name]).unwrap();
+            
+                data_set
+            };
+            
+            // ...
+            
+            // Create and write the NetCDF-3 file
+            // ----------------------------------
+            let mut file_writer: FileWriter = FileWriter::open(path).unwrap();
+            // Set the NetCDF-3 definition
+            file_writer.set_def(&data_set, Version::Classic, 0).unwrap();
+            assert_eq!(depth_var_len,                     x_var_len * y_var_len);
+            file_writer.write_var_f32(y_var_name, &y_data[..]).unwrap();
+            file_writer.write_var_f32(x_var_name, &x_data[..]).unwrap();
+            file_writer.write_var_f64(depth_var_name, &depth_data[..]).unwrap();
+             file_writer.close().unwrap();
+            // end of copied from docs
+
+        }
 
         #[test]
         // this test does not check anything yet, but outputs the result to a space separated file
@@ -290,9 +345,9 @@ fn output_to_tsv_file(file_name: &str, x_out: &XOut, y_out: &YOut) -> Result<Fil
             let bathymetry_data: &dyn BathymetryData = &cartesian::CartesianFile::new(&lockfile.path());
 
             // test wave 2 starting in the corner
-            let wave2 = SingleRay::new(bathymetry_data, 10.0, 10.0, 0.007, 0.007);
-            let res2 = wave2.trace_individual(0.0, 8.0, 1.0).unwrap();
-            let _ = output_to_tsv_file("constant_depth_shallow_xy_out.txt",&res2.0, &res2.1);
+            let wave = SingleRay::new(bathymetry_data, 10.0, 10.0, 0.007, 0.007);
+            let res = wave.trace_individual(0.0, 8.0, 1.0).unwrap();
+            let _ = output_to_tsv_file("constant_depth_shallow_xy_out.txt",&res.0, &res.1);
         
         }
         
@@ -326,9 +381,9 @@ fn output_to_tsv_file(file_name: &str, x_out: &XOut, y_out: &YOut) -> Result<Fil
         
             let bathymetry_data: &dyn BathymetryData = &cartesian::CartesianFile::new(&lockfile.path());
         
-            let wave2 = SingleRay::new(bathymetry_data, 10.0, 10.0, 0.7, 0.7);
-            let res2 = wave2.trace_individual(0.0, 18.0, 1.0).unwrap();
-            let _ = output_to_tsv_file("constant_depth_deep_xy_out.txt",&res2.0, &res2.1);
+            let wave = SingleRay::new(bathymetry_data, 10.0, 10.0, 0.7, 0.7);
+            let res = wave.trace_individual(0.0, 18.0, 1.0).unwrap();
+            let _ = output_to_tsv_file("constant_depth_deep_xy_out.txt",&res.0, &res.1);
 
         }
 
@@ -364,9 +419,9 @@ fn output_to_tsv_file(file_name: &str, x_out: &XOut, y_out: &YOut) -> Result<Fil
             let bathymetry_data: &dyn BathymetryData = &cartesian::CartesianFile::new(&lockfile.path());
         
 
-            let wave2 = SingleRay::new(bathymetry_data, 10.0, 10.0, 0.007, 0.007);
-            let res2 = wave2.trace_individual(0.0, 7.0, 1.0).unwrap();
-            let _ = output_to_tsv_file("two_depth_shallow_xy_out.txt",&res2.0, &res2.1);
+            let wave = SingleRay::new(bathymetry_data, 10.0, 10.0, 0.007, 0.007);
+            let res = wave.trace_individual(0.0, 7.0, 1.0).unwrap();
+            let _ = output_to_tsv_file("two_depth_shallow_xy_out.txt",&res.0, &res.1);
 
         }
 
@@ -399,9 +454,37 @@ fn output_to_tsv_file(file_name: &str, x_out: &XOut, y_out: &YOut) -> Result<Fil
                     
             let bathymetry_data: &dyn BathymetryData = &cartesian::CartesianFile::new(&lockfile.path());
         
-            let wave2 = SingleRay::new(bathymetry_data, 10.0, 10.0, 0.7, 0.7);
-            let res2 = wave2.trace_individual(0.0, 40.0, 1.0).unwrap();
-            let _ = output_to_tsv_file("two_depth_deep_xy_out.txt",&res2.0, &res2.1);
+            let wave = SingleRay::new(bathymetry_data, 10.0, 10.0, 0.7, 0.7);
+            let res = wave.trace_individual(0.0, 40.0, 1.0).unwrap();
+            let _ = output_to_tsv_file("two_depth_deep_xy_out.txt",&res.0, &res.1);
+
+        }
+
+        #[test]
+        /// shallow water
+        fn test_slope_depth_wave_x() {
+            let lockfile = Lockfile::create(Path::new("tmp_slope_depth_x.nc")).unwrap();
+            create_slope_file(&lockfile.path(), 2000, 2000, 1.0, 1.0);
+                    
+            let bathymetry_data: &dyn BathymetryData = &cartesian::CartesianFile::new(&lockfile.path());
+        
+            let wave = SingleRay::new(bathymetry_data, 10.0, 1000.0, 0.01, 0.0);
+            let res = wave.trace_individual(0.0, 100.0, 1.0).unwrap();
+            let _ = output_to_tsv_file("slope_depth_x_out.txt",&res.0, &res.1);
+
+        }
+
+        #[test]
+        /// shallow water
+        fn test_slope_depth_wave_xy() {
+            let lockfile = Lockfile::create(Path::new("tmp_slope_depth_xy.nc")).unwrap();
+            create_slope_file(&lockfile.path(), 2000, 2000, 1.0, 1.0);
+                    
+            let bathymetry_data: &dyn BathymetryData = &cartesian::CartesianFile::new(&lockfile.path());
+        
+            let wave = SingleRay::new(bathymetry_data, 10.0, 10.0, 0.007, 0.007);
+            let res = wave.trace_individual(0.0, 200.0, 100.0).unwrap();
+            let _ = output_to_tsv_file("slope_depth_xy_out.txt",&res.0, &res.1);
 
         }
 
