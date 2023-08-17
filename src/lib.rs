@@ -142,7 +142,7 @@ impl<'a> WaveRayPath<'a> {
    }
 
    /// get the depth and gradient at point x, y
-   pub fn depth_and_gradient(&self, x: &f32, y: &f32) -> Result<(f32, (f32, f32)), Error> {
+   pub fn depth_and_gradient(&self, x: &f32, y: &f32) -> Result<(f32, f32, f32), Error> {
       let h_dh = self.data.get_depth_and_gradient(x, y)?;
       //println!("The depth is: {}\nThe dh/dx is {}\nThe dh/dy is {}", h_dh.0, h_dh.1.0, h_dh.1.1);
       Ok(h_dh)
@@ -181,7 +181,7 @@ impl<'a> WaveRayPath<'a> {
    /// - If k is negative, group velocity will return this error. 
    pub fn odes(&self, x: &f64, y: &f64, kx: &f64, ky: &f64) -> Result<(f64, f64, f64, f64), Error> {
 
-      let (h, grad_h) = self.depth_and_gradient(&(*x as f32), &(*y as f32))?;
+      let (h, dhdx, dhdy) = self.depth_and_gradient(&(*x as f32), &(*y as f32))?;
 
       let h = h as f64;
 
@@ -195,7 +195,7 @@ impl<'a> WaveRayPath<'a> {
       let dxdt = cgx;
       let dydt = cgy;
 
-      let (dkxdt, dkydt) = dk_vector_dt(&k_mag, &h, &(grad_h.0 as f64), &(grad_h.1 as f64));
+      let (dkxdt, dkydt) = dk_vector_dt(&k_mag, &h, &(dhdx as f64), &(dhdy as f64));
 
       Ok((dxdt, dydt, dkxdt, dkydt))
    }
@@ -211,9 +211,9 @@ impl BathymetryData for ConstantDepth {
        Ok(self.h)
    }
 
-   fn get_depth_and_gradient(&self, x: &f32, y: &f32) -> Result<(f32, (f32, f32)), Error> {
+   fn get_depth_and_gradient(&self, x: &f32, y: &f32) -> Result<(f32, f32, f32), Error> {
       Ok(
-         (self.h, (0.0, 0.0))
+         (self.h, 0.0, 0.0)
       )
    }
 }
@@ -231,12 +231,12 @@ impl BathymetryData for ArrayDepth {
        Ok(self.array[*x as usize][*y as usize]) // FIXME: since x and y are floats, they are truncated or rounded to a usize. I probably want a better interpolation estimate
    }
 
-   fn get_depth_and_gradient(&self, x: &f32, y: &f32) -> Result<(f32, (f32, f32)), Error> {
+   fn get_depth_and_gradient(&self, x: &f32, y: &f32) -> Result<(f32, f32, f32), Error> {
       if *x as usize >= self.array.len() || *y as usize >= self.array.len() {
-         return Ok((f32::NAN, (f32::NAN, f32::NAN)));
+         return Ok((f32::NAN, f32::NAN, f32::NAN));
       }
        Ok(
-         (self.array[*x as usize][*y as usize], (0.0, 0.0))
+         (self.array[*x as usize][*y as usize], 0.0, 0.0)
        )
    }
 }
