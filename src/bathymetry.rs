@@ -455,10 +455,20 @@ pub(crate) mod cartesian {
             create_file(lockfile.path(), 101, 51, 500.0, 500.0);
 
             let data = CartesianFile::new(Path::new(lockfile.path()));
-            assert!((data.get_depth(&10099.0, &5099.0).unwrap() - 20.0).abs() < f32::EPSILON);
-            assert!((data.get_depth(&30099.0, &5090.0).unwrap() - 5.0).abs() < f32::EPSILON);
-            assert!((data.get_depth(&10099.0, &15099.0).unwrap() - 10.0).abs() < f32::EPSILON);
-            assert!((data.get_depth(&30099.0, &15099.0).unwrap() - 15.0).abs() < f32::EPSILON);
+
+            // check to see if depth is the same as above
+            let check_depth = vec![
+                (10099.0, 5099.0, 20.0),
+                (30099.0, 5099.0, 5.0),
+                (10099.0, 15099.0, 10.0),
+                (30099.0, 15099.0, 15.0)
+            ];
+
+            for (x, y, h) in &check_depth {
+                let depth = data.get_depth_and_gradient(x, y).unwrap().0;
+                assert!((depth - h).abs() < f32::EPSILON, "Expected {}, but got {}", h, depth);
+            }
+
         }
 
 
@@ -511,11 +521,18 @@ pub(crate) mod cartesian {
 
             let data = CartesianFile::new(Path::new(lockfile.path()));
 
-            assert!((data.get_depth(&23000.0, &20000.0).unwrap() - 10.0).abs() < f32::EPSILON, "Expected {}, but got {}", 10.0, data.get_depth(&23000.0, &20000.0).unwrap());
-            assert!((data.get_depth(&10000.0, &12500.0).unwrap() - 12.5).abs() < f32::EPSILON, "Expected {}, but got {}", 12.5, data.get_depth(&10000.0, &12500.0).unwrap());
-            assert!((data.get_depth(&25000.0, &5000.0).unwrap() - 8.75).abs() < f32::EPSILON, "Expected {}, but got {}", 8.75, data.get_depth(&25000.0, &5000.0).unwrap());
-            assert!((data.get_depth(&40000.0, &12500.0).unwrap() - 12.5).abs() < f32::EPSILON, "Expected {}, but got {}", 12.5, data.get_depth(&40000.0, &12500.0).unwrap());
-            assert!((data.get_depth(&25000.0, &12500.0).unwrap() - 11.25).abs() < f32::EPSILON, "Expected {}, but got {}", 11.25, data.get_depth(&25000.0, &12500.0).unwrap())
+            // check to see if depth is the same as above
+            let check_depth = vec![
+                (23000.0, 20000.0, 10.0),
+                (10000.0, 12500.0, 12.5),
+                (25000.0, 5000.0, 8.75),
+                (40000.0, 12500.0, 12.5)
+            ];
+
+            for (x, y, h) in &check_depth {
+                let depth = data.get_depth_and_gradient(x, y).unwrap().0;
+                assert!((depth - h).abs() < f32::EPSILON, "Expected {}, but got {}", h, depth);
+            }
 
         }
 
@@ -547,21 +564,32 @@ pub(crate) mod cartesian {
 
             let data = CartesianFile::new(Path::new(lockfile.path()));
 
-            // test to check depth is the same.
-            assert!((data.get_depth_and_gradient(&23000.0, &20000.0).unwrap().0 - 10.0).abs() < f32::EPSILON, "Expected {}, but got {}", 10.0, data.get_depth(&23000.0, &20000.0).unwrap());
-            assert!((data.get_depth_and_gradient(&10000.0, &12500.0).unwrap().0 - 12.5).abs() < f32::EPSILON, "Expected {}, but got {}", 12.5, data.get_depth(&10000.0, &12500.0).unwrap());
-            assert!((data.get_depth_and_gradient(&25000.0, &5000.0).unwrap().0 - 8.75).abs() < f32::EPSILON, "Expected {}, but got {}", 8.75, data.get_depth(&25000.0, &5000.0).unwrap());
-            assert!((data.get_depth_and_gradient(&40000.0, &12500.0).unwrap().0 - 12.5).abs() < f32::EPSILON, "Expected {}, but got {}", 12.5, data.get_depth(&40000.0, &12500.0).unwrap());
-            assert!((data.get_depth_and_gradient(&25000.0, &12500.0).unwrap().0 - 11.25).abs() < f32::EPSILON, "Expected {}, but got {}", 11.25, data.get_depth(&25000.0, &12500.0).unwrap());
+            // check to see if depth is the same as above
+            let check_depth = vec![
+                (23000.0, 20000.0, 10.0),
+                (10000.0, 12500.0, 12.5),
+                (25000.0, 5000.0, 8.75),
+                (40000.0, 12500.0, 12.5)
+            ];
 
+            for (x, y, h) in &check_depth {
+                let depth = data.get_depth_and_gradient(x, y).unwrap().0;
+                assert!((depth - h).abs() < f32::EPSILON, "Expected {}, but got {}", h, depth);
+            }
 
-            // test to make sure gradient is correct
-            assert!((data.get_depth_and_gradient(&5000.0, &5000.0).unwrap().1.0 - 0.0).abs() < f32::EPSILON);
-            assert!((data.get_depth_and_gradient(&5000.0, &5000.0).unwrap().1.1 - 0.0).abs() < f32::EPSILON);
-            assert!((data.get_depth_and_gradient(&1234.0, &1234.0).unwrap().1.0 - 0.0).abs() < f32::EPSILON);
-            assert!((data.get_depth_and_gradient(&1234.0, &1234.0).unwrap().1.1 - 0.0).abs() < f32::EPSILON);
-            assert!((data.get_depth_and_gradient(&25000.0, &12500.0).unwrap().1.0 - -0.005).abs() < f32::EPSILON);
-            assert!((data.get_depth_and_gradient(&25000.0, &12500.0).unwrap().1.1 - 0.01).abs() < f32::EPSILON);
+            // check to see if gradient is the same
+            let check_gradient = vec![
+                (5000.0, 5000.0, 0.0, 0.0),
+                (1234.0, 1234.0, 0.0, 0.0),
+                (25000.0, 12500.0, -0.005, 0.01),
+            ];
+
+            for (x, y, dhdx, dhdy) in &check_gradient {
+                let x_grad = data.get_depth_and_gradient(x, y).unwrap().1.0;
+                let y_grad = data.get_depth_and_gradient(x, y).unwrap().1.1;
+                assert!((x_grad - dhdx).abs() < f32::EPSILON, "Expected {}, but got {}", dhdx, x_grad);
+                assert!((y_grad - dhdy).abs() < f32::EPSILON, "Expected {}, but got {}", dhdy, y_grad);
+            }
 
         }
 
