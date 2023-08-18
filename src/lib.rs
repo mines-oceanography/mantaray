@@ -70,26 +70,30 @@ const G: f64 = 9.8;
 /// 
 /// # Panics
 /// The function will panic if it can not read or write to the file.
-fn output_to_file(system: WaveRayPath, t0: f64, y0: State, tf: f64, step_size: f64) -> Result<File, Error> {
+fn output_to_file(
+    system: WaveRayPath,
+    t0: f64,
+    y0: State,
+    tf: f64,
+    step_size: f64,
+) -> Result<File, Error> {
+    let mut stepper = Rk4::new(system, t0, y0, tf, step_size);
+    let res = stepper.integrate();
+    if res.is_err() {
+        return Err(Error::Undefined);
+    }
+    let y = stepper.y_out();
 
-   let mut stepper = Rk4::new(system, t0, y0, tf, step_size);
-   let res = stepper.integrate();
-   if res.is_err() {
-      return Err(Error::Undefined);
-   }
-   let y = stepper.y_out();
-   
-   let mut file = File::create("y_out.txt").expect("could not open file");
-   writeln!(&mut file, "t x y kx ky").expect("could not write to file");
-   for (i, x) in stepper.x_out().iter().enumerate() {
-      write!(&mut file, "{x} ").expect("could not write to file");
-      for elem in y[i].iter() {
-         write!(&mut file, "{elem} ").expect("could not write to file");
-      }
-      writeln!(&mut file, " ").expect("could not write to file");
-   }
-   Ok(file)
-
+    let mut file = File::create("y_out.txt")?;
+    writeln!(&mut file, "t x y kx ky")?;
+    for (i, x) in stepper.x_out().iter().enumerate() {
+        write!(&mut file, "{x} ")?;
+        for elem in y[i].iter() {
+            write!(&mut file, "{elem} ")?;
+        }
+        writeln!(&mut file, " ")?;
+    }
+    Ok(file)
 }
 
 impl<'a> WaveRayPath<'a> {
