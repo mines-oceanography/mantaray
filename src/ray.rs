@@ -89,24 +89,18 @@ impl<'a> SingleRay<'a> {
             self.initial_conditions.2, self.initial_conditions.3
         );
         let mut stepper = Box::new(Rk4::new(system, start_time, s0, end_time, step_size));
-        if stepper.integrate().is_ok() {
+        stepper.integrate()?;
+        // return the stepper results
+        let x_out: &XOut = stepper.x_out();
+        let y_out: &YOut = stepper.y_out();
 
-            // return the stepper results
-            let x_out: &XOut = stepper.x_out();
-            let y_out: &YOut = stepper.y_out();
-
-            // FIXME: how to prevent copying this data? This will take longer,
-            // since it has to copy the data over, but I don't see another way
-            // since stepper is a local variable, and when it goes out of scope,
-            // it's references will too. The solution is I need to figure out
-            // the type of stepper and have it be stored inside Single as a
-            // member variable.
-            Ok((x_out.clone(), y_out.clone()))
-
-        } else {
-            Err(Error::IntegrationError)
-        }
-
+        // FIXME: how to prevent copying this data? This will take longer,
+        // since it has to copy the data over, but I don't see another way
+        // since stepper is a local variable, and when it goes out of scope,
+        // it's references will too. The solution is I need to figure out
+        // the type of stepper and have it be stored inside Single as a
+        // member variable.
+        Ok((x_out.clone(), y_out.clone()))
     }
 
     /// set the initial conditions

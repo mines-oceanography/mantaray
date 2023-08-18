@@ -22,10 +22,9 @@ pub(crate) enum Error {
     /// The index is out of bounds of the array and would panic if attempted to access array.
     IndexOutOfBounds,
 
-    #[error("Error during `ode_solvers` integration")]
-    /// There was an error during integration using `ode_solvers`
-    IntegrationError,
-
     #[error(transparent)]
     IOError(#[from] std::io::Error),
+
+    #[error(transparent)]
+    IntegrationError(#[from] ode_solvers::dop_shared::IntegrationError),
 }
