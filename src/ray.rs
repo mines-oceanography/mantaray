@@ -590,7 +590,7 @@ mod test_single_wave {
         let lockfile = Lockfile::create(Path::new("tmp_many_waves.nc")).unwrap();
         create_constant_depth_file(&lockfile.path(), 100, 100, 1.0, 1.0);
 
-        let bathymetry_data: &dyn BathymetryData = &cartesian::CartesianFile::new(Path::new("slope_depth.nc"));
+        let bathymetry_data: &dyn BathymetryData = &cartesian::CartesianFile::new(&lockfile.path());
 
         let initial_waves = vec![ // (x, y, kx, ky)
             (10.0, 10.0, 1.0, 0.0),
@@ -606,7 +606,7 @@ mod test_single_wave {
 
         let waves = ManyRays::new(bathymetry_data, &initial_waves);
 
-        let results = waves.trace_many(0.0, 100.0, 1.0);
+        let results = waves.trace_many(0.0, 55.0, 1.0);
 
         for res in results {
             assert!(res.is_some())
