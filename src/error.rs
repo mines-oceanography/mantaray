@@ -4,6 +4,7 @@
 
 #[derive(Debug, thiserror::Error)]
 pub(crate) enum Error {
+    #[allow(dead_code)]
     #[error("Undefined error")]
     /// The undefined error will be used as a placeholder for all other errors.
     /// Two known errors that are currently undefined but need their own instance
