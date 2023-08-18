@@ -7,7 +7,7 @@ pub(crate) trait BathymetryData {
     /// Returns the nearest depth for the given x, y coordinate.
     fn get_depth(&self, x: &f32, y: &f32) -> Result<f32, Error>;
     /// Returns the nearest depth and depth gradient for the given x, y coordinates
-    fn get_depth_and_gradient(&self, x: &f32, y: &f32) -> Result<(f32, f32, f32), Error>;
+    fn get_depth_and_gradient(&self, x: &f32, y: &f32) -> Result<(f32, (f32, f32)), Error>;
 }
 
 
@@ -83,8 +83,8 @@ pub(crate) mod cartesian {
         /// - y coordinate
         /// 
         /// # Returns
-        /// `Result<(f32, f32, f32), Error>`
-        /// - `Ok((f32, f32, f32))` : (h, dhdx, dhdy), the depth and gradient at the point
+        /// `Result<(f32, (f32, f32)), Error>`
+        /// - `Ok((f32, (f32, f32)))` : (h, (dhdx, dhdy)), the depth and gradient at the point
         /// - `Err(Error)` : error during execution of `get_depth`.
         /// 
         /// # Errors
@@ -92,9 +92,9 @@ pub(crate) mod cartesian {
         /// `x` or `y` input give an out of bounds output.
         /// - `Error::InvalidArgument` : this error is returned from
         ///   `interpolator::bilinear` due to incorrect argument passed.
-        fn get_depth_and_gradient(&self, x: &f32, y: &f32) -> Result<(f32, f32, f32), Error> {
+        fn get_depth_and_gradient(&self, x: &f32, y: &f32) -> Result<(f32, (f32, f32)), Error> {
             if x.is_nan() || y.is_nan() {
-                return Ok((f32::NAN, f32::NAN, f32::NAN));
+                return Ok((f32::NAN, (f32::NAN, f32::NAN)));
             }
 
             // find nearest and surrounding edge points
@@ -130,7 +130,7 @@ pub(crate) mod cartesian {
             ) / (2.0 * y_space);
 
             Ok(
-                ( depth, x_grad, y_grad )
+                ( depth, (x_grad, y_grad) )
             )
         }
 
@@ -585,8 +585,8 @@ pub(crate) mod cartesian {
             ];
 
             for (x, y, dhdx, dhdy) in &check_gradient {
-                let x_grad = data.get_depth_and_gradient(x, y).unwrap().1;
-                let y_grad = data.get_depth_and_gradient(x, y).unwrap().2;
+                let x_grad = data.get_depth_and_gradient(x, y).unwrap().1.0;
+                let y_grad = data.get_depth_and_gradient(x, y).unwrap().1.1;
                 assert!((x_grad - dhdx).abs() < f32::EPSILON, "Expected {}, but got {}", dhdx, x_grad);
                 assert!((y_grad - dhdy).abs() < f32::EPSILON, "Expected {}, but got {}", dhdy, y_grad);
             }
