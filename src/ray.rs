@@ -32,7 +32,7 @@ impl<'a> ManyRays<'a> {
 
         // create a vector of SingleRays
         let rays: Vec<SingleRay> = self.init_rays
-            .par_iter()
+            .iter()
             .map(|(x0, y0, kx0, ky0)| {
                 SingleRay::new(self.bathymetry_data, *x0, *y0, *kx0, *ky0)
             })
@@ -40,7 +40,7 @@ impl<'a> ManyRays<'a> {
 
         // integrate each. I think here is where I would use `par_iter` from rayon in the future.
         let results: Vec<Option<(XOut, YOut)>> = rays
-            .par_iter()
+            .iter()
             .map(|r| {
                 match r.trace_individual(start_time, end_time, step_size) {
                     Ok(v) => Some(v),
