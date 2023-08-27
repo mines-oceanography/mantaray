@@ -40,10 +40,12 @@ impl BathymetryData for ConstantDepth {
 }
 
 impl ConstantDepth {
+    #[allow(dead_code)]
     fn builder() -> ConstantDepthBuilder {
         ConstantDepthBuilder::default()
     }
 
+    #[allow(dead_code)]
     pub(crate) fn new(h: f32) -> ConstantDepth {
         ConstantDepth { h }
     }

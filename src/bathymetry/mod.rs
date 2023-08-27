@@ -3,6 +3,7 @@
 mod constant_depth;
 
 use crate::error::Error;
+#[allow(unused_imports)]
 pub(super) use constant_depth::ConstantDepth;
 
 /// A trait used to give the function get_depth
@@ -138,6 +139,7 @@ pub(crate) mod cartesian {
     }
 
     impl CartesianFile {
+        #[allow(dead_code)]
         /// Construct CartesianFile
         ///
         /// # Arguments
