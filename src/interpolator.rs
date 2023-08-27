@@ -2,10 +2,12 @@
 //! 
 //! Contains the bilinear_interpolator function
 
+use crate::error::Error;
+
 #[allow(dead_code)]
 /// Bilinear interpolation 
 /// 
-/// Performs operations to calculate bilinear interpolation at target point t
+/// Performs operations to calculate bilinear interpolation at target point
 /// 
 /// # Arguments
 /// `points` : `&Vec<(i32, i32, f64)>`
@@ -15,24 +17,29 @@
 /// `target` : `&(f64, f64)`
 /// - the target point must be contained within the square of the points.
 /// 
-/// # Panics
-/// There are two ways for the function to panic, which should only happen due
-/// to incorrect arguments passed.
-/// - if the length of the inputted points vector is not 4.
-/// - if the determinant is 0.
+/// # Returns
+/// `Result<f32, Error>`
+/// - `Ok(f32)` : interpolated depth
+/// - `Err(Error)` : argument passed `points` is invalid
+/// 
+/// # Errors
+/// `Error::InvalidArgument` : either the number of points is not equal to 4, or
+/// the determinant of the change of basis matrix equals zero.
 /// 
 /// # Note
 /// The points must be in correct order since the function assumes they are. It
 /// will not give any error, but will return a value that is incorrect. In the
 /// future, this function will enforce order of the points.
-fn bilinear(points: &Vec<(i32, i32, f64)>, target: &(f64, f64)) -> f64 {
+pub(crate) fn bilinear(points: &Vec<(f32, f32, f32)>, target: &(f32, f32)) -> Result<f32, Error> {
     // verify quadrilateral input
-    assert!(points.len() == 4);
+    if points.len() != 4 {
+        return Err(Error::InvalidArgument);
+    }
 
     // check if target is coincident with a point
     for point in points {
-        if target.0 == point.0 as f64 && target.1 == point.1 as f64 {
-            return point.2;
+        if target.0 == point.0 && target.1 == point.1  {
+            return Ok(point.2);
         }
     }
 
@@ -47,21 +54,21 @@ fn bilinear(points: &Vec<(i32, i32, f64)>, target: &(f64, f64)) -> f64 {
     let bt = (b.0 - a.0, b.1 - a.1, b.2);
     let ct = (c.0 - a.0, c.1 - a.1, c.2);
     let dt = (d.0 - a.0, d.1 - a.1, d.2);
-    let tt =(target.0 - a.0 as f64, target.1 - a.1 as f64);
-    println!("{:?}, {:?}, {:?}, {:?}", at, bt, ct, dt);
+    let tt =(target.0 - a.0, target.1 - a.1);
 
     // change basis of target point
-    let det_bd = ((bt.0 * dt.1) - (dt.0 * bt.1)) as f64;
-    assert!(det_bd != 0.0);
+    let det_bd = (bt.0 * dt.1) - (dt.0 * bt.1);
+    if det_bd == 0.0 {
+        return Err(Error::InvalidArgument);
+    }
     // create inverse change of basis matrix
     let cbm = vec![
-        vec![dt.1 as f64 / det_bd, -(dt.0 as f64 / det_bd)],
-        vec![-(bt.1 as f64 / det_bd), bt.0 as f64 / det_bd]
+        vec![dt.1 / det_bd, -(dt.0 / det_bd)],
+        vec![-(bt.1 / det_bd), bt.0 / det_bd]
     ];
     // calculate new target x and y coordinates (between 0 and 1)
     let x = cbm[0][0] * tt.0 + cbm[0][1] * tt.1;
     let y = cbm[1][0] * tt.0 + cbm[1][1] * tt.1;
-    println!("x: {}, y: {}", x, y);
 
     // compute final value for the target position (bilinear interpolation)
     let a00 = a.2;
@@ -69,7 +76,7 @@ fn bilinear(points: &Vec<(i32, i32, f64)>, target: &(f64, f64)) -> f64 {
     let a01 = d.2 - a.2;  // change in the function's values at the points on the top and bottom at the same x
     let a11 = c.2 - a.2 - a10 - a01;  // change in x times the change in y
 
-    a00 + a10 * x + a01 * y + a11 * x * y
+    Ok(a00 + a10 * x + a01 * y + a11 * x * y)
 
 }
 
@@ -79,7 +86,7 @@ fn test_interp() {
     // points must be in clockwise (relative) order to each other with respect to the center of the square.
 
     let check_interp = [
-        (20.0, 23.0, -77, -19, 123, 145, 10.0, 20.0, 30.0, 40.0, 1230, 19.971951219512192),
+        (20.0, 23.0, -77.0, -19.0, 123.0, 145.0, 10.0, 20.0, 30.0, 40.0, 1230.0, 19.971951219512192),
     ];
 
     for (x, y, x1, y1, x2, y2, q11, q21, q12, q22, t, val) in check_interp {
@@ -90,9 +97,9 @@ fn test_interp() {
             (x2 + t, y1 + t, q21),
         ];
 
-        let target = (x + t as f64, y + t as f64);
-        let ans = bilinear(&points, &target);
-        assert!((ans - val).abs() < f64::EPSILON, "expected: {}. actual value: {}", val, ans);
+        let target = (x + t, y + t);
+        let ans = bilinear(&points, &target).unwrap();
+        assert!((ans - val).abs() < f32::EPSILON, "expected: {}. actual value: {}", val, ans);
     }
 }
 
@@ -101,10 +108,10 @@ fn test_interp() {
 fn test_edges() {
     // x, y, x1, y1, x2, y2, q11, q21, q12, q22, t, val
     let check_interp = [
-        (0.0, 0.0, 0, 0, 10, 10, 0.0, 5.0, 10.0, 15.0, 0, 0.0),
-        (10.0, 0.0, 0, 0, 10, 10, 0.0, 5.0, 10.0, 15.0, 0, 5.0),
-        (0.0, 10.0, 0, 0, 10, 10, 0.0, 5.0, 10.0, 15.0, 0, 10.0),
-        (10.0, 10.0, 0, 0, 10, 10, 0.0, 5.0, 10.0, 15.0, 0, 15.0),
+        (0.0, 0.0, 0.0, 0.0, 10.0, 10.0, 0.0, 5.0, 10.0, 15.0, 0.0, 0.0),
+        (10.0, 0.0, 0.0, 0.0, 10.0, 10.0, 0.0, 5.0, 10.0, 15.0, 0.0, 5.0),
+        (0.0, 10.0, 0.0, 0.0, 10.0, 10.0, 0.0, 5.0, 10.0, 15.0, 0.0, 10.0),
+        (10.0, 10.0, 0.0, 0.0, 10.0, 10.0, 0.0, 5.0, 10.0, 15.0, 0.0, 15.0),
     ];
 
     for (x, y, x1, y1, x2, y2, q11, q21, q12, q22, t, val) in check_interp {
@@ -115,8 +122,8 @@ fn test_edges() {
             (x2 + t, y1 + t, q21),
         ];
 
-        let target = (x + t as f64, y + t as f64);
-        let ans = bilinear(&points, &target);
-        assert!((ans - val).abs() < f64::EPSILON, "expected: {}. actual value: {}", val, ans);
+        let target = (x + t, y + t);
+        let ans = bilinear(&points, &target).unwrap();
+        assert!((ans - val).abs() < f32::EPSILON, "expected: {}. actual value: {}", val, ans);
     }
 }
