@@ -324,8 +324,10 @@ impl<'a> ode_solvers::System<State> for WaveRayPath<'a> {
 #[cfg(test)]
 /// tests for constant depth, constant group velocity
 mod test_constant_cg {
+    use crate::{
+        bathymetry::ConstantDepth, group_velocity, output_to_file, ArrayDepth, BathymetryData,
+    };
     use crate::{dk_vector_dt, State, WaveRayPath};
-    use crate::{group_velocity, output_to_file, ArrayDepth, BathymetryData, ConstantDepth};
     use ode_solvers::*;
 
     /// Runs ode solvers on the given check cases
@@ -402,7 +404,7 @@ mod test_constant_cg {
             // (0.0, 0.0, 0.0, 0.0) // this would cause panic
         ];
 
-        let data: &dyn BathymetryData = &ConstantDepth { h: 1000.0 };
+        let data: &dyn BathymetryData = &ConstantDepth::new(1000.0);
         let system = WaveRayPath::new(data);
 
         for (kx, ky, ans_dxdt, ans_dydt) in results {
@@ -423,7 +425,7 @@ mod test_constant_cg {
     #[test]
     /// all outputs should be NaN if k starts out of bounds
     fn test_zero_k() {
-        let data: &dyn BathymetryData = &ConstantDepth { h: 1000.0 };
+        let data: &dyn BathymetryData = &ConstantDepth::new(1000.0);
         let system = WaveRayPath::new(data);
         let y0 = State::new(0.0, 0.0, 0.0, 0.0);
 
@@ -443,7 +445,7 @@ mod test_constant_cg {
     #[test]
     /// Testing the ode_solvers Rk4 function only in the kx or ky direction
     fn test_axis() {
-        let data: &dyn BathymetryData = &ConstantDepth { h: 1000.0 };
+        let data: &dyn BathymetryData = &ConstantDepth::new(1000.0);
         // answers should be the square root of gravity
         let check_axis = [
             (0.0, 1.0, 0.0, (9.8_f64).sqrt() / 2.0),
@@ -479,7 +481,7 @@ mod test_constant_cg {
     #[test]
     /// if x input is NAN, the output x should be NaN. if k is zero, it will still error.
     fn test_x_nan() {
-        let data: &dyn BathymetryData = &ConstantDepth { h: 1000.0 };
+        let data: &dyn BathymetryData = &ConstantDepth::new(1000.0);
         let system = WaveRayPath::new(data);
         let nan = f64::NAN;
         let y0 = State::new(nan, 0.0, 1.0, 0.0);
@@ -497,7 +499,7 @@ mod test_constant_cg {
     #[test]
     /// if y input is NAN, the output x should be NaN. if k is zero, it will still error.
     fn test_y_nan() {
-        let data: &dyn BathymetryData = &ConstantDepth { h: 1000.0 };
+        let data: &dyn BathymetryData = &ConstantDepth::new(1000.0);
         let system = WaveRayPath::new(data);
         let nan = f64::NAN;
         let y0 = State::new(0.0, nan, 1.0, 0.0);
@@ -515,7 +517,7 @@ mod test_constant_cg {
     #[test]
     /// if either k input is NAN, the output x and y should be NaN.
     fn test_kx_nan() {
-        let data: &dyn BathymetryData = &ConstantDepth { h: 1000.0 };
+        let data: &dyn BathymetryData = &ConstantDepth::new(1000.0);
         let system = WaveRayPath::new(data);
         let nan = f64::NAN;
         let y0 = State::new(0.0, 0.0, nan, 0.0);
@@ -534,7 +536,7 @@ mod test_constant_cg {
     #[test]
     /// if either k input is NAN, the output x and y should be NaN.
     fn test_ky_nan() {
-        let data: &dyn BathymetryData = &ConstantDepth { h: 1000.0 };
+        let data: &dyn BathymetryData = &ConstantDepth::new(1000.0);
         let system = WaveRayPath::new(data);
         let nan = f64::NAN;
         let y0 = State::new(0.0, 0.0, 0.0, nan);
@@ -553,7 +555,7 @@ mod test_constant_cg {
     #[test]
     /// test when d / wavelenth < 1 / 20
     fn test_shallow() {
-        let data: &dyn BathymetryData = &ConstantDepth { h: 0.1 };
+        let data: &dyn BathymetryData = &ConstantDepth::new(0.1);
         // the approximation is the square root of gravity * h, but are not, they get closer as d approaches 0.
         let check_axis = [
             // the numbers very close to zero are likely due to switching between f32 and f64
@@ -605,7 +607,7 @@ mod test_constant_cg {
     #[test]
     /// test writing a file
     fn write_file() {
-        let data: &dyn BathymetryData = &ConstantDepth { h: 1000.0 };
+        let data: &dyn BathymetryData = &ConstantDepth::new(1000.0);
         let system = WaveRayPath::new(data);
         let y0 = State::new(0.0, 0.0, 1.0, -1.0);
 

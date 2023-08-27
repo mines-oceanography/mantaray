@@ -24,6 +24,12 @@ impl BathymetryData for ConstantDepth {
     }
 }
 
+impl ConstantDepth {
+    pub(crate) fn new(h: f32) -> ConstantDepth {
+        ConstantDepth { h }
+    }
+}
+
 /// Read data from test_bathy_3.nc netcdf3 file that contains x, y, and depth
 pub(crate) mod cartesian {
 
