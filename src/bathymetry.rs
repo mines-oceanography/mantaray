@@ -1,5 +1,7 @@
 //! Bathymetry
 
+use derive_builder::Builder;
+
 use crate::error::Error;
 
 /// A trait used to give the function get_depth
@@ -10,7 +12,9 @@ pub(crate) trait BathymetryData {
     fn get_depth_and_gradient(&self, x: &f32, y: &f32) -> Result<(f32, (f32, f32)), Error>;
 }
 
+#[derive(Builder, Debug, PartialEq)]
 pub(crate) struct ConstantDepth {
+    #[builder(default = "1000.0")]
     h: f32,
 }
 
@@ -27,6 +31,17 @@ impl BathymetryData for ConstantDepth {
 impl ConstantDepth {
     pub(crate) fn new(h: f32) -> ConstantDepth {
         ConstantDepth { h }
+    }
+}
+
+#[cfg(test)]
+mod test_constantdepth {
+    use super::{ConstantDepth, ConstantDepthBuilder};
+
+    #[test]
+    fn build() {
+        let c = ConstantDepthBuilder::default().build().unwrap();
+        assert_eq!(c, ConstantDepth { h: 1000.0 });
     }
 }
 
