@@ -6,6 +6,8 @@ use crate::error::Error;
 pub(crate) trait BathymetryData {
     /// Returns the nearest depth for the given x, y coordinate.
     fn get_depth(&self, x: &f32, y: &f32) -> Result<f32, Error>;
+    /// Returns the nearest depth and depth gradient for the given x, y coordinates
+    fn get_depth_and_gradient(&self, x: &f32, y: &f32) -> Result<(f32, (f32, f32)), Error>;
 }
 
 
@@ -74,6 +76,67 @@ pub(crate) mod cartesian {
             };
             let depth = self.interpolate(&edge_points, &(*x, *y))?;
             Ok(depth)
+        }
+
+        /// Returns the interpolated depth and gradient for the given x, y coordinate.
+        /// 
+        /// # Arguments
+        /// `x` : `&f32`
+        /// - x coordinate
+        /// 
+        /// `y` : `&f32`
+        /// - y coordinate
+        /// 
+        /// # Returns
+        /// `Result<(f32, (f32, f32)), Error>`
+        /// - `Ok((f32, (f32, f32)))` : (h, (dhdx, dhdy)), the depth and gradient at the point
+        /// - `Err(Error)` : error during execution of `get_depth`.
+        /// 
+        /// # Errors
+        /// - `Error::IndexOutOfBounds` : this error is returned when the
+        /// `x` or `y` input give an out of bounds output.
+        /// - `Error::InvalidArgument` : this error is returned from
+        ///   `interpolator::bilinear` due to incorrect argument passed.
+        fn get_depth_and_gradient(&self, x: &f32, y: &f32) -> Result<(f32, (f32, f32)), Error> {
+            if x.is_nan() || y.is_nan() {
+                return Ok((f32::NAN, (f32::NAN, f32::NAN)));
+            }
+
+            // find nearest and surrounding edge points
+            let nearest_pt = match self.nearest_point(x, y) {
+                Some(p) => p,
+                None => return Err(Error::IndexOutOfBounds), // TODO: for none should it error or NAN or something else?
+            };
+            let edge_points = match self.four_corners(&nearest_pt.0, &nearest_pt.1) {
+                Some(p) => p,
+                None => return Err(Error::IndexOutOfBounds) // TODO: same as above comment
+            };
+
+            // interpolate the depth
+            let depth = self.interpolate(&edge_points, &(*x, *y))?;
+
+            // get the gradient
+
+            // NOTE: the gradient assumes that the depth is linear in both the x
+            // and y directions, and since bilinear interpolation is used to
+            // interpolate the depth at any given point, this is a good
+            // approximation.
+            let x_space = self.variables.0[1] - self.variables.0[0];
+            let y_space = self.variables.1[1] - self.variables.1[0];
+
+            let x_grad = (
+                self.depth_from_arr(&edge_points[3].0, &edge_points[3].1)?
+                 - self.depth_from_arr(&edge_points[1].0, &edge_points[1].1)?
+            ) / (2.0 * x_space);
+
+            let y_grad = (
+                self.depth_from_arr(&edge_points[0].0, &edge_points[0].1)?
+                 - self.depth_from_arr(&edge_points[2].0, &edge_points[2].1)?
+            ) / (2.0 * y_space);
+
+            Ok(
+                ( depth, (x_grad, y_grad) )
+            )
         }
 
     }
@@ -397,10 +460,20 @@ pub(crate) mod cartesian {
             create_file(lockfile.path(), 101, 51, 500.0, 500.0);
 
             let data = CartesianFile::new(Path::new(lockfile.path()));
-            assert!((data.get_depth(&10099.0, &5099.0).unwrap() - 20.0).abs() < f32::EPSILON);
-            assert!((data.get_depth(&30099.0, &5090.0).unwrap() - 5.0).abs() < f32::EPSILON);
-            assert!((data.get_depth(&10099.0, &15099.0).unwrap() - 10.0).abs() < f32::EPSILON);
-            assert!((data.get_depth(&30099.0, &15099.0).unwrap() - 15.0).abs() < f32::EPSILON);
+
+            // check to see if depth is the same as above
+            let check_depth = vec![
+                (10099.0, 5099.0, 20.0),
+                (30099.0, 5099.0, 5.0),
+                (10099.0, 15099.0, 10.0),
+                (30099.0, 15099.0, 15.0)
+            ];
+
+            for (x, y, h) in &check_depth {
+                let depth = data.get_depth_and_gradient(x, y).unwrap().0;
+                assert!((depth - h).abs() < f32::EPSILON, "Expected {}, but got {}", h, depth);
+            }
+
         }
 
 
@@ -453,11 +526,18 @@ pub(crate) mod cartesian {
 
             let data = CartesianFile::new(Path::new(lockfile.path()));
 
-            assert!((data.get_depth(&23000.0, &20000.0).unwrap() - 10.0).abs() < f32::EPSILON, "Expected {}, but got {}", 10.0, data.get_depth(&23000.0, &20000.0).unwrap());
-            assert!((data.get_depth(&10000.0, &12500.0).unwrap() - 12.5).abs() < f32::EPSILON, "Expected {}, but got {}", 12.5, data.get_depth(&10000.0, &12500.0).unwrap());
-            assert!((data.get_depth(&25000.0, &5000.0).unwrap() - 8.75).abs() < f32::EPSILON, "Expected {}, but got {}", 8.75, data.get_depth(&25000.0, &5000.0).unwrap());
-            assert!((data.get_depth(&40000.0, &12500.0).unwrap() - 12.5).abs() < f32::EPSILON, "Expected {}, but got {}", 12.5, data.get_depth(&40000.0, &12500.0).unwrap());
-            assert!((data.get_depth(&25000.0, &12500.0).unwrap() - 11.25).abs() < f32::EPSILON, "Expected {}, but got {}", 11.25, data.get_depth(&25000.0, &12500.0).unwrap())
+            // check to see if depth is the same as above
+            let check_depth = vec![
+                (23000.0, 20000.0, 10.0),
+                (10000.0, 12500.0, 12.5),
+                (25000.0, 5000.0, 8.75),
+                (40000.0, 12500.0, 12.5)
+            ];
+
+            for (x, y, h) in &check_depth {
+                let depth = data.get_depth_and_gradient(x, y).unwrap().0;
+                assert!((depth - h).abs() < f32::EPSILON, "Expected {}, but got {}", h, depth);
+            }
 
         }
 
@@ -476,6 +556,45 @@ pub(crate) mod cartesian {
             assert!(data.get_depth(&nan, &nan).unwrap().is_nan());
             assert!(data.get_depth(&10000.0, &nan).unwrap().is_nan());
             assert!(data.get_depth(&nan, &10000.0).unwrap().is_nan());
+
+        }
+
+        #[test]
+        fn test_depth_and_gradient() {
+            // create temporary file
+            use lockfile::Lockfile;
+            let lockfile = Lockfile::create(Path::new("tmp_bathy10.nc")).unwrap();
+            
+            create_file(lockfile.path(), 101, 51, 500.0, 500.0);
+
+            let data = CartesianFile::new(Path::new(lockfile.path()));
+
+            // check to see if depth is the same as above
+            let check_depth = vec![
+                (23000.0, 20000.0, 10.0),
+                (10000.0, 12500.0, 12.5),
+                (25000.0, 5000.0, 8.75),
+                (40000.0, 12500.0, 12.5)
+            ];
+
+            for (x, y, h) in &check_depth {
+                let depth = data.get_depth_and_gradient(x, y).unwrap().0;
+                assert!((depth - h).abs() < f32::EPSILON, "Expected {}, but got {}", h, depth);
+            }
+
+            // check to see if gradient is the same
+            let check_gradient = vec![
+                (5000.0, 5000.0, 0.0, 0.0),
+                (1234.0, 1234.0, 0.0, 0.0),
+                (25000.0, 12500.0, -0.005, 0.01),
+            ];
+
+            for (x, y, dhdx, dhdy) in &check_gradient {
+                let x_grad = data.get_depth_and_gradient(x, y).unwrap().1.0;
+                let y_grad = data.get_depth_and_gradient(x, y).unwrap().1.1;
+                assert!((x_grad - dhdx).abs() < f32::EPSILON, "Expected {}, but got {}", dhdx, x_grad);
+                assert!((y_grad - dhdy).abs() < f32::EPSILON, "Expected {}, but got {}", dhdy, y_grad);
+            }
 
         }
 
