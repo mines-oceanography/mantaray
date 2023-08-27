@@ -202,20 +202,6 @@ impl<'a> WaveRayPath<'a> {
     }
 }
 
-struct ConstantDepth {
-    h: f32,
-}
-
-impl BathymetryData for ConstantDepth {
-    fn get_depth(&self, _x: &f32, _y: &f32) -> Result<f32, Error> {
-        Ok(self.h)
-    }
-
-    fn get_depth_and_gradient(&self, x: &f32, y: &f32) -> Result<(f32, (f32, f32)), Error> {
-        Ok((self.h, (0.0, 0.0)))
-    }
-}
-
 struct ArrayDepth {
     array: Vec<Vec<f32>>,
 }

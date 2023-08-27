@@ -10,6 +10,20 @@ pub(crate) trait BathymetryData {
     fn get_depth_and_gradient(&self, x: &f32, y: &f32) -> Result<(f32, (f32, f32)), Error>;
 }
 
+pub(crate) struct ConstantDepth {
+    h: f32,
+}
+
+impl BathymetryData for ConstantDepth {
+    fn get_depth(&self, _x: &f32, _y: &f32) -> Result<f32, Error> {
+        Ok(self.h)
+    }
+
+    fn get_depth_and_gradient(&self, x: &f32, y: &f32) -> Result<(f32, (f32, f32)), Error> {
+        Ok((self.h, (0.0, 0.0)))
+    }
+}
+
 /// Read data from test_bathy_3.nc netcdf3 file that contains x, y, and depth
 pub(crate) mod cartesian {
 
