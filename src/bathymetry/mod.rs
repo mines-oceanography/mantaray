@@ -1,8 +1,9 @@
 //! Bathymetry
 
-use derive_builder::Builder;
+mod constant_depth;
 
 use crate::error::Error;
+pub(super) use constant_depth::ConstantDepth;
 
 /// A trait used to give the function get_depth
 pub(crate) trait BathymetryData {
@@ -10,45 +11,6 @@ pub(crate) trait BathymetryData {
     fn get_depth(&self, x: &f32, y: &f32) -> Result<f32, Error>;
     /// Returns the nearest depth and depth gradient for the given x, y coordinates
     fn get_depth_and_gradient(&self, x: &f32, y: &f32) -> Result<(f32, (f32, f32)), Error>;
-}
-
-#[derive(Builder, Debug, PartialEq)]
-pub(crate) struct ConstantDepth {
-    #[builder(default = "1000.0")]
-    h: f32,
-}
-
-impl BathymetryData for ConstantDepth {
-    fn get_depth(&self, _x: &f32, _y: &f32) -> Result<f32, Error> {
-        Ok(self.h)
-    }
-
-    fn get_depth_and_gradient(&self, x: &f32, y: &f32) -> Result<(f32, (f32, f32)), Error> {
-        Ok((self.h, (0.0, 0.0)))
-    }
-}
-
-impl ConstantDepth {
-    pub(crate) fn new(h: f32) -> ConstantDepth {
-        ConstantDepth { h }
-    }
-}
-
-#[cfg(test)]
-mod test_constantdepth {
-    use super::{ConstantDepth, ConstantDepthBuilder};
-
-    #[test]
-    fn build_default() {
-        let c = ConstantDepthBuilder::default().build().unwrap();
-        assert_eq!(c, ConstantDepth { h: 1000.0 });
-    }
-
-    #[test]
-    fn build() {
-        let c = ConstantDepthBuilder::default().h(42.0).build().unwrap();
-        assert_eq!(c, ConstantDepth { h: 42.0 });
-    }
 }
 
 /// Read data from test_bathy_3.nc netcdf3 file that contains x, y, and depth
