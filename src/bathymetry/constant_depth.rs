@@ -13,7 +13,7 @@ impl BathymetryData for ConstantDepth {
         Ok(self.h)
     }
 
-    fn get_depth_and_gradient(&self, x: &f32, y: &f32) -> Result<(f32, (f32, f32)), Error> {
+    fn get_depth_and_gradient(&self, _x: &f32, _y: &f32) -> Result<(f32, (f32, f32)), Error> {
         Ok((self.h, (0.0, 0.0)))
     }
 }
