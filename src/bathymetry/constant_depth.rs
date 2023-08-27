@@ -19,13 +19,17 @@ impl BathymetryData for ConstantDepth {
 }
 
 impl ConstantDepth {
+    fn builder() -> ConstantDepthBuilder {
+        ConstantDepthBuilder::default()
+    }
+
     pub(crate) fn new(h: f32) -> ConstantDepth {
         ConstantDepth { h }
     }
 }
 
 #[cfg(test)]
-mod test_constantdepth {
+mod test_builder {
     use super::{ConstantDepth, ConstantDepthBuilder};
 
     #[test]
@@ -38,5 +42,11 @@ mod test_constantdepth {
     fn build() {
         let c = ConstantDepthBuilder::default().h(42.0).build().unwrap();
         assert_eq!(c, ConstantDepth { h: 42.0 });
+    }
+
+    #[test]
+    fn builder() {
+        let c = ConstantDepth::builder().build().unwrap();
+        assert_eq!(c, ConstantDepth { h: 1000.0 });
     }
 }
