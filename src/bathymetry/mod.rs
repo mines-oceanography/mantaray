@@ -2,12 +2,15 @@
 
 mod cartesian;
 mod constant_depth;
+mod constant_slope;
 
 use crate::error::Error;
 #[allow(unused_imports)]
 pub(super) use cartesian::CartesianFile;
 #[allow(unused_imports)]
 pub(super) use constant_depth::ConstantDepth;
+#[allow(unused_imports)]
+pub(super) use constant_slope::ConstantSlope;
 
 /// A trait used to give the function get_depth
 pub(crate) trait BathymetryData {
