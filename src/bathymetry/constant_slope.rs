@@ -29,7 +29,7 @@ impl BathymetryData for ConstantSlope {
         if x.is_nan() || y.is_nan() {
             Ok(f32::NAN)
         } else {
-            Ok(self.dx * (x - self.x0) + self.dy * (y - self.y0))
+            Ok(self.h0 + self.dx * (x - self.x0) + self.dy * (y - self.y0))
         }
     }
 
@@ -42,7 +42,7 @@ impl BathymetryData for ConstantSlope {
         if x.is_nan() || y.is_nan() {
             Ok((f32::NAN, (f32::NAN, f32::NAN)))
         } else {
-            let h = self.dx * (x - self.x0) + self.dy * (y - self.y0);
+            let h = self.h0 + self.dx * (x - self.x0) + self.dy * (y - self.y0);
             Ok((h, (self.dx, self.dy)))
         }
     }
