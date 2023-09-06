@@ -7,13 +7,13 @@ use derive_builder::Builder;
 ///
 /// This might be only useful for development and tests.
 pub(crate) struct ConstantSlope {
-    #[builder(default = "1000.0")]
+    #[builder(default = "50.0")]
     h0: f32,
     #[builder(default = "0.0")]
     x0: f32,
     #[builder(default = "0.0")]
     y0: f32,
-    #[builder(default = "1e-2")]
+    #[builder(default = "5e-2")]
     dx: f32,
     #[builder(default = "0.0")]
     dy: f32,
