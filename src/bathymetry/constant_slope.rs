@@ -3,7 +3,24 @@ use crate::error::Error;
 use derive_builder::Builder;
 
 #[derive(Builder, Debug, PartialEq)]
-/// A bathymetry database with constant slope
+/// A bathymetry pseudo-database with constant slope
+///
+/// # Arguments
+///
+/// * `h0`: Depth [m] at ($x_0$, $y_0$).
+/// * `x0`: `x` coordinate [m] where depth is `h0` at `y0`.
+/// * `y0`: `y` coordinate [m] where depth is `h0` at `x0`.
+/// * `dhdx`: Slope on x direction.
+/// * `dhdy`: Slope on y direction.
+///
+/// ConstantSlope can be build with default values, which is a convenient
+/// approach to build tests.
+///
+/// * Manual definition
+/// let bathymetry = ConstantSlope(100, 0, 0, -1e-2, 0);
+///
+/// * Using default values
+/// let h100 = ConstantSlope::builder().h0(100).build().unwrap();
 ///
 /// This might be only useful for development and tests.
 pub(crate) struct ConstantSlope {
