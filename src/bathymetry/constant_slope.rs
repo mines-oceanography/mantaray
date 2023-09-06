@@ -13,7 +13,7 @@ pub(crate) struct ConstantSlope {
     x0: f32,
     #[builder(default = "0.0")]
     y0: f32,
-    #[builder(default = "5e-2")]
+    #[builder(default = "-5e-2")]
     dhdx: f32,
     #[builder(default = "0.0")]
     dhdy: f32,
@@ -69,7 +69,7 @@ mod test_constant_slope {
             h0: 100.0,
             x0: 0.0,
             y0: 0.0,
-            dhdx: 1e-2,
+            dhdx: -1e-2,
             dhdy: 0.0,
         };
 
@@ -89,10 +89,10 @@ mod test_builder {
         assert_eq!(
             c,
             ConstantSlope {
-                h0: 1000.0,
+                h0: 50.0,
                 x0: 0.0,
                 y0: 0.0,
-                dhdx: 1e-2,
+                dhdx: -5e-2,
                 dhdy: 0.0
             }
         );
@@ -107,7 +107,7 @@ mod test_builder {
                 h0: 42.0,
                 x0: 0.0,
                 y0: 0.0,
-                dhdx: 1e-2,
+                dhdx: -5e-2,
                 dhdy: 0.0
             }
         );
@@ -119,10 +119,10 @@ mod test_builder {
         assert_eq!(
             c,
             ConstantSlope {
-                h0: 1000.0,
+                h0: 50.0,
                 x0: 0.0,
                 y0: 0.0,
-                dhdx: 1e-2,
+                dhdx: -5e-2,
                 dhdy: 0.0
             }
         );
