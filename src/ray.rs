@@ -1,9 +1,11 @@
 //! This module makes it easier to use the Rk4 ray tracing by encapsulating it
 //! with the SingleRay struct
 
+use rayon::prelude::*;
+
 use ode_solvers::{OVector, Rk4};
 
-use crate::{bathymetry::BathymetryData, error::Error, State, WaveRayPath};
+use crate::{BathymetryData, error::Error, State, WaveRayPath};
 use std::fs::File;
 use std::io::Write;
 use std::path::Path;
@@ -15,29 +17,30 @@ type YOut = Vec<OVector<f64, nalgebra::base::dimension::Const<4>>>;
 /// a struct that creates many rays
 struct ManyRays<'a> {
     bathymetry_data: &'a dyn BathymetryData,
-    num_rays: usize
+    /// a vector of initial x, y, kx, and ky values for the many waves
+    init_rays: &'a Vec<(f64, f64, f64, f64)>
 }
 
 impl<'a> ManyRays<'a> {
-    /// construct a new `ManyRays` from bathymetry and number of rays
-    fn new(bathymetry_data: &'a dyn BathymetryData, num_rays: usize) -> Self {
-        ManyRays { bathymetry_data, num_rays }
+    /// construct a new `ManyRays` from bathymetry and initial rays
+    fn new(bathymetry_data: &'a dyn BathymetryData, init_rays: &'a Vec<(f64, f64, f64, f64)>) -> Self {
+        ManyRays { bathymetry_data, init_rays }
     }
 
-    /// trace many rays
+    /// trace many rays given start and stop time, and step size (delta t)
     fn trace_many(&self, start_time: f64, end_time: f64, step_size: f64) -> Vec<Option<(XOut, YOut)>> {
 
         // create a vector of SingleRays
-        let rays: Vec<SingleRay> = (0..self.num_rays)
-            .map(|i| {
-                // create the group of waves here
-                todo!("Make a function to define the initial conditions for waves.")
+        let rays: Vec<SingleRay> = self.init_rays
+            .par_iter()
+            .map(|(x0, y0, kx0, ky0)| {
+                SingleRay::new(self.bathymetry_data, *x0, *y0, *kx0, *ky0)
             })
             .collect();
 
         // integrate each. I think here is where I would use `par_iter` from rayon in the future.
         let results: Vec<Option<(XOut, YOut)>> = rays
-            .iter()
+            .par_iter()
             .map(|r| {
                 match r.trace_individual(start_time, end_time, step_size) {
                     Ok(v) => Some(v),
@@ -191,7 +194,7 @@ mod test_single_wave {
     use lockfile::Lockfile;
     use std::path::Path;
 
-    use crate::bathymetry::{BathymetryData, CartesianFile};
+    use crate::{BathymetryData, bathymetry::cartesian::CartesianFile};
 
     use super::{output_to_tsv_file, SingleRay};
 
