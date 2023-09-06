@@ -14,9 +14,9 @@ pub(crate) struct ConstantSlope {
     #[builder(default = "0.0")]
     y0: f32,
     #[builder(default = "5e-2")]
-    dx: f32,
+    dhdx: f32,
     #[builder(default = "0.0")]
-    dy: f32,
+    dhdy: f32,
 }
 
 impl BathymetryData for ConstantSlope {
@@ -29,7 +29,7 @@ impl BathymetryData for ConstantSlope {
         if x.is_nan() || y.is_nan() {
             Ok(f32::NAN)
         } else {
-            Ok(self.h0 + self.dx * (x - self.x0) + self.dy * (y - self.y0))
+            Ok(self.h0 + self.dhdx * (x - self.x0) + self.dhdy * (y - self.y0))
         }
     }
 
@@ -42,8 +42,8 @@ impl BathymetryData for ConstantSlope {
         if x.is_nan() || y.is_nan() {
             Ok((f32::NAN, (f32::NAN, f32::NAN)))
         } else {
-            let h = self.h0 + self.dx * (x - self.x0) + self.dy * (y - self.y0);
-            Ok((h, (self.dx, self.dy)))
+            let h = self.h0 + self.dhdx * (x - self.x0) + self.dhdy * (y - self.y0);
+            Ok((h, (self.dhdx, self.dhdy)))
         }
     }
 }
@@ -69,8 +69,8 @@ mod test_constant_slope {
             h0: 100.0,
             x0: 0.0,
             y0: 0.0,
-            dx: 1e-2,
-            dy: 0.0,
+            dhdx: 1e-2,
+            dhdy: 0.0,
         };
 
         assert!(c.get_depth(&f32::NAN, &0.0).unwrap().is_nan());
@@ -92,8 +92,8 @@ mod test_builder {
                 h0: 1000.0,
                 x0: 0.0,
                 y0: 0.0,
-                dx: 1e-2,
-                dy: 0.0
+                dhdx: 1e-2,
+                dhdy: 0.0
             }
         );
     }
@@ -107,8 +107,8 @@ mod test_builder {
                 h0: 42.0,
                 x0: 0.0,
                 y0: 0.0,
-                dx: 1e-2,
-                dy: 0.0
+                dhdx: 1e-2,
+                dhdy: 0.0
             }
         );
     }
@@ -122,8 +122,8 @@ mod test_builder {
                 h0: 1000.0,
                 x0: 0.0,
                 y0: 0.0,
-                dx: 1e-2,
-                dy: 0.0
+                dhdx: 1e-2,
+                dhdy: 0.0
             }
         );
     }
