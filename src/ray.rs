@@ -23,12 +23,42 @@ struct ManyRays<'a> {
 
 impl<'a> ManyRays<'a> {
     /// construct a new `ManyRays` from bathymetry and initial rays
+    /// 
+    /// # Arguments
+    /// `bathymetry_data`: `&'a dyn BathymetryData`
+    /// - the data on depth that implements the `get_depth` and
+    ///   `get_depth_gradient` methods.
+    /// 
+    /// `init_rays`: `&'a Vec<(f64, f64, f64, f64)>`
+    /// - a vector of initial x, y, kx, and ky values for the many waves
+    /// 
+    /// # Returns
+    /// `Self`: a constructed `ManyRays` struct
     fn new(bathymetry_data: &'a dyn BathymetryData, init_rays: &'a Vec<(f64, f64, f64, f64)>) -> Self {
         ManyRays { bathymetry_data, init_rays }
     }
 
-    /// trace many rays given start and stop time, and step size (delta t)
-    fn trace_many(&self, start_time: f64, end_time: f64, step_size: f64) -> Vec<Option<(XOut, YOut)>> {
+    /// Trace many rays given start time, stop time, and step size (delta t)
+    /// 
+    /// Given the arguments, `trace_many` creates a vector of SingleRays,
+    /// integrates each ray, and returns the results.
+    /// 
+    /// Arguments:
+    /// 
+    /// `start_time`: `f64`
+    /// - the time the ray tracing begins.
+    /// 
+    /// `end_time`: `f64`
+    /// - the time the ray tracing is stopped.
+    /// 
+    /// `step_size`: `f64`
+    /// - the change in time between integration steps. Smaller step size
+    ///   produces more accurate result, but takes longer to run.
+    /// 
+    /// Returns: `Vec<Option<(XOut, YOut)>>`: A vector of optional values. Each
+    /// value in the vector is either `None`, which represents an error during
+    /// that ray's integration, or they are a tuple of (XOut, YOut).
+        fn trace_many(&self, start_time: f64, end_time: f64, step_size: f64) -> Vec<Option<(XOut, YOut)>> {
 
         // create a vector of SingleRays
         let rays: Vec<SingleRay> = self.init_rays
