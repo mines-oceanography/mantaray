@@ -224,7 +224,7 @@ mod test_single_wave {
     use lockfile::Lockfile;
     use std::path::Path;
 
-    use crate::{BathymetryData, bathymetry::cartesian::CartesianFile};
+    use crate::{BathymetryData, bathymetry::CartesianFile};
 
     use super::{output_to_tsv_file, SingleRay};
 
