@@ -224,7 +224,7 @@ mod test_single_wave {
     use lockfile::Lockfile;
     use std::path::Path;
 
-    use crate::{BathymetryData, bathymetry::{CartesianFile, ConstantSlope}};
+    use crate::{BathymetryData, bathymetry::{CartesianFile, ConstantSlope, ConstantDepth}};
 
     use super::{output_to_tsv_file, SingleRay};
 
@@ -405,10 +405,7 @@ mod test_single_wave {
     /// generate an output file showing ray tracing on a constant depth
     /// shallow wave propagating in the x direction.
     fn test_constant_wave_shallow_x() {
-        let lockfile = Lockfile::create(Path::new("tmp_constant_depth_shallow_x.nc")).unwrap();
-        create_constant_depth_file(&lockfile.path(), 100, 100, 1.0, 1.0);
-
-        let bathymetry_data: &dyn BathymetryData = &CartesianFile::new(&lockfile.path());
+        let bathymetry_data: &dyn BathymetryData = &ConstantDepth::new(10.0);
 
         let wave = SingleRay::new(bathymetry_data, 10.0, 50.0, 0.01, 0.0);
 
@@ -423,10 +420,7 @@ mod test_single_wave {
     /// generate an output file showing ray tracing on a constant depth
     /// shallow wave propagating at an angle in the x=y direction.
     fn test_constant_wave_shallow_xy() {
-        let lockfile = Lockfile::create(Path::new("tmp_constant_depth_shallow_xy.nc")).unwrap();
-        create_constant_depth_file(&lockfile.path(), 100, 100, 1.0, 1.0);
-
-        let bathymetry_data: &dyn BathymetryData = &CartesianFile::new(&lockfile.path());
+        let bathymetry_data: &dyn BathymetryData = &ConstantDepth::new(10.0);
 
         // test wave 2 starting in the corner
         let wave = SingleRay::new(bathymetry_data, 10.0, 10.0, 0.007, 0.007);
@@ -439,10 +433,7 @@ mod test_single_wave {
     /// generate an output file showing ray tracing on a constant depth
     /// deep wave propagating in the x direction.
     fn test_constant_wave_deep_x() {
-        let lockfile = Lockfile::create(Path::new("tmp_constant_depth_deep_x.nc")).unwrap();
-        create_constant_depth_file(&lockfile.path(), 100, 100, 1.0, 1.0);
-
-        let bathymetry_data: &dyn BathymetryData = &CartesianFile::new(&lockfile.path());
+        let bathymetry_data: &dyn BathymetryData = &ConstantDepth::new(10.0);
 
         // test wave 1
         let wave = SingleRay::new(bathymetry_data, 10.0, 50.0, 1.0, 0.0);
@@ -458,10 +449,7 @@ mod test_single_wave {
     /// generate an output file showing ray tracing on a constant depth
     /// deep wave propagating at an angle in the x=y direction.
     fn test_constant_wave_deep_xy() {
-        let lockfile = Lockfile::create(Path::new("tmp_constant_depth_deep_xy.nc")).unwrap();
-        create_constant_depth_file(&lockfile.path(), 100, 100, 1.0, 1.0);
-
-        let bathymetry_data: &dyn BathymetryData = &CartesianFile::new(&lockfile.path());
+        let bathymetry_data: &dyn BathymetryData = &ConstantDepth::new(10.0);
 
         let wave = SingleRay::new(bathymetry_data, 10.0, 10.0, 0.7, 0.7);
         let res = wave.trace_individual(0.0, 18.0, 1.0).unwrap();
