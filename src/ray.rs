@@ -228,65 +228,6 @@ mod test_single_wave {
 
     use super::{output_to_tsv_file, SingleRay};
 
-    /// Create a constant depth file
-    fn create_constant_depth_file(
-        path: &Path,
-        x_len: usize,
-        y_len: usize,
-        x_step: f32,
-        y_step: f32,
-    ) {
-        let x_data: Vec<f32> = (0..x_len).map(|x| x as f32 * x_step).collect();
-        let y_data: Vec<f32> = (0..y_len).map(|y| y as f32 * y_step).collect();
-        let depth_data: Vec<f64> = (0..(x_len * y_len)).map(|_| 10.0f64).collect();
-
-        // most below copied from the docs
-        use netcdf3::{DataSet, FileWriter, Version};
-        let y_dim_name: &str = "y";
-        let y_var_name: &str = y_dim_name;
-        let y_var_len: usize = y_len;
-
-        let x_dim_name: &str = "x";
-        let x_var_name: &str = x_dim_name;
-        let x_var_len: usize = x_len;
-
-        let depth_var_name: &str = "depth";
-        let depth_var_len: usize = depth_data.len();
-
-        // Create the NetCDF-3 definition
-        // ------------------------------
-        let data_set: DataSet = {
-            let mut data_set: DataSet = DataSet::new();
-            // Define the dimensions
-            data_set.add_fixed_dim(y_dim_name, y_var_len).unwrap();
-            data_set.add_fixed_dim(x_dim_name, x_var_len).unwrap();
-            // Define the variable
-            data_set.add_var_f32(y_var_name, &[y_dim_name]).unwrap();
-            data_set.add_var_f32(x_var_name, &[x_var_name]).unwrap();
-            data_set
-                .add_var_f64(depth_var_name, &[y_dim_name, x_var_name])
-                .unwrap();
-
-            data_set
-        };
-
-        // ...
-
-        // Create and write the NetCDF-3 file
-        // ----------------------------------
-        let mut file_writer: FileWriter = FileWriter::open(path).unwrap();
-        // Set the NetCDF-3 definition
-        file_writer.set_def(&data_set, Version::Classic, 0).unwrap();
-        assert_eq!(depth_var_len, x_var_len * y_var_len);
-        file_writer.write_var_f32(y_var_name, &y_data[..]).unwrap();
-        file_writer.write_var_f32(x_var_name, &x_data[..]).unwrap();
-        file_writer
-            .write_var_f64(depth_var_name, &depth_data[..])
-            .unwrap();
-        file_writer.close().unwrap();
-        // end of copied from docs
-    }
-
     /// Create a test file with depths split down the middle
     fn create_two_depth_file(path: &Path, x_len: usize, y_len: usize, x_step: f32, y_step: f32) {
         let x_data: Vec<f32> = (0..x_len).map(|x| x as f32 * x_step).collect();
@@ -342,63 +283,6 @@ mod test_single_wave {
         // end of copied from docs
     }
 
-    /// create a file that has a constant slope of 0.05 in the x direction
-    fn create_slope_file(path: &Path, x_len: usize, y_len: usize, x_step: f32, y_step: f32) {
-        let x_data: Vec<f32> = (0..x_len).map(|x| x as f32 * x_step).collect();
-        let y_data: Vec<f32> = (0..y_len).map(|y| y as f32 * y_step).collect();
-        let depth_data: Vec<f64> = (0..(x_len * y_len))
-            .map(|p| {
-                let loc = 2000 - (p % x_len);
-                loc as f64 * 0.05
-            })
-            .collect();
-
-        // most below copied from the docs
-        use netcdf3::{DataSet, FileWriter, Version};
-        let y_dim_name: &str = "y";
-        let y_var_name: &str = y_dim_name;
-        let y_var_len: usize = y_len;
-
-        let x_dim_name: &str = "x";
-        let x_var_name: &str = x_dim_name;
-        let x_var_len: usize = x_len;
-
-        let depth_var_name: &str = "depth";
-        let depth_var_len: usize = depth_data.len();
-
-        // Create the NetCDF-3 definition
-        // ------------------------------
-        let data_set: DataSet = {
-            let mut data_set: DataSet = DataSet::new();
-            // Define the dimensions
-            data_set.add_fixed_dim(y_dim_name, y_var_len).unwrap();
-            data_set.add_fixed_dim(x_dim_name, x_var_len).unwrap();
-            // Define the variable
-            data_set.add_var_f32(y_var_name, &[y_dim_name]).unwrap();
-            data_set.add_var_f32(x_var_name, &[x_var_name]).unwrap();
-            data_set
-                .add_var_f64(depth_var_name, &[y_dim_name, x_var_name])
-                .unwrap();
-
-            data_set
-        };
-
-        // ...
-
-        // Create and write the NetCDF-3 file
-        // ----------------------------------
-        let mut file_writer: FileWriter = FileWriter::open(path).unwrap();
-        // Set the NetCDF-3 definition
-        file_writer.set_def(&data_set, Version::Classic, 0).unwrap();
-        assert_eq!(depth_var_len, x_var_len * y_var_len);
-        file_writer.write_var_f32(y_var_name, &y_data[..]).unwrap();
-        file_writer.write_var_f32(x_var_name, &x_data[..]).unwrap();
-        file_writer
-            .write_var_f64(depth_var_name, &depth_data[..])
-            .unwrap();
-        file_writer.close().unwrap();
-        // end of copied from docs
-    }
 
     #[test]
     // this test does not check anything yet, but outputs the result to a space separated file
@@ -539,11 +423,7 @@ mod test_single_wave {
  #[cfg(test)]
  mod test_many_waves {
 
-    use std::path::Path;
-
-    use lockfile::Lockfile;
-
-    use crate::bathymetry::{BathymetryData, cartesian, ConstantSlope};
+    use crate::bathymetry::{BathymetryData, ConstantSlope};
 
     use super::ManyRays;
 

@@ -1,6 +1,6 @@
 //! Bathymetry
 
-pub(crate) mod cartesian;
+mod cartesian;
 mod constant_depth;
 mod constant_slope;
 
