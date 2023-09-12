@@ -370,6 +370,25 @@ mod test_constant_cg {
     }
 
     #[test]
+    fn test_zero_h() {
+        let data: &dyn BathymetryData = &ConstantDepth::new(0.0);
+        let system = WaveRayPath::new(data);
+        let y0 = State::new(0.0, 0.0, 1.0, 1.0);
+
+        let t0 = 0.0;
+        let tf = 10.0;
+        let step_size = 1.0;
+
+        let mut stepper = Rk4::new(system, t0, y0, tf, step_size);
+        let _ = stepper.integrate();
+
+        assert!(stepper.y_out().last().unwrap().x.is_nan());
+        assert!(stepper.y_out().last().unwrap().y.is_nan());
+        assert!(stepper.y_out().last().unwrap().z.is_nan());
+        assert!(stepper.y_out().last().unwrap().w.is_nan());
+    }
+
+    #[test]
     /// Testing the ode_solvers Rk4 function only in the kx or ky direction
     fn test_axis() {
         let data: &dyn BathymetryData = &ConstantDepth::new(1000.0);
