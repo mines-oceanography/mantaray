@@ -67,7 +67,7 @@ impl BathymetryData for ConstantSlope {
 
 impl ConstantSlope {
     #[allow(dead_code)]
-    fn builder() -> ConstantSlopeBuilder {
+    pub(crate) fn builder() -> ConstantSlopeBuilder {
         ConstantSlopeBuilder::default()
     }
 }

@@ -1,9 +1,11 @@
 //! This module makes it easier to use the Rk4 ray tracing by encapsulating it
 //! with the SingleRay struct
 
+use rayon::prelude::*;
+
 use ode_solvers::{OVector, Rk4};
 
-use crate::{bathymetry::BathymetryData, error::Error, State, WaveRayPath};
+use crate::{BathymetryData, error::Error, State, WaveRayPath};
 use std::fs::File;
 use std::io::Write;
 use std::path::Path;
@@ -11,6 +13,80 @@ use std::path::Path;
 // define x_out and y_out types
 type XOut = Vec<f64>;
 type YOut = Vec<OVector<f64, nalgebra::base::dimension::Const<4>>>;
+
+/// a struct that creates many rays
+struct ManyRays<'a> {
+    bathymetry_data: &'a dyn BathymetryData,
+    /// a vector of initial x, y, kx, and ky values for the many waves
+    init_rays: &'a Vec<(f64, f64, f64, f64)>
+}
+
+impl<'a> ManyRays<'a> {
+    /// construct a new `ManyRays` from bathymetry and initial rays
+    /// 
+    /// # Arguments
+    /// `bathymetry_data`: `&'a dyn BathymetryData`
+    /// - the data on depth that implements the `get_depth` and
+    ///   `get_depth_gradient` methods.
+    /// 
+    /// `init_rays`: `&'a Vec<(f64, f64, f64, f64)>`
+    /// - a vector of initial x, y, kx, and ky values for the many waves
+    /// 
+    /// # Returns
+    /// `Self`: a constructed `ManyRays` struct
+    fn new(bathymetry_data: &'a dyn BathymetryData, init_rays: &'a Vec<(f64, f64, f64, f64)>) -> Self {
+        ManyRays { bathymetry_data, init_rays }
+    }
+
+    /// Trace many rays given start time, stop time, and step size (delta t)
+    /// 
+    /// Given the arguments, `trace_many` creates a vector of SingleRays,
+    /// integrates each ray, and returns the results.
+    /// 
+    /// Arguments:
+    /// 
+    /// `start_time`: `f64`
+    /// - the time the ray tracing begins.
+    /// 
+    /// `end_time`: `f64`
+    /// - the time the ray tracing is stopped.
+    /// 
+    /// `step_size`: `f64`
+    /// - the change in time between integration steps. Smaller step size
+    ///   produces more accurate result, but takes longer to run.
+    /// 
+    /// Returns: `Vec<Option<(XOut, YOut)>>`: A vector of optional values. Each
+    /// value in the vector is either `None`, which represents an error during
+    /// that ray's integration, or they are a tuple of (XOut, YOut).
+        fn trace_many(&self, start_time: f64, end_time: f64, step_size: f64) -> Vec<Option<(XOut, YOut)>> {
+
+        // create a vector of SingleRays
+        let rays: Vec<SingleRay> = self.init_rays
+            .par_iter()
+            .map(|(x0, y0, kx0, ky0)| {
+                SingleRay::new(self.bathymetry_data, *x0, *y0, *kx0, *ky0)
+            })
+            .collect();
+
+        // integrate each. I think here is where I would use `par_iter` from rayon in the future.
+        let results: Vec<Option<(XOut, YOut)>> = rays
+            .par_iter()
+            .map(|r| {
+                match r.trace_individual(start_time, end_time, step_size) {
+                    Ok(v) => Some(v),
+                    Err(e) => {
+                        println!("ERROR {} during intergration", e);
+                        None      
+                    }
+                }
+            })
+            .collect();
+
+        // return the results
+        results
+
+    }
+}
 
 // A struct with methods for tracing an individual wave and returning the result.
 struct SingleRay<'a> {
@@ -148,68 +224,9 @@ mod test_single_wave {
     use lockfile::Lockfile;
     use std::path::Path;
 
-    use crate::bathymetry::{BathymetryData, CartesianFile};
+    use crate::{BathymetryData, bathymetry::{CartesianFile, ConstantSlope, ConstantDepth}};
 
     use super::{output_to_tsv_file, SingleRay};
-
-    /// Create a constant depth file
-    fn create_constant_depth_file(
-        path: &Path,
-        x_len: usize,
-        y_len: usize,
-        x_step: f32,
-        y_step: f32,
-    ) {
-        let x_data: Vec<f32> = (0..x_len).map(|x| x as f32 * x_step).collect();
-        let y_data: Vec<f32> = (0..y_len).map(|y| y as f32 * y_step).collect();
-        let depth_data: Vec<f64> = (0..(x_len * y_len)).map(|_| 10.0f64).collect();
-
-        // most below copied from the docs
-        use netcdf3::{DataSet, FileWriter, Version};
-        let y_dim_name: &str = "y";
-        let y_var_name: &str = y_dim_name;
-        let y_var_len: usize = y_len;
-
-        let x_dim_name: &str = "x";
-        let x_var_name: &str = x_dim_name;
-        let x_var_len: usize = x_len;
-
-        let depth_var_name: &str = "depth";
-        let depth_var_len: usize = depth_data.len();
-
-        // Create the NetCDF-3 definition
-        // ------------------------------
-        let data_set: DataSet = {
-            let mut data_set: DataSet = DataSet::new();
-            // Define the dimensions
-            data_set.add_fixed_dim(y_dim_name, y_var_len).unwrap();
-            data_set.add_fixed_dim(x_dim_name, x_var_len).unwrap();
-            // Define the variable
-            data_set.add_var_f32(y_var_name, &[y_dim_name]).unwrap();
-            data_set.add_var_f32(x_var_name, &[x_var_name]).unwrap();
-            data_set
-                .add_var_f64(depth_var_name, &[y_dim_name, x_var_name])
-                .unwrap();
-
-            data_set
-        };
-
-        // ...
-
-        // Create and write the NetCDF-3 file
-        // ----------------------------------
-        let mut file_writer: FileWriter = FileWriter::open(path).unwrap();
-        // Set the NetCDF-3 definition
-        file_writer.set_def(&data_set, Version::Classic, 0).unwrap();
-        assert_eq!(depth_var_len, x_var_len * y_var_len);
-        file_writer.write_var_f32(y_var_name, &y_data[..]).unwrap();
-        file_writer.write_var_f32(x_var_name, &x_data[..]).unwrap();
-        file_writer
-            .write_var_f64(depth_var_name, &depth_data[..])
-            .unwrap();
-        file_writer.close().unwrap();
-        // end of copied from docs
-    }
 
     /// Create a test file with depths split down the middle
     fn create_two_depth_file(path: &Path, x_len: usize, y_len: usize, x_step: f32, y_step: f32) {
@@ -266,73 +283,13 @@ mod test_single_wave {
         // end of copied from docs
     }
 
-    /// create a file that has a constant slope of 0.05 in the x direction
-    fn create_slope_file(path: &Path, x_len: usize, y_len: usize, x_step: f32, y_step: f32) {
-        let x_data: Vec<f32> = (0..x_len).map(|x| x as f32 * x_step).collect();
-        let y_data: Vec<f32> = (0..y_len).map(|y| y as f32 * y_step).collect();
-        let depth_data: Vec<f64> = (0..(x_len * y_len))
-            .map(|p| {
-                let loc = 2000 - (p % x_len);
-                loc as f64 * 0.05
-            })
-            .collect();
-
-        // most below copied from the docs
-        use netcdf3::{DataSet, FileWriter, Version};
-        let y_dim_name: &str = "y";
-        let y_var_name: &str = y_dim_name;
-        let y_var_len: usize = y_len;
-
-        let x_dim_name: &str = "x";
-        let x_var_name: &str = x_dim_name;
-        let x_var_len: usize = x_len;
-
-        let depth_var_name: &str = "depth";
-        let depth_var_len: usize = depth_data.len();
-
-        // Create the NetCDF-3 definition
-        // ------------------------------
-        let data_set: DataSet = {
-            let mut data_set: DataSet = DataSet::new();
-            // Define the dimensions
-            data_set.add_fixed_dim(y_dim_name, y_var_len).unwrap();
-            data_set.add_fixed_dim(x_dim_name, x_var_len).unwrap();
-            // Define the variable
-            data_set.add_var_f32(y_var_name, &[y_dim_name]).unwrap();
-            data_set.add_var_f32(x_var_name, &[x_var_name]).unwrap();
-            data_set
-                .add_var_f64(depth_var_name, &[y_dim_name, x_var_name])
-                .unwrap();
-
-            data_set
-        };
-
-        // ...
-
-        // Create and write the NetCDF-3 file
-        // ----------------------------------
-        let mut file_writer: FileWriter = FileWriter::open(path).unwrap();
-        // Set the NetCDF-3 definition
-        file_writer.set_def(&data_set, Version::Classic, 0).unwrap();
-        assert_eq!(depth_var_len, x_var_len * y_var_len);
-        file_writer.write_var_f32(y_var_name, &y_data[..]).unwrap();
-        file_writer.write_var_f32(x_var_name, &x_data[..]).unwrap();
-        file_writer
-            .write_var_f64(depth_var_name, &depth_data[..])
-            .unwrap();
-        file_writer.close().unwrap();
-        // end of copied from docs
-    }
 
     #[test]
     // this test does not check anything yet, but outputs the result to a space separated file
     /// generate an output file showing ray tracing on a constant depth
     /// shallow wave propagating in the x direction.
     fn test_constant_wave_shallow_x() {
-        let lockfile = Lockfile::create(Path::new("tmp_constant_depth_shallow_x.nc")).unwrap();
-        create_constant_depth_file(&lockfile.path(), 100, 100, 1.0, 1.0);
-
-        let bathymetry_data: &dyn BathymetryData = &CartesianFile::new(&lockfile.path());
+        let bathymetry_data: &dyn BathymetryData = &ConstantDepth::new(10.0);
 
         let wave = SingleRay::new(bathymetry_data, 10.0, 50.0, 0.01, 0.0);
 
@@ -347,10 +304,7 @@ mod test_single_wave {
     /// generate an output file showing ray tracing on a constant depth
     /// shallow wave propagating at an angle in the x=y direction.
     fn test_constant_wave_shallow_xy() {
-        let lockfile = Lockfile::create(Path::new("tmp_constant_depth_shallow_xy.nc")).unwrap();
-        create_constant_depth_file(&lockfile.path(), 100, 100, 1.0, 1.0);
-
-        let bathymetry_data: &dyn BathymetryData = &CartesianFile::new(&lockfile.path());
+        let bathymetry_data: &dyn BathymetryData = &ConstantDepth::new(10.0);
 
         // test wave 2 starting in the corner
         let wave = SingleRay::new(bathymetry_data, 10.0, 10.0, 0.007, 0.007);
@@ -363,10 +317,7 @@ mod test_single_wave {
     /// generate an output file showing ray tracing on a constant depth
     /// deep wave propagating in the x direction.
     fn test_constant_wave_deep_x() {
-        let lockfile = Lockfile::create(Path::new("tmp_constant_depth_deep_x.nc")).unwrap();
-        create_constant_depth_file(&lockfile.path(), 100, 100, 1.0, 1.0);
-
-        let bathymetry_data: &dyn BathymetryData = &CartesianFile::new(&lockfile.path());
+        let bathymetry_data: &dyn BathymetryData = &ConstantDepth::new(10.0);
 
         // test wave 1
         let wave = SingleRay::new(bathymetry_data, 10.0, 50.0, 1.0, 0.0);
@@ -382,10 +333,7 @@ mod test_single_wave {
     /// generate an output file showing ray tracing on a constant depth
     /// deep wave propagating at an angle in the x=y direction.
     fn test_constant_wave_deep_xy() {
-        let lockfile = Lockfile::create(Path::new("tmp_constant_depth_deep_xy.nc")).unwrap();
-        create_constant_depth_file(&lockfile.path(), 100, 100, 1.0, 1.0);
-
-        let bathymetry_data: &dyn BathymetryData = &CartesianFile::new(&lockfile.path());
+        let bathymetry_data: &dyn BathymetryData = &ConstantDepth::new(10.0);
 
         let wave = SingleRay::new(bathymetry_data, 10.0, 10.0, 0.7, 0.7);
         let res = wave.trace_individual(0.0, 18.0, 1.0).unwrap();
@@ -463,26 +411,47 @@ mod test_single_wave {
     #[test]
     /// shallow water
     fn test_slope_depth_wave_x() {
-        let lockfile = Lockfile::create(Path::new("tmp_slope_depth_x.nc")).unwrap();
-        create_slope_file(&lockfile.path(), 2000, 2000, 1.0, 1.0);
-
-        let bathymetry_data: &dyn BathymetryData = &CartesianFile::new(&lockfile.path());
+        let bathymetry_data: &dyn BathymetryData = &ConstantSlope::builder().build().unwrap();
 
         let wave = SingleRay::new(bathymetry_data, 10.0, 1000.0, 0.01, 0.0);
         let res = wave.trace_individual(0.0, 100.0, 1.0).unwrap();
         let _ = output_to_tsv_file("slope_depth_x_out.txt", &res.0, &res.1);
     }
 
+ }
+
+ #[cfg(test)]
+ mod test_many_waves {
+
+    use crate::bathymetry::{BathymetryData, ConstantSlope};
+
+    use super::ManyRays;
+
     #[test]
-    /// shallow water
-    fn test_slope_depth_wave_xy() {
-        let lockfile = Lockfile::create(Path::new("tmp_slope_depth_xy.nc")).unwrap();
-        create_slope_file(&lockfile.path(), 2000, 2000, 1.0, 1.0);
+    /// check that output with test values from single wave works
+    fn test_many_waves_ok() {
 
-        let bathymetry_data: &dyn BathymetryData = &CartesianFile::new(&lockfile.path());
+        let bathymetry_data: &dyn BathymetryData = &ConstantSlope::builder().build().unwrap();
 
-        let wave = SingleRay::new(bathymetry_data, 10.0, 10.0, 0.007, 0.007);
-        let res = wave.trace_individual(0.0, 200.0, 100.0).unwrap();
-        let _ = output_to_tsv_file("slope_depth_xy_out.txt", &res.0, &res.1);
+        let initial_waves = vec![ // (x, y, kx, ky)
+            (10.0, 10.0, 1.0, 0.0),
+            (10.0, 20.0, 1.0, 0.0),
+            (10.0, 30.0, 1.0, 0.0),
+            (10.0, 40.0, 1.0, 0.0),
+            (10.0, 50.0, 1.0, 0.0),
+            (10.0, 60.0, 1.0, 0.0),
+            (10.0, 70.0, 1.0, 0.0),
+            (10.0, 80.0, 1.0, 0.0),
+            (10.0, 90.0, 1.0, 0.0),
+        ];
+
+        let waves = ManyRays::new(bathymetry_data, &initial_waves);
+
+        let results = waves.trace_many(0.0, 55.0, 1.0);
+
+        for res in results {
+            assert!(res.is_some())
+        }
     }
-}
+
+ }
