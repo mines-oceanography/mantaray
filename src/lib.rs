@@ -202,27 +202,6 @@ impl<'a> WaveRayPath<'a> {
     }
 }
 
-struct ArrayDepth {
-    array: Vec<Vec<f32>>,
-}
-
-// FIXME: the program is not crashing, but NAN isn't that useful. maybe use option: some or none
-impl BathymetryData for ArrayDepth {
-    fn get_depth(&self, x: &f32, y: &f32) -> Result<f32, Error> {
-        if *x as usize >= self.array.len() || *y as usize >= self.array.len() {
-            return Ok(f32::NAN);
-        }
-        Ok(self.array[*x as usize][*y as usize]) // FIXME: since x and y are floats, they are truncated or rounded to a usize. I probably want a better interpolation estimate
-    }
-
-    fn get_depth_and_gradient(&self, x: &f32, y: &f32) -> Result<(f32, (f32, f32)), Error> {
-        if *x as usize >= self.array.len() || *y as usize >= self.array.len() {
-            return Ok((f32::NAN, (f32::NAN, f32::NAN)));
-        }
-        Ok((self.array[*x as usize][*y as usize], (0.0, 0.0)))
-    }
-}
-
 /// Calculates the group velocity
 ///
 /// # Arguments
@@ -325,7 +304,8 @@ impl<'a> ode_solvers::System<State> for WaveRayPath<'a> {
 /// tests for constant depth, constant group velocity
 mod test_constant_cg {
     use crate::{
-        bathymetry::ConstantDepth, group_velocity, output_to_file, ArrayDepth, BathymetryData,
+        bathymetry::ArrayDepth, bathymetry::ConstantDepth, group_velocity, output_to_file,
+        BathymetryData,
     };
     use crate::{dk_vector_dt, State, WaveRayPath};
     use ode_solvers::*;
@@ -460,13 +440,11 @@ mod test_constant_cg {
     #[test]
     /// check that function accepts array
     fn test_array_as_parameter() {
-        let data: &dyn BathymetryData = &ArrayDepth {
-            array: vec![
-                vec![1000.0, 1000.0, 1000.0],
-                vec![1000.0, 1000.0, 1000.0],
-                vec![1000.0, 1000.0, 1000.0],
-            ],
-        };
+        let data: &dyn BathymetryData = &ArrayDepth::new(vec![
+            vec![1000.0, 1000.0, 1000.0],
+            vec![1000.0, 1000.0, 1000.0],
+            vec![1000.0, 1000.0, 1000.0],
+        ]);
         // answers should be the square root of gravity divided by 2
         let check_axis = [
             (0.0, 1.0, 0.0, (9.8_f64).sqrt() / 2.0),
@@ -586,9 +564,8 @@ mod test_constant_cg {
     #[test]
     /// If the bathymetry array index is out of range, it will return nan.
     fn out_of_range_give_nan() {
-        let data: &dyn BathymetryData = &ArrayDepth {
-            array: vec![vec![1000.0, 1000.0], vec![1000.0, 1000.0]],
-        };
+        let data: &dyn BathymetryData =
+            &ArrayDepth::new(vec![vec![1000.0, 1000.0], vec![1000.0, 1000.0]]);
         let system = WaveRayPath::new(data);
         let y0 = State::new(0.0, 0.0, 0.0, 1.0);
 

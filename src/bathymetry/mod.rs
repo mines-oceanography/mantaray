@@ -1,10 +1,13 @@
 //! Bathymetry
 
+mod array_depth;
 mod cartesian;
 mod constant_depth;
 mod constant_slope;
 
 use crate::error::Error;
+#[allow(unused_imports)]
+pub(super) use array_depth::ArrayDepth;
 #[allow(unused_imports)]
 pub(super) use cartesian::CartesianFile;
 #[allow(unused_imports)]
