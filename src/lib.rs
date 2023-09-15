@@ -176,7 +176,7 @@ impl<'a> WaveRayPath<'a> {
 /// - If k is negative, group velocity will return this error.
 ///
 pub(crate) fn group_velocity(k: &f64, h: &f64) -> Result<f64, Error> {
-    if *h < 0.0 {
+    if *h <= 0.0 {
         return Ok(f64::NAN); // FIXME: should this also return an error?
     }
     if *k <= 0.0 {
