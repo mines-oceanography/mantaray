@@ -113,8 +113,8 @@ impl BathymetryData for CartesianFile {
             - self.depth_from_arr(&edge_points[1].0, &edge_points[1].1)?)
             / (2.0 * x_space);
 
-        let y_grad = (self.depth_from_arr(&edge_points[0].0, &edge_points[0].1)?
-            - self.depth_from_arr(&edge_points[2].0, &edge_points[2].1)?)
+        let y_grad = (self.depth_from_arr(&edge_points[2].0, &edge_points[2].1)?
+            - self.depth_from_arr(&edge_points[0].0, &edge_points[0].1)?)
             / (2.0 * y_space);
 
         Ok((depth, (x_grad, y_grad)))
