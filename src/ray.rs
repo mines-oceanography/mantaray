@@ -7,7 +7,7 @@ use ode_solvers::{OVector, Rk4};
 
 use crate::{BathymetryData, error::Error, State, WaveRayPath};
 use std::fs::{File, OpenOptions};
-use std::io::Write;
+use std::io::{Write, BufWriter};
 use std::path::Path;
 
 // define x_out and y_out types
@@ -205,46 +205,49 @@ impl<'a> SingleRay<'a> {
 }
 
 // output to space separated file
-fn output_to_tsv_file(file_name: &str, x_out: &XOut, y_out: &YOut) -> Result<File, Error> {
-    let mut file = File::create(file_name)?;
-    writeln!(&mut file, "t x y kx ky")?;
+fn output_to_tsv_file(file_name: &str, x_out: &XOut, y_out: &YOut) -> Result<(), Error> {
+    let file = File::create(file_name)?;
+    let mut writer = BufWriter::new(file);
+    writeln!(&mut writer, "t x y kx ky")?;
     for (i, x) in x_out.iter().enumerate() {
         if y_out[i][0].is_nan() {
             break;
         }
-        write!(&mut file, "{x} ")?;
+        write!(&mut writer, "{} ", x)?;
         for elem in y_out[i].iter() {
-            write!(&mut file, "{elem} ")?;
+            write!(&mut writer, "{} ", elem)?;
         }
-        writeln!(&mut file, " ")?;
+        writeln!(&mut writer, " ")?;
     }
-    Ok(file)
+    writer.flush()?;
+    Ok(())
 }
 
 fn output_or_append_to_tsv_file(
     file_name: &str,
     x_out: &XOut,
     y_out: &YOut,
-) -> Result<File, Error> {
-    let mut file = OpenOptions::new()
+) -> Result<(), Error> {
+    let file = OpenOptions::new()
         .write(true)
         .create(true)
         .append(true)
         .open(file_name)?;
-    //let mut file = BufWriter::new(file);
-    writeln!(&mut file, "t x y kx ky")?;
+    let mut writer = BufWriter::new(file);
+    writeln!(&mut writer, "t x y kx ky")?;
     for (i, x) in x_out.iter().enumerate() {
         if y_out[i][0].is_nan() {
             break;
         }
-        write!(&mut file, "{x} ")?;
+        write!(&mut writer, "{} ", x)?;
         for elem in y_out[i].iter() {
-            write!(&mut file, "{elem} ")?;
+            write!(&mut writer, "{} ", elem)?;
         }
-        writeln!(&mut file, " ")?;
+        writeln!(&mut writer, " ")?;
     }
-    writeln!(&mut file, "END")?;
-    Ok(file)
+    writeln!(&mut writer, "END")?;
+    writer.flush()?;
+    Ok(())
 }
 
 #[cfg(test)]
