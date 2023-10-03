@@ -41,58 +41,6 @@ use error::Error;
 // Define constant gravity
 const G: f64 = 9.8;
 
-/// Run the Rk4 stepper.integrate() and save the results to a space separated file
-///
-/// # Arguments
-/// `system` : `WaveRayPath`
-/// - struct that calculates the derivatives for each state
-///
-/// `t0` : `f64`
-/// - initial time
-///
-/// `y0` : `State`
-/// - initial state
-///
-/// `tf` : `f64`
-/// - final time
-///
-/// `step_size` : `f64`
-/// - size of time increment delta t
-///
-/// # Returns
-/// `Result<File, Error>`
-/// - `Ok(File)` : return the file created
-/// - `Err(Error::Undefined)` : error during integration
-///
-/// # Errors
-/// `Error::Undefined` : this is a placeholder for an integration error during the Rk4 algorithm.
-///
-/// # Panics
-/// The function will panic if it can not read or write to the file.
-fn output_to_file(
-    system: WaveRayPath,
-    t0: f64,
-    y0: State,
-    tf: f64,
-    step_size: f64,
-) -> Result<File, Error> {
-    let mut stepper = Rk4::new(system, t0, y0, tf, step_size);
-    stepper.integrate()?;
-
-    let y = stepper.y_out();
-
-    let mut file = File::create("y_out.txt")?;
-    writeln!(&mut file, "t x y kx ky")?;
-    for (i, x) in stepper.x_out().iter().enumerate() {
-        write!(&mut file, "{x} ")?;
-        for elem in y[i].iter() {
-            write!(&mut file, "{elem} ")?;
-        }
-        writeln!(&mut file, " ")?;
-    }
-    Ok(file)
-}
-
 impl<'a> WaveRayPath<'a> {
     /// Construct a new `WaveRayPath`
     ///
@@ -304,8 +252,7 @@ impl<'a> ode_solvers::System<State> for WaveRayPath<'a> {
 /// tests for constant depth, constant group velocity
 mod test_constant_cg {
     use crate::{
-        bathymetry::ArrayDepth, bathymetry::ConstantDepth, group_velocity, output_to_file,
-        BathymetryData,
+        bathymetry::ArrayDepth, bathymetry::ConstantDepth, group_velocity, BathymetryData,
     };
     use crate::{dk_vector_dt, State, WaveRayPath};
     use ode_solvers::*;
@@ -579,20 +526,6 @@ mod test_constant_cg {
         let last_step = stepper.y_out().last().unwrap();
 
         assert!(last_step.x.is_nan() && last_step.y.is_nan());
-    }
-
-    #[test]
-    /// test writing a file
-    fn write_file() {
-        let data: &dyn BathymetryData = &ConstantDepth::new(1000.0);
-        let system = WaveRayPath::new(data);
-        let y0 = State::new(0.0, 0.0, 1.0, -1.0);
-
-        let t0 = 0.0;
-        let tf = 10.0;
-        let step_size = 1.0;
-
-        assert!(output_to_file(system, t0, y0, tf, step_size).is_ok());
     }
 
     #[test]
