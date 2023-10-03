@@ -6,7 +6,7 @@ use rayon::prelude::*;
 use ode_solvers::{OVector, Rk4};
 
 use crate::{BathymetryData, error::Error, State, WaveRayPath};
-use std::fs::File;
+use std::fs::{File, OpenOptions};
 use std::io::Write;
 use std::path::Path;
 
@@ -218,6 +218,32 @@ fn output_to_tsv_file(file_name: &str, x_out: &XOut, y_out: &YOut) -> Result<Fil
         }
         writeln!(&mut file, " ")?;
     }
+    Ok(file)
+}
+
+fn output_or_append_to_tsv_file(
+    file_name: &str,
+    x_out: &XOut,
+    y_out: &YOut,
+) -> Result<File, Error> {
+    let mut file = OpenOptions::new()
+        .write(true)
+        .create(true)
+        .append(true)
+        .open(file_name)?;
+    //let mut file = BufWriter::new(file);
+    writeln!(&mut file, "t x y kx ky")?;
+    for (i, x) in x_out.iter().enumerate() {
+        if y_out[i][0].is_nan() {
+            break;
+        }
+        write!(&mut file, "{x} ")?;
+        for elem in y_out[i].iter() {
+            write!(&mut file, "{elem} ")?;
+        }
+        writeln!(&mut file, " ")?;
+    }
+    writeln!(&mut file, "END")?;
     Ok(file)
 }
 
