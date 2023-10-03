@@ -206,14 +206,17 @@ impl<'a> SingleRay<'a> {
 
 // output to space separated file
 fn output_to_tsv_file(file_name: &str, x_out: &XOut, y_out: &YOut) -> Result<File, Error> {
-    let mut file = File::create(file_name).expect("could not open file");
-    writeln!(&mut file, "t x y kx ky").expect("could not write to file");
+    let mut file = File::create(file_name)?;
+    writeln!(&mut file, "t x y kx ky")?;
     for (i, x) in x_out.iter().enumerate() {
-        write!(&mut file, "{x} ").expect("could not write to file");
-        for elem in y_out[i].iter() {
-            write!(&mut file, "{elem} ").expect("could not write to file");
+        if y_out[i][0].is_nan() {
+            break;
         }
-        writeln!(&mut file, " ").expect("could not write to file");
+        write!(&mut file, "{x} ")?;
+        for elem in y_out[i].iter() {
+            write!(&mut file, "{elem} ")?;
+        }
+        writeln!(&mut file, " ")?;
     }
     Ok(file)
 }
