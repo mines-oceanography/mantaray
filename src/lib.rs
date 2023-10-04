@@ -176,7 +176,7 @@ impl<'a> WaveRayPath<'a> {
 /// - If k is negative, group velocity will return this error.
 ///
 pub(crate) fn group_velocity(k: &f64, h: &f64) -> Result<f64, Error> {
-    if *h < 0.0 {
+    if *h <= 0.0 {
         return Ok(f64::NAN); // FIXME: should this also return an error?
     }
     if *k <= 0.0 {
@@ -355,6 +355,25 @@ mod test_constant_cg {
         let data: &dyn BathymetryData = &ConstantDepth::new(1000.0);
         let system = WaveRayPath::new(data);
         let y0 = State::new(0.0, 0.0, 0.0, 0.0);
+
+        let t0 = 0.0;
+        let tf = 10.0;
+        let step_size = 1.0;
+
+        let mut stepper = Rk4::new(system, t0, y0, tf, step_size);
+        let _ = stepper.integrate();
+
+        assert!(stepper.y_out().last().unwrap().x.is_nan());
+        assert!(stepper.y_out().last().unwrap().y.is_nan());
+        assert!(stepper.y_out().last().unwrap().z.is_nan());
+        assert!(stepper.y_out().last().unwrap().w.is_nan());
+    }
+
+    #[test]
+    fn test_zero_h() {
+        let data: &dyn BathymetryData = &ConstantDepth::new(0.0);
+        let system = WaveRayPath::new(data);
+        let y0 = State::new(0.0, 0.0, 1.0, 1.0);
 
         let t0 = 0.0;
         let tf = 10.0;
