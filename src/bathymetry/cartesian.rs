@@ -405,12 +405,19 @@ mod test_cartesian_file {
     }
 
     /// Create a test file like the test_bathy.nc
-    fn create_slope_file(path: &Path, x_len: usize, y_len: usize, x_step: f32, y_step: f32) {
+    fn create_fn_file(
+        path: &Path,
+        x_len: usize,
+        y_len: usize,
+        x_step: f32,
+        y_step: f32,
+        depth_fn: fn(usize, usize) -> f64,
+    ) {
         let x_data: Vec<f32> = (0..x_len).map(|x| x as f32 * x_step).collect();
         let y_data: Vec<f32> = (0..y_len).map(|y| y as f32 * y_step).collect();
 
         let depth_data: Vec<f64> = (0..x_len * y_len)
-            .map(|p| (p % x_len) as f64 * 0.05)
+            .map(|p| depth_fn(p % x_len, p / y_len))
             .collect();
 
         // most below copied from the docs
@@ -631,12 +638,16 @@ mod test_cartesian_file {
     }
 
     #[test]
-    fn test_depth_and_gradient() {
+    fn test_depth_and_gradient_x() {
         // create temporary file
         use lockfile::Lockfile;
         let lockfile = Lockfile::create(Path::new("tmp_bathy10.nc")).unwrap();
 
-        create_slope_file(lockfile.path(), 100, 100, 1.0, 1.0);
+        fn depth_fn(indx: usize, _indy: usize) -> f64 {
+            indx as f64 * 0.05
+        }
+
+        create_fn_file(lockfile.path(), 100, 100, 1.0, 1.0, depth_fn);
 
         let data = CartesianFile::new(Path::new(lockfile.path()));
 
@@ -658,6 +669,58 @@ mod test_cartesian_file {
             (50.0, 50.0, -0.05, 0.0),
             (14.0, 12.0, -0.05, 0.0),
             (10.0, 80.0, -0.05, 0.0),
+        ];
+
+        for (x, y, dhdx, dhdy) in &check_gradient {
+            let x_grad = data.get_depth_and_gradient(x, y).unwrap().1 .0;
+            let y_grad = data.get_depth_and_gradient(x, y).unwrap().1 .1;
+            assert!(
+                (x_grad - dhdx).abs() < f32::EPSILON,
+                "Expected {}, but got {}",
+                dhdx,
+                x_grad
+            );
+            assert!(
+                (y_grad - dhdy).abs() < f32::EPSILON,
+                "Expected {}, but got {}",
+                dhdy,
+                y_grad
+            );
+        }
+    }
+
+    #[test]
+    fn test_depth_and_gradient_y() {
+        // create temporary file
+        use lockfile::Lockfile;
+        let lockfile = Lockfile::create(Path::new("tmp_bathy11.nc")).unwrap();
+
+        fn depth_fn(_indx: usize, indy: usize) -> f64 {
+            indy as f64 * 0.05
+        }
+
+        create_fn_file(lockfile.path(), 100, 100, 1.0, 1.0, depth_fn);
+
+        let data = CartesianFile::new(Path::new(lockfile.path()));
+
+        // check to see if depth is the same as above
+        let check_depth = vec![(10.0, 30.0, 1.5), (30.0, 10.0, 0.5)];
+
+        for (x, y, h) in &check_depth {
+            let depth = data.get_depth_and_gradient(x, y).unwrap().0;
+            assert!(
+                (depth - h).abs() < f32::EPSILON,
+                "Expected {}, but got {}",
+                h,
+                depth
+            );
+        }
+
+        // check to see if gradient is the same
+        let check_gradient = vec![
+            (50.0, 50.0, 0.0, -0.05),
+            (14.0, 12.0, 0.0, -0.05),
+            (10.0, 80.0, 0.0, -0.05),
         ];
 
         for (x, y, dhdx, dhdy) in &check_gradient {
