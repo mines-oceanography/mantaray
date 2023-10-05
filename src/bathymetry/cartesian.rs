@@ -404,6 +404,62 @@ mod test_cartesian_file {
         // end of copied from docs
     }
 
+    /// Create a test file like the test_bathy.nc
+    fn create_slope_file(path: &Path, x_len: usize, y_len: usize, x_step: f32, y_step: f32) {
+        let x_data: Vec<f32> = (0..x_len).map(|x| x as f32 * x_step).collect();
+        let y_data: Vec<f32> = (0..y_len).map(|y| y as f32 * y_step).collect();
+
+        let depth_data: Vec<f64> = (0..x_len * y_len)
+            .map(|p| (p % x_len) as f64 * 0.05)
+            .collect();
+
+        // most below copied from the docs
+        use netcdf3::{DataSet, FileWriter, Version};
+        let y_dim_name: &str = "y";
+        let y_var_name: &str = y_dim_name;
+        let y_var_len: usize = y_len;
+
+        let x_dim_name: &str = "x";
+        let x_var_name: &str = x_dim_name;
+        let x_var_len: usize = x_len;
+
+        let depth_var_name: &str = "depth";
+        let depth_var_len: usize = depth_data.len();
+
+        // Create the NetCDF-3 definition
+        // ------------------------------
+        let data_set: DataSet = {
+            let mut data_set: DataSet = DataSet::new();
+            // Define the dimensions
+            data_set.add_fixed_dim(y_dim_name, y_var_len).unwrap();
+            data_set.add_fixed_dim(x_dim_name, x_var_len).unwrap();
+            // Define the variable
+            data_set.add_var_f32(y_var_name, &[y_dim_name]).unwrap();
+            data_set.add_var_f32(x_var_name, &[x_var_name]).unwrap();
+            data_set
+                .add_var_f64(depth_var_name, &[y_dim_name, x_var_name])
+                .unwrap();
+
+            data_set
+        };
+
+        // ...
+
+        // Create and write the NetCDF-3 file
+        // ----------------------------------
+        let mut file_writer: FileWriter = FileWriter::open(path).unwrap();
+        // Set the NetCDF-3 definition
+        file_writer.set_def(&data_set, Version::Classic, 0).unwrap();
+        assert_eq!(depth_var_len, x_var_len * y_var_len);
+        file_writer.write_var_f32(y_var_name, &y_data[..]).unwrap();
+        file_writer.write_var_f32(x_var_name, &x_data[..]).unwrap();
+        file_writer
+            .write_var_f64(depth_var_name, &depth_data[..])
+            .unwrap();
+        // file_writer.close().unwrap();
+        // end of copied from docs
+    }
+
     #[test]
     /// This test checks that the file was created.
     fn test_create_test_bathy() {
@@ -580,17 +636,12 @@ mod test_cartesian_file {
         use lockfile::Lockfile;
         let lockfile = Lockfile::create(Path::new("tmp_bathy10.nc")).unwrap();
 
-        create_file(lockfile.path(), 101, 51, 500.0, 500.0);
+        create_slope_file(lockfile.path(), 100, 100, 1.0, 1.0);
 
         let data = CartesianFile::new(Path::new(lockfile.path()));
 
         // check to see if depth is the same as above
-        let check_depth = vec![
-            (23000.0, 20000.0, 10.0),
-            (10000.0, 12500.0, 12.5),
-            (25000.0, 5000.0, 8.75),
-            (40000.0, 12500.0, 12.5),
-        ];
+        let check_depth = vec![(10.0, 30.0, 0.5), (30.0, 10.0, 1.5)];
 
         for (x, y, h) in &check_depth {
             let depth = data.get_depth_and_gradient(x, y).unwrap().0;
@@ -604,9 +655,9 @@ mod test_cartesian_file {
 
         // check to see if gradient is the same
         let check_gradient = vec![
-            (5000.0, 5000.0, 0.0, 0.0),
-            (1234.0, 1234.0, 0.0, 0.0),
-            (25000.0, 12500.0, -0.005, 0.01),
+            (50.0, 50.0, -0.05, 0.0),
+            (14.0, 12.0, -0.05, 0.0),
+            (10.0, 80.0, -0.05, 0.0),
         ];
 
         for (x, y, dhdx, dhdy) in &check_gradient {
