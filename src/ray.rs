@@ -5,9 +5,9 @@ use rayon::prelude::*;
 
 use ode_solvers::{OVector, Rk4};
 
-use crate::{BathymetryData, error::Error, State, WaveRayPath};
+use crate::{error::Error, BathymetryData, State, WaveRayPath};
 use std::fs::{File, OpenOptions};
-use std::io::{Write, BufWriter};
+use std::io::{BufWriter, Write};
 use std::path::Path;
 
 // define x_out and y_out types
@@ -18,73 +18,81 @@ type YOut = Vec<OVector<f64, nalgebra::base::dimension::Const<4>>>;
 struct ManyRays<'a> {
     bathymetry_data: &'a dyn BathymetryData,
     /// a vector of initial x, y, kx, and ky values for the many waves
-    init_rays: &'a Vec<(f64, f64, f64, f64)>
+    init_rays: &'a Vec<(f64, f64, f64, f64)>,
 }
 
 impl<'a> ManyRays<'a> {
     /// construct a new `ManyRays` from bathymetry and initial rays
-    /// 
+    ///
     /// # Arguments
     /// `bathymetry_data`: `&'a dyn BathymetryData`
     /// - the data on depth that implements the `get_depth` and
     ///   `get_depth_gradient` methods.
-    /// 
+    ///
     /// `init_rays`: `&'a Vec<(f64, f64, f64, f64)>`
     /// - a vector of initial x, y, kx, and ky values for the many waves
-    /// 
+    ///
     /// # Returns
     /// `Self`: a constructed `ManyRays` struct
-    fn new(bathymetry_data: &'a dyn BathymetryData, init_rays: &'a Vec<(f64, f64, f64, f64)>) -> Self {
-        ManyRays { bathymetry_data, init_rays }
+    fn new(
+        bathymetry_data: &'a dyn BathymetryData,
+        init_rays: &'a Vec<(f64, f64, f64, f64)>,
+    ) -> Self {
+        ManyRays {
+            bathymetry_data,
+            init_rays,
+        }
     }
 
     /// Trace many rays given start time, stop time, and step size (delta t)
-    /// 
+    ///
     /// Given the arguments, `trace_many` creates a vector of SingleRays,
     /// integrates each ray, and returns the results.
-    /// 
+    ///
     /// Arguments:
-    /// 
+    ///
     /// `start_time`: `f64`
     /// - the time the ray tracing begins.
-    /// 
+    ///
     /// `end_time`: `f64`
     /// - the time the ray tracing is stopped.
-    /// 
+    ///
     /// `step_size`: `f64`
     /// - the change in time between integration steps. Smaller step size
     ///   produces more accurate result, but takes longer to run.
-    /// 
+    ///
     /// Returns: `Vec<Option<(XOut, YOut)>>`: A vector of optional values. Each
     /// value in the vector is either `None`, which represents an error during
     /// that ray's integration, or they are a tuple of (XOut, YOut).
-        fn trace_many(&self, start_time: f64, end_time: f64, step_size: f64) -> Vec<Option<(XOut, YOut)>> {
-
+    fn trace_many(
+        &self,
+        start_time: f64,
+        end_time: f64,
+        step_size: f64,
+    ) -> Vec<Option<(XOut, YOut)>> {
         // create a vector of SingleRays
-        let rays: Vec<SingleRay> = self.init_rays
+        let rays: Vec<SingleRay> = self
+            .init_rays
             .par_iter()
-            .map(|(x0, y0, kx0, ky0)| {
-                SingleRay::new(self.bathymetry_data, *x0, *y0, *kx0, *ky0)
-            })
+            .map(|(x0, y0, kx0, ky0)| SingleRay::new(self.bathymetry_data, *x0, *y0, *kx0, *ky0))
             .collect();
 
         // integrate each. I think here is where I would use `par_iter` from rayon in the future.
         let results: Vec<Option<(XOut, YOut)>> = rays
             .par_iter()
-            .map(|r| {
-                match r.trace_individual(start_time, end_time, step_size) {
+            .map(
+                |r| match r.trace_individual(start_time, end_time, step_size) {
                     Ok(v) => Some(v),
                     Err(e) => {
                         println!("ERROR {} during intergration", e);
-                        None      
+                        None
                     }
-                }
-            })
+                },
+            )
             .collect();
 
         // return the results
         results
-
     }
 }
 
@@ -223,11 +231,7 @@ fn output_to_tsv_file(file_name: &str, x_out: &XOut, y_out: &YOut) -> Result<(),
     Ok(())
 }
 
-fn output_or_append_to_tsv_file(
-    file_name: &str,
-    x_out: &XOut,
-    y_out: &YOut,
-) -> Result<(), Error> {
+fn output_or_append_to_tsv_file(file_name: &str, x_out: &XOut, y_out: &YOut) -> Result<(), Error> {
     let file = OpenOptions::new()
         .write(true)
         .create(true)
@@ -256,7 +260,10 @@ mod test_single_wave {
     use lockfile::Lockfile;
     use std::path::Path;
 
-    use crate::{BathymetryData, bathymetry::{CartesianFile, ConstantSlope, ConstantDepth}};
+    use crate::{
+        bathymetry::{CartesianFile, ConstantDepth, ConstantSlope},
+        BathymetryData,
+    };
 
     use super::{output_to_tsv_file, SingleRay};
 
@@ -314,7 +321,6 @@ mod test_single_wave {
         file_writer.close().unwrap();
         // end of copied from docs
     }
-
 
     #[test]
     // this test does not check anything yet, but outputs the result to a space separated file
@@ -449,11 +455,10 @@ mod test_single_wave {
         let res = wave.trace_individual(0.0, 100.0, 1.0).unwrap();
         let _ = output_to_tsv_file("slope_depth_x_out.txt", &res.0, &res.1);
     }
+}
 
- }
-
- #[cfg(test)]
- mod test_many_waves {
+#[cfg(test)]
+mod test_many_waves {
 
     use crate::bathymetry::{BathymetryData, ConstantSlope};
 
@@ -462,10 +467,10 @@ mod test_single_wave {
     #[test]
     /// check that output with test values from single wave works
     fn test_many_waves_ok() {
-
         let bathymetry_data: &dyn BathymetryData = &ConstantSlope::builder().build().unwrap();
 
-        let initial_waves = vec![ // (x, y, kx, ky)
+        let initial_waves = vec![
+            // (x, y, kx, ky)
             (10.0, 10.0, 1.0, 0.0),
             (10.0, 20.0, 1.0, 0.0),
             (10.0, 30.0, 1.0, 0.0),
@@ -485,5 +490,4 @@ mod test_single_wave {
             assert!(res.is_some())
         }
     }
-
- }
+}
