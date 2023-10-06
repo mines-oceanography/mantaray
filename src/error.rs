@@ -4,23 +4,22 @@
 
 #[derive(Debug, thiserror::Error)]
 pub(crate) enum Error {
+    #[error("Argument passed was out of bounds")]
+    /// The value k = |(kx, ky)| can only be positive. If k <=0, the function will pass ArgumentOutOfBounds.
+    ArgumentOutOfBounds,
 
-   #[error("Argument passed was out of bounds")]
-   /// The value k = |(kx, ky)| can only be positive. If k <=0, the function will pass ArgumentOutOfBounds.
-   ArgumentOutOfBounds,
+    #[error("One or more of the points surrounding the nearest point are out of bounds.")]
+    /// This error is returned when `nearest_point` returns a point in bounds,
+    /// but `four_corners` is still out of bounds.
+    CornersOutOfBounds,
 
-   #[error("One or more of the points surrounding the nearest point are out of bounds.")]
-   /// This error is returned when `nearest_point` returns a point in bounds,
-   /// but `four_corners` is still out of bounds.
-   CornersOutOfBounds,
-   
     #[error("Argument passed was not a valid option")]
     /// The argument passed was not a valid option
     InvalidArgument,
 
     #[error("Index passed was out of bounds")]
     /// The index is out of bounds of the array and would panic if attempted to
-   /// access array.
+    /// access array.
     IndexOutOfBounds,
 
     #[error(transparent)]
