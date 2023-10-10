@@ -22,6 +22,7 @@ impl BathymetryData for ArrayDepth {
     }
 }
 
+#[allow(dead_code)]
 impl ArrayDepth {
     pub(crate) fn new(array: Vec<Vec<f32>>) -> Self {
         ArrayDepth { array }
