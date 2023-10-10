@@ -166,12 +166,12 @@ impl CartesianFile {
     ///
     /// # Returns
     /// `usize`: index of closest value
-    fn nearest(&self, target: &f32, arr: &Vec<f32>) -> usize {
+    fn nearest(&self, target: &f32, arr: &[f32]) -> usize {
         let mut closest_index = 0;
         let mut closest_distance = (target - arr[0]).abs();
 
-        for i in 1..arr.len() {
-            let distance = (target - arr[i]).abs();
+        for (i, value) in arr.iter().enumerate().skip(1) {
+            let distance = (target - value).abs();
 
             if distance < closest_distance {
                 closest_index = i;
@@ -205,8 +205,8 @@ impl CartesianFile {
         let indx = self.nearest(x, &self.variables.0);
         let indy = self.nearest(y, &self.variables.1);
 
-        if indx <= 0
-            || indy <= 0
+        if indx == 0
+            || indy == 0
             || indx >= self.variables.0.len() - 1
             || indy >= self.variables.1.len()
         {
@@ -231,8 +231,8 @@ impl CartesianFile {
     ///   `indx` and `indy` in clockwise order.
     /// - `None` : `indx` or `indy` is out of range and no value exists.
     fn four_corners(&self, indx: &usize, indy: &usize) -> Option<Vec<(usize, usize)>> {
-        if *indx <= 0
-            || *indy <= 0
+        if *indx == 0
+            || *indy == 0
             || *indx >= self.variables.0.len() - 1
             || *indy >= self.variables.1.len() - 1
         {
@@ -271,7 +271,7 @@ impl CartesianFile {
     /// `points` is out of bounds.
     /// - `Error::InvalidArgument` : error during execution of
     /// `interpolator::bilinear` due to invalid arguments.
-    fn interpolate(&self, points: &Vec<(usize, usize)>, target: &(f32, f32)) -> Result<f32, Error> {
+    fn interpolate(&self, points: &[(usize, usize)], target: &(f32, f32)) -> Result<f32, Error> {
         let pts = vec![
             (
                 self.variables.0[points[0].0],
@@ -294,7 +294,7 @@ impl CartesianFile {
                 self.depth_from_arr(&points[3].0, &points[3].1)?,
             ),
         ];
-        Ok(interpolator::bilinear(&pts, target)?)
+        interpolator::bilinear(&pts, target)
     }
 
     /// Access values in flattened array as you would a 2d array
