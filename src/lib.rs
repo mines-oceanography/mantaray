@@ -25,8 +25,6 @@
 
 use bathymetry::BathymetryData;
 use ode_solvers::*;
-use std::fs::File;
-use std::io::Write;
 
 mod error;
 
@@ -41,6 +39,7 @@ use error::Error;
 // Define constant gravity
 const G: f64 = 9.8;
 
+#[allow(dead_code)]
 impl<'a> WaveRayPath<'a> {
     /// Construct a new `WaveRayPath`
     ///
