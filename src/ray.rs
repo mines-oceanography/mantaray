@@ -8,10 +8,11 @@ use ode_solvers::{OVector, Rk4};
 use crate::{error::Error, BathymetryData, State, WaveRayPath};
 use std::fs::{File, OpenOptions};
 use std::io::{BufWriter, Write};
-use std::path::Path;
 
+#[allow(dead_code)]
 // define x_out and y_out types
 type XOut = Vec<f64>;
+#[allow(dead_code)]
 type YOut = Vec<OVector<f64, nalgebra::base::dimension::Const<4>>>;
 
 /// a struct that creates many rays
@@ -21,6 +22,7 @@ struct ManyRays<'a> {
     init_rays: &'a Vec<(f64, f64, f64, f64)>,
 }
 
+#[allow(dead_code)]
 impl<'a> ManyRays<'a> {
     /// construct a new `ManyRays` from bathymetry and initial rays
     ///
@@ -102,6 +104,7 @@ struct SingleRay<'a> {
     initial_conditions: (f64, f64, f64, f64),
 }
 
+#[allow(dead_code)]
 impl<'a> SingleRay<'a> {
     /// construct a `SingleRay`
     ///
@@ -192,26 +195,9 @@ impl<'a> SingleRay<'a> {
         // member variable.
         Ok((x_out.clone(), y_out.clone()))
     }
-
-    /// set the initial conditions
-    ///
-    /// # Arguments
-    /// `x0` : `f64`
-    /// - the initial x coordinate
-    ///
-    /// `y0` : `f64`
-    /// - the initial y coordinate
-    ///
-    /// `kx0` : `f64`
-    /// - the initial kx value
-    ///
-    /// `ky0` : `f64`
-    /// - the initial ky value
-    pub fn set_initial_conditions(&mut self, x0: f64, y0: f64, kx0: f64, ky0: f64) {
-        self.initial_conditions = (x0, y0, kx0, ky0)
-    }
 }
 
+#[allow(dead_code)]
 // output to space separated file
 fn output_to_tsv_file(file_name: &str, x_out: &XOut, y_out: &YOut) -> Result<(), Error> {
     let file = File::create(file_name)?;
@@ -231,6 +217,7 @@ fn output_to_tsv_file(file_name: &str, x_out: &XOut, y_out: &YOut) -> Result<(),
     Ok(())
 }
 
+#[allow(dead_code)]
 fn output_or_append_to_tsv_file(file_name: &str, x_out: &XOut, y_out: &YOut) -> Result<(), Error> {
     let file = OpenOptions::new()
         .write(true)
