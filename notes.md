@@ -20,7 +20,7 @@ $$
 {\bf \nabla} \times {\bf k} = 0.
 $$
 
-Additionally, differentiating the equations for the wavenumber and frequency in time and space, respectively, we gets:
+Additionally, differentiating the equations for the wavenumber and frequency in time and space, respectively, we get:
 
 $$
 \frac{\partial {\bf k}}{\partial t} + {\bf \nabla}\omega =0,
@@ -105,23 +105,26 @@ $$
 $$
 
 $$
-\frac{d k_x}{dt}= - \frac{1}{2}gk[\tanh{(kH)}]^{-1/2}\frac{\partial H}{\partial x},
+\frac{d k_x}{dt}=  \frac{1}{2}k\frac{\left[ gk \tanh{(kH)}\right]^{1/2}}{ \sinh{(kH)} \cosh{(kH)}}\frac{\partial H}{\partial x},
 $$
 
 $$
-\frac{d k_y}{dt}= - \frac{1}{2}gk[\tanh{(kH)}]^{-1/2}\frac{\partial H}{\partial y},
+\frac{d k_y}{dt}= \frac{1}{2}k\frac{\left[ gk \tanh{(kH)}\right]^{1/2}}{ \sinh{(kH)} \cosh{(kH)}}\frac{\partial H}{\partial y},
 $$
 
-# Current effects
+#### Current effects
 $$
 c_{g_x} = c_g  \cos(\theta) + u_x
 $$
+
 $$
 c_{g_y} = c_g  \sin(\theta) + u_y
 $$
+
 $$
 \frac{dk_x}{dt}=\frac{dk_x}{dt}(bathy) - k_x\frac{\partial u_x}{\partial x} - k_y\frac{\partial u_y}{\partial x}
 $$
+
 $$
 \frac{dk_y}{dt}=\frac{dk_y}{dt}(bathy) - k_x\frac{\partial u_x}{\partial y} - k_y\frac{\partial u_y}{\partial y}
 $$
