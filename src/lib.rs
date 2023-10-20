@@ -132,19 +132,31 @@ impl<'a> WaveRayPath<'a> {
     ) -> Result<(f64, f64, f64, f64), Error> {
         let (h, (dhdx, dhdy)) = self.depth_and_gradient(&(*x as f32), &(*y as f32))?;
 
+        // TODO: need method to get, but for now set to zero
+        let ux = 0.0;
+        let uy = 0.0;
+
         let h = h as f64;
 
         let k_mag = (kx * kx + ky * ky).sqrt();
         let k_dir = ky.atan2(*kx);
 
         let cg = group_velocity(&k_mag, &h)?;
-        let cgx = cg * k_dir.cos();
-        let cgy = cg * k_dir.sin();
+        let cgx = cg * k_dir.cos() + ux;
+        let cgy = cg * k_dir.sin() + uy;
 
         let dxdt = cgx;
         let dydt = cgy;
 
-        let (dkxdt, dkydt) = dk_vector_dt(&k_mag, &h, &(dhdx as f64), &(dhdy as f64));
+        let (dkxdt_bathy, dkydt_bathy) = dk_vector_dt(&k_mag, &h, &(dhdx as f64), &(dhdy as f64));
+
+        let duxdx = 0.0;
+        let duydx = 0.0;
+        let duxdy = 0.0;
+        let duydy = 0.0;
+
+        let dkxdt = dkxdt_bathy - kx * duxdx - ky * duydx;
+        let dkydt = dkydt_bathy - kx * duxdy - ky * duydy;
 
         Ok((dxdt, dydt, dkxdt, dkydt))
     }
@@ -206,6 +218,7 @@ pub(crate) fn group_velocity(k: &f64, h: &f64) -> Result<f64, Error> {
 /// # Returns
 /// `(f64, f64)` : values cooresponding to (dkx/dt, dky/dt)
 fn dk_vector_dt(k_mag: &f64, h: &f64, dhdx: &f64, dhdy: &f64) -> (f64, f64) {
+    // TODO: label this as dkdt bathy
     let dkxdt = (0.5) * k_mag * 1.0 / (k_mag * h).sinh() * 1.0 / (k_mag * h).cosh()
         * (G * k_mag * (k_mag * h).tanh()).sqrt()
         * dhdx;
