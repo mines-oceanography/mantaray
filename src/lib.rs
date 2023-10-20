@@ -24,6 +24,7 @@
 #![deny(missing_docs)]
 
 use bathymetry::BathymetryData;
+use current::{ConstantCurrent, CurrentData};
 use ode_solvers::*;
 use std::fs::File;
 use std::io::Write;
@@ -33,6 +34,7 @@ mod error;
 mod interpolator;
 
 mod bathymetry;
+mod current;
 
 mod ray;
 
@@ -57,7 +59,23 @@ impl<'a> WaveRayPath<'a> {
     /// Returns:
     /// `Self` : the newly created `WaveRayPath`
     pub fn new(depth_data: &'a dyn BathymetryData) -> Self {
-        WaveRayPath { data: depth_data }
+        WaveRayPath {
+            bathy_data: depth_data,
+            x_current_data: None,
+            y_current_data: None,
+        }
+    }
+
+    pub fn new_with_current(
+        depth_data: &'a dyn BathymetryData,
+        x_current: Option<&'a dyn CurrentData>,
+        y_current: Option<&'a dyn CurrentData>,
+    ) -> Self {
+        WaveRayPath {
+            bathy_data: depth_data,
+            x_current_data: x_current,
+            y_current_data: y_current,
+        }
     }
 
     /// Get the depth at the point x, y
@@ -80,16 +98,26 @@ impl<'a> WaveRayPath<'a> {
     /// - `Error::InvalidArgument` : this error is returned from
     ///   `interpolator::bilinear` due to incorrect argument passed.
     pub fn depth(&self, x: &f32, y: &f32) -> Result<f32, Error> {
-        let depth = self.data.get_depth(x, y)?;
+        let depth = self.bathy_data.get_depth(x, y)?;
         //println!("{:?}", depth);
         Ok(depth)
     }
 
     /// get the depth and gradient at point x, y
     pub fn depth_and_gradient(&self, x: &f32, y: &f32) -> Result<(f32, (f32, f32)), Error> {
-        let h_dh = self.data.get_depth_and_gradient(x, y)?;
+        let h_dh = self.bathy_data.get_depth_and_gradient(x, y)?;
         //println!("The depth is: {}\nThe dh/dx is {}\nThe dh/dy is {}", h_dh.0, h_dh.1.0, h_dh.1.1);
         Ok(h_dh)
+    }
+
+    pub fn x_current(&self, x: &f32, y: &f32) -> Result<f32, Error> {
+        let ux = self.x_current_data.unwrap().get_current(x, y)?;
+        Ok(ux)
+    }
+
+    pub fn y_current(&self, x: &f32, y: &f32) -> Result<f32, Error> {
+        let uy = self.y_current_data.unwrap().get_current(x, y)?;
+        Ok(uy)
     }
 
     /// Calculates system of odes from the given state
@@ -132,9 +160,19 @@ impl<'a> WaveRayPath<'a> {
     ) -> Result<(f64, f64, f64, f64), Error> {
         let (h, (dhdx, dhdy)) = self.depth_and_gradient(&(*x as f32), &(*y as f32))?;
 
-        // TODO: need method to get, but for now set to zero
-        let ux = 0.0;
-        let uy = 0.0;
+        let (ux, duxdx, duxdy) = if let None = self.x_current_data {
+            (0.0, 0.0, 0.0)
+        } else {
+            let a = self.x_current(&(*x as f32), &(*y as f32))?;
+            (a as f64, 0.0, 0.0)
+        };
+
+        let (uy, duydx, duydy) = if let None = self.y_current_data {
+            (0.0, 0.0, 0.0)
+        } else {
+            let b = self.y_current(&(*x as f32), &(*y as f32))?;
+            (b as f64, 0.0, 0.0)
+        };
 
         let h = h as f64;
 
@@ -149,11 +187,6 @@ impl<'a> WaveRayPath<'a> {
         let dydt = cgy;
 
         let (dkxdt_bathy, dkydt_bathy) = dk_vector_dt(&k_mag, &h, &(dhdx as f64), &(dhdy as f64));
-
-        let duxdx = 0.0;
-        let duydx = 0.0;
-        let duxdy = 0.0;
-        let duydy = 0.0;
 
         let dkxdt = dkxdt_bathy - kx * duxdx - ky * duydx;
         let dkydt = dkydt_bathy - kx * duxdy - ky * duydy;
@@ -238,7 +271,10 @@ type Time = f64;
 struct WaveRayPath<'a> {
     /// A reference to a pointer to a struct that implements the depth trait. The
     /// lifetime of WaveRayPath is restricted to the lifetime of this variable.
-    data: &'a dyn BathymetryData,
+    bathy_data: &'a dyn BathymetryData,
+
+    x_current_data: Option<&'a dyn CurrentData>, // TODO: change this to implement a default builder
+    y_current_data: Option<&'a dyn CurrentData>, // TODO: change this to implement a default builder
 }
 
 impl<'a> ode_solvers::System<State> for WaveRayPath<'a> {
@@ -262,8 +298,8 @@ impl<'a> ode_solvers::System<State> for WaveRayPath<'a> {
 }
 
 #[cfg(test)]
-/// tests for constant depth, constant group velocity
-mod test_constant_cg {
+/// tests for constant depth
+mod test_constant_bathymetry {
     use crate::{
         bathymetry::ArrayDepth, bathymetry::ConstantDepth, group_velocity, BathymetryData,
     };
@@ -580,5 +616,58 @@ mod test_constant_cg {
             "Expected 0, got {}",
             ans.1
         )
+    }
+}
+
+/// tests for constant current
+#[cfg(test)]
+mod test_current {
+    use crate::{
+        bathymetry::{BathymetryData, ConstantDepth},
+        current::{ConstantCurrent, CurrentData},
+        WaveRayPath,
+    };
+
+    #[test]
+    fn test_constant_depth_current() {
+        // test case: initial group velocity in x axis only test 1, -1 for both
+        // ux and uy individually the results should be equal to the original
+        // without current plus or minus one. dk/dt will be zero in both x and y
+
+        // these results are copied from test_odes in mod test_constant_bathymetry, but with 1 added in the correct place
+        let results = [
+            // (kx, ky, dxdt, dydt)
+            (1.0, 0.0, 1.565247584249853 + 1.0, 0.0), // ux = 1, uy = 0
+            (1.0, 0.0, 1.565247584249853 - 1.0, 0.0), // ux = -1, uy = 0
+            (1.0, 0.0, 1.565247584249853, 0.0 + 1.0), // ux = 0, uy = 1
+            (1.0, 0.0, 1.565247584249853, 0.0 - 1.0), // ux = 0, uy = -1
+        ];
+
+        let bathy_data: &dyn BathymetryData = &ConstantDepth::new(1000.0);
+        let current_data_1: &dyn CurrentData = &ConstantCurrent::new(1.0);
+        let current_data_2: &dyn CurrentData = &ConstantCurrent::new(-1.0);
+
+        // TODO: need a default builder
+
+        for (i, (kx, ky, ans_dxdt, ans_dydt)) in results.iter().enumerate() {
+            let system = match i {
+                0 => WaveRayPath::new_with_current(bathy_data, Some(current_data_1), None),
+                1 => WaveRayPath::new_with_current(bathy_data, Some(current_data_2), None),
+                2 => WaveRayPath::new_with_current(bathy_data, None, Some(current_data_1)),
+                3 => WaveRayPath::new_with_current(bathy_data, None, Some(current_data_2)),
+                _ => WaveRayPath::new_with_current(bathy_data, None, None),
+            };
+            let (dxdt, dydt, _, _) = system.odes(&0.0, &0.0, &kx, &ky).unwrap();
+            assert!(
+                (ans_dxdt - dxdt).abs() < f64::EPSILON && (ans_dydt - dydt).abs() < f64::EPSILON,
+                "ans_dxdt: {}, ans_dydt: {}, dxdt: {}, dydt: {}, kx: {}, ky: {}",
+                ans_dxdt,
+                ans_dydt,
+                dxdt,
+                dydt,
+                kx,
+                ky
+            );
+        }
     }
 }
