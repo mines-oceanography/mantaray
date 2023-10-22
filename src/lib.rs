@@ -27,6 +27,7 @@ pub mod bathymetry;
 mod current;
 mod datatype;
 mod error;
+mod ffi;
 mod interpolator;
 mod io;
 pub mod ray;
