@@ -7,6 +7,7 @@ pub(crate) struct ConstantCurrent {
     uy: f32,
 }
 
+#[allow(dead_code)]
 impl ConstantCurrent {
     /// Constructor
     pub(crate) fn new(ux: f32, uy: f32) -> Self {
