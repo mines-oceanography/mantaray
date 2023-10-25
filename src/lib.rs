@@ -24,7 +24,7 @@
 #![deny(missing_docs)]
 
 use bathymetry::BathymetryData;
-use current::{ConstantCurrent, CurrentData};
+use current::CurrentData;
 use ode_solvers::*;
 
 mod error;
