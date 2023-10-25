@@ -3,18 +3,19 @@ use crate::error::Error;
 use super::CurrentData;
 
 pub(crate) struct ConstantCurrent {
-    current: f32,
+    ux: f32,
+    uy: f32,
 }
 
 impl ConstantCurrent {
     /// Constructor
-    pub(crate) fn new(current: f32) -> Self {
-        ConstantCurrent { current }
+    pub(crate) fn new(ux: f32, uy: f32) -> Self {
+        ConstantCurrent { ux, uy }
     }
 }
 
 impl CurrentData for ConstantCurrent {
-    fn get_current(&self, _x: &f32, _y: &f32) -> Result<f32, Error> {
-        Ok(self.current)
+    fn current(&self, _x: &f32, _y: &f32) -> Result<(f32, f32), Error> {
+        Ok((self.ux, self.uy))
     }
 }
