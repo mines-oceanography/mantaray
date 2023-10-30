@@ -25,6 +25,7 @@
 
 use bathymetry::BathymetryData;
 use current::CurrentData;
+use derive_builder::Builder;
 use ode_solvers::*;
 
 mod error;
@@ -72,6 +73,16 @@ impl<'a> WaveRayPath<'a> {
             bathy_data: depth_data,
             current_data: current_data,
         }
+    }
+
+    /// build design method
+    ///
+    /// Used to create builder object then set each argument individually.
+    ///
+    /// # Returns
+    /// `WaveRayPathBuilder<'a>` : the default WaveRayPathBuilder
+    pub fn build() -> WaveRayPathBuilder<'a> {
+        WaveRayPathBuilder::default()
     }
 
     /// Get the depth at the point x, y
@@ -251,12 +262,13 @@ fn dk_vector_dt(k_mag: &f64, h: &f64, dhdx: &f64, dhdy: &f64) -> (f64, f64) {
 type State = Vector4<f64>;
 type Time = f64;
 
+#[derive(Builder)]
 /// A struct that stores the bathymetry/depth data related to an individual ray.
 struct WaveRayPath<'a> {
     /// A reference to a pointer to a struct that implements the depth trait. The
     /// lifetime of WaveRayPath is restricted to the lifetime of this variable.
     bathy_data: &'a dyn BathymetryData,
-
+    #[builder(default = "None")]
     current_data: Option<&'a dyn CurrentData>, // TODO: change this to implement a default builder
 }
 
@@ -610,6 +622,65 @@ mod test_current {
         current::{ConstantCurrent, CurrentData},
         WaveRayPath,
     };
+
+    #[test]
+    /// this test I added by copying a test from the module
+    /// test_constant_current and using the WaveRayPath from the builder. I am
+    /// comparing the results using the function `odes` because it uses both the
+    /// current and the bathymetry and will make sure both work.
+    fn test_waveraypath_builder() {
+        let bd = ConstantDepth::new(1000.0);
+        let cd = ConstantCurrent::new(0.0, 0.0);
+
+        // build pattern with supplying current data
+        let wave = WaveRayPath::build()
+            .bathy_data(&bd) // TODO: should bathy_data also be optional?
+            .current_data(Some(&cd))
+            .build()
+            .unwrap();
+
+        // build pattern without supplying current data
+        let wave2 = WaveRayPath::build().bathy_data(&bd).build().unwrap();
+
+        let results = [
+            // (kx, ky, dxdt, dydt)
+            (1.0, 0.0, 1.565247584249853, 0.0),
+            (0.0, 1.0, 0.0, 1.565247584249853),
+            (-1.0, 0.0, -1.565247584249853, 0.0),
+            (0.0, -1.0, 0.0, -1.565247584249853),
+            // (0.0, 0.0, 0.0, 0.0) // this would cause panic
+        ];
+
+        // check the first wave
+        for (kx, ky, ans_dxdt, ans_dydt) in results {
+            let (dxdt, dydt, _, _) = wave.odes(&0.0, &0.0, &kx, &ky).unwrap();
+            assert!(
+                (ans_dxdt - dxdt).abs() < 1.0e-4 && (ans_dydt - dydt).abs() < 1.0e-4,
+                "ans_dxdt: {}, ans_dydt: {}, dxdt: {}, dydt: {}, kx: {}, ky: {}",
+                ans_dxdt,
+                ans_dydt,
+                dxdt,
+                dydt,
+                kx,
+                ky
+            );
+        }
+
+        // check the second wave
+        for (kx, ky, ans_dxdt, ans_dydt) in results {
+            let (dxdt, dydt, _, _) = wave2.odes(&0.0, &0.0, &kx, &ky).unwrap();
+            assert!(
+                (ans_dxdt - dxdt).abs() < 1.0e-4 && (ans_dydt - dydt).abs() < 1.0e-4,
+                "ans_dxdt: {}, ans_dydt: {}, dxdt: {}, dydt: {}, kx: {}, ky: {}",
+                ans_dxdt,
+                ans_dydt,
+                dxdt,
+                dydt,
+                kx,
+                ky
+            );
+        }
+    }
 
     #[test]
     fn test_constant_depth_current() {
