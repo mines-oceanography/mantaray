@@ -119,8 +119,8 @@ impl<'a> WaveRayPath<'a> {
     }
 
     pub fn current(&self, x: &f32, y: &f32) -> Result<(f32, f32), Error> {
-        let (ux, uy) = self.current_data.unwrap().current(x, y)?;
-        Ok((ux, uy))
+        let (u, v) = self.current_data.unwrap().current(x, y)?;
+        Ok((u, v))
     }
 
     /// Calculates system of odes from the given state
@@ -163,7 +163,7 @@ impl<'a> WaveRayPath<'a> {
     ) -> Result<(f64, f64, f64, f64), Error> {
         let (h, (dhdx, dhdy)) = self.depth_and_gradient(&(*x as f32), &(*y as f32))?;
 
-        let (ux, uy, duxdx, duydx, duxdy, duydy) = if let None = self.current_data {
+        let (u, v, dudx, dvdx, dudy, dvdy) = if let None = self.current_data {
             (0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
         } else {
             let (a, b) = self.current(&(*x as f32), &(*y as f32))?;
@@ -176,16 +176,16 @@ impl<'a> WaveRayPath<'a> {
         let k_dir = ky.atan2(*kx);
 
         let cg = group_velocity(&k_mag, &h)?;
-        let cgx = cg * k_dir.cos() + ux;
-        let cgy = cg * k_dir.sin() + uy;
+        let cgx = cg * k_dir.cos() + u;
+        let cgy = cg * k_dir.sin() + v;
 
         let dxdt = cgx;
         let dydt = cgy;
 
         let (dkxdt_bathy, dkydt_bathy) = dk_vector_dt(&k_mag, &h, &(dhdx as f64), &(dhdy as f64));
 
-        let dkxdt = dkxdt_bathy - kx * duxdx - ky * duydx;
-        let dkydt = dkydt_bathy - kx * duxdy - ky * duydy;
+        let dkxdt = dkxdt_bathy - kx * dudx - ky * dvdx;
+        let dkydt = dkydt_bathy - kx * dudy - ky * dvdy;
 
         Ok((dxdt, dydt, dkxdt, dkydt))
     }
@@ -686,16 +686,16 @@ mod test_current {
     #[test]
     fn test_constant_depth_current() {
         // test case: initial group velocity in x axis only test 1, -1 for both
-        // ux and uy individually the results should be equal to the original
+        // u and v individually the results should be equal to the original
         // without current plus or minus one. dk/dt will be zero in both x and y
 
         // these results are copied from test_odes in mod test_constant_bathymetry, but with 1 added in the correct place
         let results = [
             // (kx, ky, dxdt, dydt)
-            (1.0, 0.0, 1.565247584249853 + 1.0, 0.0), // ux = 1, uy = 0
-            (1.0, 0.0, 1.565247584249853 - 1.0, 0.0), // ux = -1, uy = 0
-            (1.0, 0.0, 1.565247584249853, 0.0 + 1.0), // ux = 0, uy = 1
-            (1.0, 0.0, 1.565247584249853, 0.0 - 1.0), // ux = 0, uy = -1
+            (1.0, 0.0, 1.565247584249853 + 1.0, 0.0), // u = 1, v = 0
+            (1.0, 0.0, 1.565247584249853 - 1.0, 0.0), // u = -1, v = 0
+            (1.0, 0.0, 1.565247584249853, 0.0 + 1.0), // u = 0, v = 1
+            (1.0, 0.0, 1.565247584249853, 0.0 - 1.0), // u = 0, v = -1
         ];
 
         let bathy_data: &dyn BathymetryData = &ConstantDepth::new(1000.0);
