@@ -118,7 +118,7 @@ impl<'a> WaveRayPath<'a> {
         Ok(h_dh)
     }
 
-    pub fn current(&self, x: &f32, y: &f32) -> Result<(f32, f32), Error> {
+    pub fn current(&self, x: &f64, y: &f64) -> Result<(f64, f64), Error> {
         let (u, v) = self.current_data.unwrap().current(x, y)?;
         Ok((u, v))
     }
@@ -166,7 +166,7 @@ impl<'a> WaveRayPath<'a> {
         let (u, v, dudx, dvdx, dudy, dvdy) = if let None = self.current_data {
             (0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
         } else {
-            let (a, b) = self.current(&(*x as f32), &(*y as f32))?;
+            let (a, b) = self.current(x, y)?;
             (a as f64, b as f64, 0.0, 0.0, 0.0, 0.0)
         };
 
