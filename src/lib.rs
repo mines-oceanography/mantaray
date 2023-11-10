@@ -71,7 +71,7 @@ impl<'a> WaveRayPath<'a> {
     ) -> Self {
         WaveRayPath {
             bathy_data: depth_data,
-            current_data: current_data,
+            current_data,
         }
     }
 
@@ -162,11 +162,11 @@ impl<'a> WaveRayPath<'a> {
     ) -> Result<(f64, f64, f64, f64), Error> {
         let (h, (dhdx, dhdy)) = self.depth_and_gradient(&(*x as f32), &(*y as f32))?;
 
-        let (u, v, dudx, dvdx, dudy, dvdy) = if let None = self.current_data {
+        let (u, v, dudx, dvdx, dudy, dvdy) = if self.current_data.is_none() {
             (0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
         } else {
             let (a, b) = self.current(x, y)?;
-            (a as f64, b as f64, 0.0, 0.0, 0.0, 0.0)
+            (a, b, 0.0, 0.0, 0.0, 0.0)
         };
 
         let h = h as f64;
