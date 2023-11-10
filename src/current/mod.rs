@@ -1,3 +1,9 @@
+//! CurrentData
+//! 
+//! This module contains the following structs that implement the `CurrentData`
+//! trait:
+//! - `ConstantCurrent`
+
 use crate::error::Error;
 
 mod constant_current;
