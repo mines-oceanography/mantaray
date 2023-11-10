@@ -38,6 +38,7 @@ mod bathymetry;
 mod current;
 
 mod ray;
+mod ray_tracing_data_type;
 
 use error::Error;
 

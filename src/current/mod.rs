@@ -6,6 +6,7 @@
 
 use crate::error::Error;
 
+mod cartesian_file_current;
 mod constant_current;
 
 #[allow(unused_imports)]
