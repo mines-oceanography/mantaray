@@ -49,10 +49,8 @@ pub(crate) fn bilinear(points: &Vec<(f32, f32, f32)>, target: &(f32, f32)) -> Re
     let c = points[2];
     let d = points[3];
 
-    // translate points and target with respect to a:
-    let at = (0.0, 0.0, a.2);
+    // translate points b, d, and target with respect to a:
     let bt = (b.0 - a.0, b.1 - a.1, b.2);
-    let ct = (c.0 - a.0, c.1 - a.1, c.2);
     let dt = (d.0 - a.0, d.1 - a.1, d.2);
     let tt = (target.0 - a.0, target.1 - a.1);
 
