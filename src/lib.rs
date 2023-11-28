@@ -620,7 +620,7 @@ mod test_constant_bathymetry {
 mod test_current {
     use crate::{
         bathymetry::{BathymetryData, ConstantDepth},
-        current::{ConstantCurrent, CurrentData},
+        current::{ConstantCurrent, CurrentData, self},
         WaveRayPath,
     };
 
@@ -696,6 +696,8 @@ mod test_current {
             (1.0, 0.0, 1.565247584249853 - 1.0, 0.0), // u = -1, v = 0
             (1.0, 0.0, 1.565247584249853, 0.0 + 1.0), // u = 0, v = 1
             (1.0, 0.0, 1.565247584249853, 0.0 - 1.0), // u = 0, v = -1
+            (1.0, 0.0, 1.565247584249853 + 1.0, 0.0 + 1.0), // u = 1, v = 1
+            (1.0, 0.0, 1.565247584249853 - 1.0, 0.0 - 1.0), // u = -1, v = -1
         ];
 
         let bathy_data: &dyn BathymetryData = &ConstantDepth::new(1000.0);
@@ -703,6 +705,9 @@ mod test_current {
         let current_data_2: &dyn CurrentData = &ConstantCurrent::new(-1.0, 0.0);
         let current_data_3: &dyn CurrentData = &ConstantCurrent::new(0.0, 1.0);
         let current_data_4: &dyn CurrentData = &ConstantCurrent::new(0.0, -1.0);
+        let current_data_5: &dyn CurrentData = &ConstantCurrent::new(1.0, 1.0);
+        let current_data_6: &dyn CurrentData = &ConstantCurrent::new(-1.0, -1.0);
+
 
         // TODO: need a default builder
 
@@ -712,6 +717,8 @@ mod test_current {
                 1 => WaveRayPath::new_with_current(bathy_data, Some(current_data_2)),
                 2 => WaveRayPath::new_with_current(bathy_data, Some(current_data_3)),
                 3 => WaveRayPath::new_with_current(bathy_data, Some(current_data_4)),
+                4 => WaveRayPath::new_with_current(bathy_data, Some(current_data_5)),
+                5 => WaveRayPath::new_with_current(bathy_data, Some(current_data_6)),
                 _ => WaveRayPath::new_with_current(bathy_data, None),
             };
             let (dxdt, dydt, _, _) = system.odes(&0.0, &0.0, &kx, &ky).unwrap();
