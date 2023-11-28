@@ -114,17 +114,17 @@ $$
 
 #### Current effects
 $$
-c_{g_x} = c_g  \cos(\theta) + u_x
+c_{g_x} = c_g  \cos(\theta) + u
 $$
 
 $$
-c_{g_y} = c_g  \sin(\theta) + u_y
+c_{g_y} = c_g  \sin(\theta) + v
 $$
 
 $$
-\frac{dk_x}{dt}=\frac{dk_x}{dt}(bathy) - k_x\frac{\partial u_x}{\partial x} - k_y\frac{\partial u_y}{\partial x}
+\frac{dk_x}{dt}=\frac{dk_x}{dt}(bathy) - k_x\frac{\partial u}{\partial x} - k_y\frac{\partial v}{\partial x}
 $$
 
 $$
-\frac{dk_y}{dt}=\frac{dk_y}{dt}(bathy) - k_x\frac{\partial u_x}{\partial y} - k_y\frac{\partial u_y}{\partial y}
+\frac{dk_y}{dt}=\frac{dk_y}{dt}(bathy) - k_x\frac{\partial u}{\partial y} - k_y\frac{\partial v}{\partial y}
 $$

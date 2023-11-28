@@ -22,10 +22,14 @@ pub(crate) enum Error {
     /// access array.
     IndexOutOfBounds,
 
+    #[allow(clippy::enum_variant_names)] // tell clippy the name is ok
     #[error(transparent)]
+    // IO error from std::io
     IOError(#[from] std::io::Error),
 
+    #[allow(clippy::enum_variant_names)] // tell clippy the name is ok
     #[error(transparent)]
+    // Integration error from ode_solvers
     IntegrationError(#[from] ode_solvers::dop_shared::IntegrationError),
 
     #[error("The requested point has no nearest point")]
