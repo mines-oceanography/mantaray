@@ -619,7 +619,7 @@ mod test_constant_bathymetry {
 mod test_current {
     use crate::{
         bathymetry::{BathymetryData, ConstantDepth},
-        current::{ConstantCurrent, CurrentData, self},
+        current::{self, ConstantCurrent, CurrentData},
         WaveRayPath,
     };
 
@@ -706,9 +706,6 @@ mod test_current {
         let current_data_4: &dyn CurrentData = &ConstantCurrent::new(0.0, -1.0);
         let current_data_5: &dyn CurrentData = &ConstantCurrent::new(1.0, 1.0);
         let current_data_6: &dyn CurrentData = &ConstantCurrent::new(-1.0, -1.0);
-
-
-        // TODO: need a default builder
 
         for (i, (kx, ky, ans_dxdt, ans_dydt)) in results.iter().enumerate() {
             let system = match i {
