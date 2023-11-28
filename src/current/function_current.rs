@@ -1,12 +1,18 @@
 use crate::error::Error;
 
-use super::CurrentData;
+use super::{CurrentData, CurrentType, GradientType};
+
+/// CurrentFunction is a type alias for a function pointer to a function that
+/// accepts two references to f64 values and returns a Result containing a tuple
+/// of two f64 values or an Error. This represents taking input of (x, y) and
+/// returning either (u, v) or an error.
+pub(crate) type CurrentFunctionType = fn(&f64, &f64) -> Result<(f64, f64), Error>;
 
 pub(crate) struct FunctionCurrent {
     /// `fn_current` is a function pointer to a function with the signature
     /// `fn(&f64, &f64) -> Result<(f64, f64), Error>`. This function represents
     /// taking an input of (x, y) and returning either a (u, v) or an error.
-    fn_current: fn(&f64, &f64) -> Result<(f64, f64), Error>,
+    fn_current: CurrentFunctionType,
 }
 
 #[allow(dead_code)]
@@ -16,7 +22,7 @@ impl FunctionCurrent {
     ///
     /// # Arguments:
     ///
-    /// - `fn_current`: `fn(&f64, &f64) -> Result<(f64, f64), Error>`
+    /// - `fn_current`: `CurrentFunctionType`  (aka `fn(&f64, &f64) -> Result<(f64, f64), Error>`)
     ///
     /// The function that calculates current given an (x, y) input. A function
     /// that takes two references to f64 values and returns a Result containing
@@ -25,7 +31,7 @@ impl FunctionCurrent {
     /// # Returns:
     ///
     /// `FunctionCurrent` : returns the constructed struct
-    pub(crate) fn new(fn_current: fn(&f64, &f64) -> Result<(f64, f64), Error>) -> Self {
+    pub(crate) fn new(fn_current: CurrentFunctionType) -> Self {
         FunctionCurrent { fn_current }
     }
 }
@@ -47,7 +53,7 @@ impl CurrentData for FunctionCurrent {
     ///
     /// # Panics
     /// `current` can panic if the function in `fn_current` panics.
-    fn current(&self, x: &f64, y: &f64) -> Result<(f64, f64), Error> {
+    fn current(&self, x: &f64, y: &f64) -> Result<CurrentType, Error> {
         (self.fn_current)(x, y)
     }
 
@@ -68,11 +74,7 @@ impl CurrentData for FunctionCurrent {
     ///
     /// # Panics
     /// `current` can panic if the function in `fn_current` panics.
-    fn current_and_gradient(
-        &self,
-        x: &f64,
-        y: &f64,
-    ) -> Result<((f64, f64), (f64, f64, f64, f64)), Error> {
+    fn current_and_gradient(&self, x: &f64, y: &f64) -> Result<(CurrentType, GradientType), Error> {
         let (u, v) = (self.fn_current)(x, y)?;
 
         let d = 1.0; // FIXME: this needs to be a better estimate?
