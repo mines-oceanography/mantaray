@@ -117,9 +117,57 @@ impl<'a> WaveRayPath<'a> {
         Ok(h_dh)
     }
 
+    /// Get the current at the point (x, y)
+    ///
+    /// # Arguments
+    /// `x` : `&f64`
+    /// - the x coordinate in meters
+    ///
+    /// `y` : `&f64`
+    /// - the y coordinate in meters
+    ///
+    /// # Returns
+    /// `Result<(f64, f64), Error>`: returns either the current (u, v) at (x, y)
+    /// or an error
+    ///
+    /// # Errors
+    /// TODO: add errors. The current implementation with only constant current
+    /// should never return an error.
+    ///
+    /// # Panics
+    /// This will only panic if there is no current_data to unwrap.
     pub fn current(&self, x: &f64, y: &f64) -> Result<(f64, f64), Error> {
         let (u, v) = self.current_data.unwrap().current(x, y)?;
         Ok((u, v))
+    }
+
+    /// Get the current and gradient at the point (x, y)
+    ///
+    /// # Arguments
+    /// `x` : `&f64`
+    /// - the x coordinate in meters
+    ///
+    /// `y` : `&f64`
+    /// - the y coordinate in meters
+    ///
+    /// # Returns
+    /// `Result<(f64, f64, f64, f64, f64, f64), Error>`: returns either the
+    /// current (u, v) and the gradient (du/dx, du/dy, dv/dx, dv/dy) at (x, y)
+    ///
+    /// # Errors
+    /// TODO: add errors. The current implementation with only constant current
+    /// should never return an error.
+    ///
+    /// # Panics
+    /// This will only panic if there is no current_data to unwrap.
+    pub fn current_and_gradient(
+        &self,
+        x: &f64,
+        y: &f64,
+    ) -> Result<(f64, f64, f64, f64, f64, f64), Error> {
+        let ((u, v), (dudx, dudy, dvdx, dvdy)) =
+            self.current_data.unwrap().current_and_gradient(x, y)?;
+        Ok((u, v, dudx, dvdx, dudy, dvdy))
     }
 
     /// Calculates system of odes from the given state
@@ -165,8 +213,7 @@ impl<'a> WaveRayPath<'a> {
         let (u, v, dudx, dvdx, dudy, dvdy) = if self.current_data.is_none() {
             (0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
         } else {
-            let (a, b) = self.current(x, y)?;
-            (a, b, 0.0, 0.0, 0.0, 0.0)
+            self.current_and_gradient(x, y)?
         };
 
         let h = h as f64;
@@ -619,7 +666,7 @@ mod test_constant_bathymetry {
 mod test_current {
     use crate::{
         bathymetry::{BathymetryData, ConstantDepth},
-        current::{self, ConstantCurrent, CurrentData},
+        current::{ConstantCurrent, CurrentData},
         WaveRayPath,
     };
 
