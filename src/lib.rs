@@ -319,7 +319,7 @@ struct WaveRayPath<'a> {
     current_data: Option<&'a dyn CurrentData>, // TODO: change this to implement a default builder
 }
 
-impl<'a> ode_solvers::System<State> for WaveRayPath<'a> {
+impl<'a> ode_solvers::System<Time, State> for WaveRayPath<'a> {
     fn system(&self, t: Time, s: &State, ds: &mut State) {
         let (dxdt, dydt, dkxdt, dkydt) = match self.odes(&s[0], &s[1], &s[2], &s[3]) {
             Err(e) => {
