@@ -345,7 +345,8 @@ mod test_single_wave {
         // test wave 2 starting in the corner
         let wave = SingleRay::new(bathymetry_data, 10.0, 10.0, 0.007, 0.007);
         let res = wave.trace_individual(0.0, 8.0, 1.0).unwrap();
-        let _ = output_to_tsv_file("constant_depth_shallow_xy_out.txt", &res.0, &res.1);
+        let filename = temp_filename("constant_depth_shallow_xy_out.txt");
+        let _ = output_to_tsv_file(&filename, &res.0, &res.1);
     }
 
     #[test]
@@ -361,7 +362,8 @@ mod test_single_wave {
         // make sure the starting point is at least 2 steps away from the edge.
         let res = wave.trace_individual(0.0, 18.0, 1.0).unwrap();
 
-        let _ = output_to_tsv_file("constant_depth_deep_x_out.txt", &res.0, &res.1);
+        let filename = temp_filename("constant_depth_deep_x_out.txt");
+        let _ = output_to_tsv_file(&filename, &res.0, &res.1);
     }
 
     #[test]
@@ -373,7 +375,8 @@ mod test_single_wave {
 
         let wave = SingleRay::new(bathymetry_data, 10.0, 10.0, 0.7, 0.7);
         let res = wave.trace_individual(0.0, 18.0, 1.0).unwrap();
-        let _ = output_to_tsv_file("constant_depth_deep_xy_out.txt", &res.0, &res.1);
+        let filename = temp_filename("constant_depth_deep_xy_out.txt");
+        let _ = output_to_tsv_file(&filename, &res.0, &res.1);
     }
 
     #[test]
@@ -408,7 +411,8 @@ mod test_single_wave {
 
         let wave = SingleRay::new(bathymetry_data, 10.0, 10.0, 0.007, 0.007);
         let res = wave.trace_individual(0.0, 7.0, 1.0).unwrap();
-        let _ = output_to_tsv_file("two_depth_shallow_xy_out.txt", &res.0, &res.1);
+        let filename = temp_filename("two_depth_shallow_xy_out.txt");
+        let _ = output_to_tsv_file(&filename, &res.0, &res.1);
     }
 
     #[test]
@@ -426,7 +430,8 @@ mod test_single_wave {
         // make sure the starting point is at least 2 steps away from the edge.
         let res = wave.trace_individual(0.0, 30.0, 1.0).unwrap();
 
-        let _ = output_to_tsv_file("two_depth_deep_x_out.txt", &res.0, &res.1);
+        let filename = temp_filename("two_depth_deep_x_out.txt");
+        let _ = output_to_tsv_file(&filename, &res.0, &res.1);
     }
 
     #[test]
@@ -441,7 +446,8 @@ mod test_single_wave {
 
         let wave = SingleRay::new(bathymetry_data, 10.0, 10.0, 0.7, 0.7);
         let res = wave.trace_individual(0.0, 40.0, 1.0).unwrap();
-        let _ = output_to_tsv_file("two_depth_deep_xy_out.txt", &res.0, &res.1);
+        let filename = temp_filename("two_depth_deep_xy_out.txt");
+        let _ = output_to_tsv_file(&filename, &res.0, &res.1);
     }
 
     #[test]
@@ -451,7 +457,8 @@ mod test_single_wave {
 
         let wave = SingleRay::new(bathymetry_data, 10.0, 1000.0, 0.01, 0.0);
         let res = wave.trace_individual(0.0, 100.0, 1.0).unwrap();
-        let _ = output_to_tsv_file("slope_depth_x_out.txt", &res.0, &res.1);
+        let filename = temp_filename("slope_depth_x_out.txt");
+        let _ = output_to_tsv_file(&filename, &res.0, &res.1);
     }
 }
 
