@@ -246,6 +246,7 @@ mod test_single_wave {
 
     use lockfile::Lockfile;
     use std::path::Path;
+    use tempfile::tempdir;
 
     use crate::{
         bathymetry::{CartesianFile, ConstantDepth, ConstantSlope},
@@ -307,6 +308,16 @@ mod test_single_wave {
             .unwrap();
         file_writer.close().unwrap();
         // end of copied from docs
+    }
+
+    fn temp_filename(filename: &str) -> String {
+        let tmp_dir = tempdir().unwrap();
+        tmp_dir
+            .path()
+            .join(filename)
+            .into_os_string()
+            .into_string()
+            .unwrap()
     }
 
     #[test]
