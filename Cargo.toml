@@ -6,12 +6,12 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-derive_builder = "0.12.0"
+derive_builder = "0.20.0"
 netcdf3 = "0.5.2"
 ode_solvers = "0.3.7"
-thiserror = "1.0.40"
+thiserror = "1.0.57"
 nalgebra = "0.31.4"
-rayon = "1.7.0"
+rayon = "1.8.1"
 
 [dev-dependencies]
 lockfile = "0.4.0"
