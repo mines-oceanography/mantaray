@@ -326,13 +326,13 @@ mod test_single_wave {
     /// shallow wave propagating in the x direction.
     fn test_constant_wave_shallow_x() {
         let bathymetry_data: &dyn BathymetryData = &ConstantDepth::new(10.0);
-
         let wave = SingleRay::new(bathymetry_data, 10.0, 50.0, 0.01, 0.0);
 
         // make sure the starting point is at least 2 steps away from the edge.
         let res = wave.trace_individual(0.0, 8.0, 1.0).unwrap();
 
-        let _ = output_to_tsv_file("constant_depth_shallow_x_out.txt", &res.0, &res.1);
+        let filename = temp_filename("constant_depth_shallow_x_out.txt");
+        let _ = output_to_tsv_file(&filename, &res.0, &res.1);
     }
 
     #[test]
