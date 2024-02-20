@@ -5,7 +5,9 @@ use rayon::prelude::*;
 
 use ode_solvers::{OVector, Rk4};
 
-use crate::{error::Error, BathymetryData, State, WaveRayPath};
+use crate::{
+    bathymetry::BathymetryData, error::Error, wave_ray_path::State, wave_ray_path::WaveRayPath,
+};
 use std::fs::{File, OpenOptions};
 use std::io::{BufWriter, Write};
 
@@ -174,7 +176,7 @@ impl<'a> SingleRay<'a> {
         step_size: f64,
     ) -> Result<(XOut, YOut), Error> {
         // do the calculations
-        let system = WaveRayPath::new(self.bathymetry_data);
+        let system = WaveRayPath::new(self.bathymetry_data, None);
         let s0 = State::new(
             self.initial_conditions.0,
             self.initial_conditions.1,
@@ -247,10 +249,7 @@ mod test_single_wave {
     use lockfile::Lockfile;
     use std::path::Path;
 
-    use crate::{
-        bathymetry::{CartesianFile, ConstantDepth, ConstantSlope},
-        BathymetryData,
-    };
+    use crate::bathymetry::{BathymetryData, CartesianFile, ConstantDepth, ConstantSlope};
 
     use super::{output_to_tsv_file, SingleRay};
 
