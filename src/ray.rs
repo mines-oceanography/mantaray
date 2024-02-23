@@ -3,23 +3,17 @@
 
 use std::fs::{File, OpenOptions};
 use std::io::{BufWriter, Write};
-
-use rayon::prelude::*;
-
-use ode_solvers::{OVector, Rk4};
-
-use crate::wave_ray_path::Time;
-use crate::{
-    bathymetry::BathymetryData, error::Error, wave_ray_path::State, wave_ray_path::WaveRayPath,
-};
+use std::path::Path;
 
 use ode_solvers::dop_shared::SolverResult;
+use rayon::prelude::*;
 
-#[allow(dead_code)]
-// define x_out and y_out types
-type XOut = Vec<f64>;
-#[allow(dead_code)]
-type YOut = Vec<OVector<f64, nalgebra::base::dimension::Const<4>>>;
+use ode_solvers::Rk4;
+
+use crate::{
+    bathymetry::BathymetryData, error::Error, wave_ray_path::State, wave_ray_path::Time,
+    wave_ray_path::WaveRayPath,
+};
 
 /// a struct that creates many rays
 pub struct ManyRays<'a> {
@@ -160,15 +154,11 @@ impl<'a> SingleRay<'a> {
     /// - delta t
     ///
     /// # Returns
-    /// `Result<(XOut, YOut), Error>`
-    /// - `Ok((XOut, YOut))` : a tuple of the x_out and y_out from the Rk4
-    ///   stepper.
+    /// `Result<SolverResult<Time, State>, Error>`
+    /// - `SolverResult<Time, State>` : The result of the `ode_solvers`
+    ///   integration.
     /// - `Err(Error::IntegrationError)` : there was an error during Rk4
     ///   integrate method.
-    ///
-    /// # Panics
-    /// This function will panic if the wave ever propagates out of bounds of
-    /// the bathymetry data array during Rk4 integration.
     ///
     /// # Note
     /// This struct still copies the data when it returns, which could be an
@@ -198,9 +188,9 @@ impl<'a> SingleRay<'a> {
 
 #[allow(dead_code)]
 // output to space separated file
-fn output_to_tsv_file(file_name: &str, results: &SolverResult<Time, State>) -> Result<(), Error> {
-    let (x_out, y_out) = results.get();
-    let file = File::create(file_name)?;
+fn output_to_tsv_file(file_path: &Path, result: &SolverResult<Time, State>) -> Result<(), Error> {
+    let (x_out, y_out) = result.get();
+    let file = File::create(file_path)?;
     let mut writer = BufWriter::new(file);
     writeln!(&mut writer, "t x y kx ky")?;
     for (i, x) in x_out.iter().enumerate() {
@@ -218,13 +208,15 @@ fn output_to_tsv_file(file_name: &str, results: &SolverResult<Time, State>) -> R
 }
 
 #[allow(dead_code)]
-fn output_or_append_to_tsv_file(file_name: &str, results: &SolverResult<Time, State>) -> Result<(), Error> {
-    let (x_out, y_out) = results.get();
+fn output_or_append_to_tsv_file(
+    file_path: &Path,
+    result: &SolverResult<Time, State>,
+) -> Result<(), Error> {
+    let (x_out, y_out) = result.get();
     let file = OpenOptions::new()
-        .write(true)
         .create(true)
         .append(true)
-        .open(file_name)?;
+        .open(file_path)?;
     let mut writer = BufWriter::new(file);
     writeln!(&mut writer, "t x y kx ky")?;
     for (i, x) in x_out.iter().enumerate() {
@@ -284,7 +276,7 @@ mod test_single_wave {
         let res = wave.trace_individual(0.0, 8.0, 1.0).unwrap();
 
         let filename = temp_filename("constant_depth_shallow_x_out.txt");
-        let _ = output_to_tsv_file(&filename, &res);
+        let _ = output_to_tsv_file(Path::new(&filename), &res);
     }
 
     #[test]
@@ -298,7 +290,7 @@ mod test_single_wave {
         let wave = SingleRay::new(bathymetry_data, 10.0, 10.0, 0.007, 0.007);
         let res = wave.trace_individual(0.0, 8.0, 1.0).unwrap();
         let filename = temp_filename("constant_depth_shallow_xy_out.txt");
-        let _ = output_to_tsv_file(&filename, &res);
+        let _ = output_to_tsv_file(Path::new(&filename), &res);
     }
 
     #[test]
@@ -315,7 +307,7 @@ mod test_single_wave {
         let res = wave.trace_individual(0.0, 18.0, 1.0).unwrap();
 
         let filename = temp_filename("constant_depth_deep_x_out.txt");
-        let _ = output_to_tsv_file(&filename, &res);
+        let _ = output_to_tsv_file(Path::new(&filename), &res);
     }
 
     #[test]
@@ -328,7 +320,7 @@ mod test_single_wave {
         let wave = SingleRay::new(bathymetry_data, 10.0, 10.0, 0.7, 0.7);
         let res = wave.trace_individual(0.0, 18.0, 1.0).unwrap();
         let filename = temp_filename("constant_depth_deep_xy_out.txt");
-        let _ = output_to_tsv_file(&filename, &res);
+        let _ = output_to_tsv_file(Path::new(&filename), &res);
     }
 
     #[test]
@@ -346,9 +338,10 @@ mod test_single_wave {
         // make sure the starting point is at least 2 steps away from the edge.
         let res = wave.trace_individual(0.0, 6.0, 1.0).unwrap();
 
+        let _ = output_to_tsv_file(Path::new("two_depth_shallow_out_x.txt"), &res);
         let filename = temp_filename("two_depth_shallow_out_x.txt");
 
-        let _ = output_to_tsv_file(&filename, &res);
+        let _ = output_to_tsv_file(&Path::new(&filename), &res);
     }
 
     #[test]
@@ -366,7 +359,7 @@ mod test_single_wave {
         let wave = SingleRay::new(bathymetry_data, 10.0, 10.0, 0.007, 0.007);
         let res = wave.trace_individual(0.0, 7.0, 1.0).unwrap();
         let filename = temp_filename("two_depth_shallow_xy_out.txt");
-        let _ = output_to_tsv_file(&filename, &res);
+        let _ = output_to_tsv_file(Path::new(&filename), &res);
     }
 
     #[test]
@@ -385,7 +378,7 @@ mod test_single_wave {
         let res = wave.trace_individual(0.0, 30.0, 1.0).unwrap();
 
         let filename = temp_filename("two_depth_deep_x_out.txt");
-        let _ = output_to_tsv_file(&filename, &res);
+        let _ = output_to_tsv_file(Path::new(&filename), &res);
     }
 
     #[test]
@@ -401,7 +394,7 @@ mod test_single_wave {
         let wave = SingleRay::new(bathymetry_data, 10.0, 10.0, 0.7, 0.7);
         let res = wave.trace_individual(0.0, 40.0, 1.0).unwrap();
         let filename = temp_filename("two_depth_deep_xy_out.txt");
-        let _ = output_to_tsv_file(&filename, &res);
+        let _ = output_to_tsv_file(Path::new(&filename), &res);
     }
 
     #[test]
@@ -412,7 +405,7 @@ mod test_single_wave {
         let wave = SingleRay::new(bathymetry_data, 10.0, 1000.0, 0.01, 0.0);
         let res = wave.trace_individual(0.0, 100.0, 1.0).unwrap();
         let filename = temp_filename("slope_depth_x_out.txt");
-        let _ = output_to_tsv_file(&filename, &res);
+        let _ = output_to_tsv_file(Path::new(&filename), &res);
     }
 }
 
