@@ -1,7 +1,7 @@
 //! This module makes it easier to use the Rk4 ray tracing by encapsulating it
 //! with the SingleRay struct
 
-use std::fs::{File, OpenOptions};
+use std::fs::OpenOptions;
 use std::io::{BufWriter, Write};
 use std::path::Path;
 
@@ -187,27 +187,6 @@ impl<'a> SingleRay<'a> {
 }
 
 #[allow(dead_code)]
-// output to space separated file
-fn output_to_tsv_file(file_path: &Path, result: &SolverResult<Time, State>) -> Result<(), Error> {
-    let (x_out, y_out) = result.get();
-    let file = File::create(file_path)?;
-    let mut writer = BufWriter::new(file);
-    writeln!(&mut writer, "t x y kx ky")?;
-    for (i, x) in x_out.iter().enumerate() {
-        if y_out[i][0].is_nan() {
-            break;
-        }
-        write!(&mut writer, "{} ", x)?;
-        for elem in y_out[i].iter() {
-            write!(&mut writer, "{} ", elem)?;
-        }
-        writeln!(&mut writer, " ")?;
-    }
-    writer.flush()?;
-    Ok(())
-}
-
-#[allow(dead_code)]
 fn output_or_append_to_tsv_file(
     file_path: &Path,
     result: &SolverResult<Time, State>,
@@ -241,9 +220,13 @@ mod test_single_wave {
     use std::path::Path;
     use tempfile::tempdir;
 
-    use crate::{bathymetry::{BathymetryData, CartesianFile, ConstantDepth, ConstantSlope}, io::utility::create_netcdf3_bathymetry};
+    use crate::{
+        {bathymetry::{BathymetryData, CartesianFile, ConstantDepth, ConstantSlope},
+        ray_result::RayResults,
+        writable::Writable,
+    }, io::utility::create_netcdf3_bathymetry};
 
-    use super::{output_to_tsv_file, SingleRay};
+    use super::SingleRay;
 
     /// Create a test file with depths split down the middle
     fn two_depth_fn(x: f32, _y: f32) -> f64 {
@@ -276,7 +259,7 @@ mod test_single_wave {
         let res = wave.trace_individual(0.0, 8.0, 1.0).unwrap();
 
         let filename = temp_filename("constant_depth_shallow_x_out.txt");
-        let _ = output_to_tsv_file(Path::new(&filename), &res);
+        let _ = RayResults::from(res).write_to_csv_file(Path::new(&filename), " ");
     }
 
     #[test]
@@ -289,8 +272,8 @@ mod test_single_wave {
         // test wave 2 starting in the corner
         let wave = SingleRay::new(bathymetry_data, 10.0, 10.0, 0.007, 0.007);
         let res = wave.trace_individual(0.0, 8.0, 1.0).unwrap();
-        let filename = temp_filename("constant_depth_shallow_xy_out.txt");
-        let _ = output_to_tsv_file(Path::new(&filename), &res);
+        let filename = temp_filename("constant_depth_shallow_x_out.txt");
+        let _ = RayResults::from(res).write_to_csv_file(Path::new(&filename), " ");
     }
 
     #[test]
@@ -307,7 +290,7 @@ mod test_single_wave {
         let res = wave.trace_individual(0.0, 18.0, 1.0).unwrap();
 
         let filename = temp_filename("constant_depth_deep_x_out.txt");
-        let _ = output_to_tsv_file(Path::new(&filename), &res);
+        let _ = RayResults::from(res).write_to_csv_file(Path::new(&filename), " ");
     }
 
     #[test]
@@ -319,8 +302,9 @@ mod test_single_wave {
 
         let wave = SingleRay::new(bathymetry_data, 10.0, 10.0, 0.7, 0.7);
         let res = wave.trace_individual(0.0, 18.0, 1.0).unwrap();
+
         let filename = temp_filename("constant_depth_deep_xy_out.txt");
-        let _ = output_to_tsv_file(Path::new(&filename), &res);
+        let _ = RayResults::from(res).write_to_csv_file(Path::new(&filename), " ");
     }
 
     #[test]
@@ -338,10 +322,9 @@ mod test_single_wave {
         // make sure the starting point is at least 2 steps away from the edge.
         let res = wave.trace_individual(0.0, 6.0, 1.0).unwrap();
 
-        let _ = output_to_tsv_file(Path::new("two_depth_shallow_out_x.txt"), &res);
         let filename = temp_filename("two_depth_shallow_out_x.txt");
 
-        let _ = output_to_tsv_file(&Path::new(&filename), &res);
+        let _ = RayResults::from(res).write_to_csv_file(Path::new(&filename), " ");
     }
 
     #[test]
@@ -358,8 +341,9 @@ mod test_single_wave {
 
         let wave = SingleRay::new(bathymetry_data, 10.0, 10.0, 0.007, 0.007);
         let res = wave.trace_individual(0.0, 7.0, 1.0).unwrap();
+
         let filename = temp_filename("two_depth_shallow_xy_out.txt");
-        let _ = output_to_tsv_file(Path::new(&filename), &res);
+        let _ = RayResults::from(res).write_to_csv_file(Path::new(&filename), " ");
     }
 
     #[test]
@@ -378,7 +362,7 @@ mod test_single_wave {
         let res = wave.trace_individual(0.0, 30.0, 1.0).unwrap();
 
         let filename = temp_filename("two_depth_deep_x_out.txt");
-        let _ = output_to_tsv_file(Path::new(&filename), &res);
+        let _ = RayResults::from(res).write_to_csv_file(Path::new(&filename), " ");
     }
 
     #[test]
@@ -393,8 +377,9 @@ mod test_single_wave {
 
         let wave = SingleRay::new(bathymetry_data, 10.0, 10.0, 0.7, 0.7);
         let res = wave.trace_individual(0.0, 40.0, 1.0).unwrap();
+
         let filename = temp_filename("two_depth_deep_xy_out.txt");
-        let _ = output_to_tsv_file(Path::new(&filename), &res);
+        let _ = RayResults::from(res).write_to_csv_file(Path::new(&filename), " ");
     }
 
     #[test]
@@ -404,8 +389,9 @@ mod test_single_wave {
 
         let wave = SingleRay::new(bathymetry_data, 10.0, 1000.0, 0.01, 0.0);
         let res = wave.trace_individual(0.0, 100.0, 1.0).unwrap();
+
         let filename = temp_filename("slope_depth_x_out.txt");
-        let _ = output_to_tsv_file(Path::new(&filename), &res);
+        let _ = RayResults::from(res).write_to_csv_file(Path::new(&filename), " ");
     }
 }
 
