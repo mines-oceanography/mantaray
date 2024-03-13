@@ -232,6 +232,15 @@ impl<'a> ode_solvers::System<Time, State> for WaveRayPath<'a> {
         ds[2] = dkxdt;
         ds[3] = dkydt;
     }
+
+    fn solout(&mut self, x: Time, _y: &State, dy: &State) -> bool {
+        if dy[0].is_nan() && dy[1].is_nan() && dy[2].is_nan() && dy[3].is_nan() {
+            println!("NaN derivatives in output. Likely reached end of current or bathy domain. Stopping integration at time {}.", x);
+            true
+        } else {
+            false
+        }
+    }
 }
 
 #[cfg(test)]
