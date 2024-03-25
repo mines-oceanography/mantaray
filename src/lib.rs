@@ -25,7 +25,11 @@
 
 mod bathymetry;
 mod current;
+mod datatype;
 mod error;
 mod interpolator;
 mod ray;
 mod wave_ray_path;
+
+#[allow(unused_imports)]
+use datatype::{Coordinate, Current, Point};
