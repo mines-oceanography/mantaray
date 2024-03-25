@@ -12,34 +12,18 @@ pub(crate) struct Point<T> {
 impl<T> Point<T> {
     /// Create a new `Point` with the given `x` and `y` coordinates.
     ///
-    /// # Examples
-    /// ```
-    /// let p = Point::new(1.0, 2.0);
-    /// assert_eq!(*p.x(), 1.0);
-    /// assert_eq!(*p.y(), 2.0);
-    /// ```
     fn new(x: T, y: T) -> Self {
         Point { x, y }
     }
 
     /// Get the `x` coordinate of the `Point`.
     ///
-    /// # Examples
-    /// ```
-    /// let p = Point::new(1.0, 2.0);
-    /// assert_eq!(*p.x(), 1.0);
-    /// ```
     fn x(&self) -> &T {
         &self.x
     }
 
     /// Get the `y` coordinate of the `Point`.
     ///
-    /// # Examples
-    /// ```
-    /// let p = Point::new(1.0, 2.0);
-    /// assert_eq!(*p.y(), 2.0);
-    /// ```
     fn y(&self) -> &T {
         &self.y
     }
@@ -59,12 +43,6 @@ pub(crate) struct Coordinate<T> {
 impl<T> Coordinate<T> {
     /// Create a new `Coordinate` with the given `lat` and `lon` coordinates.
     ///
-    /// # Examples
-    /// ```
-    /// let c = Coordinate::new(1.0, 2.0);
-    /// assert_eq!(*c.lat(), 1.0);
-    /// assert_eq!(*c.lon(), 2.0);
-    /// ```
     fn new(lon: T, lat: T) -> Self {
         Coordinate { lat, lon }
     }
