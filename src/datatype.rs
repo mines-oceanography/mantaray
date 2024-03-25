@@ -43,7 +43,7 @@ pub(crate) struct Coordinate<T> {
 impl<T> Coordinate<T> {
     /// Create a new `Coordinate` with the given `lat` and `lon` coordinates.
     ///
-    fn new(lon: T, lat: T) -> Self {
+    fn new(lat: T, lon: T) -> Self {
         Coordinate { lat, lon }
     }
 
