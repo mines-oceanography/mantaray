@@ -16,3 +16,4 @@ rayon = "1.8.1"
 
 [dev-dependencies]
 lockfile = "0.4.0"
+tempfile = "3.10.0"
