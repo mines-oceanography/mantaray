@@ -16,7 +16,7 @@ const G: f64 = 9.8;
 pub(crate) type State = Vector4<f64>;
 
 /// time in seconds for `ode_solvers` to use
-type Time = f64;
+pub(crate) type Time = f64;
 
 #[derive(Builder)]
 /// A struct that stores the bathymetry/depth data related to an individual ray.

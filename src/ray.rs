@@ -1,15 +1,19 @@
 //! This module makes it easier to use the Rk4 ray tracing by encapsulating it
 //! with the SingleRay struct
 
+use std::fs::{File, OpenOptions};
+use std::io::{BufWriter, Write};
+
 use rayon::prelude::*;
 
 use ode_solvers::{OVector, Rk4};
 
+use crate::wave_ray_path::Time;
 use crate::{
     bathymetry::BathymetryData, error::Error, wave_ray_path::State, wave_ray_path::WaveRayPath,
 };
-use std::fs::{File, OpenOptions};
-use std::io::{BufWriter, Write};
+
+use ode_solvers::dop_shared::SolverResult;
 
 #[allow(dead_code)]
 // define x_out and y_out types
@@ -73,7 +77,7 @@ impl<'a> ManyRays<'a> {
         start_time: f64,
         end_time: f64,
         step_size: f64,
-    ) -> Vec<Option<(XOut, YOut)>> {
+    ) -> Vec<Option<SolverResult<Time, State>>> {
         // create a vector of SingleRays
         let rays: Vec<SingleRay> = self
             .init_rays
@@ -82,7 +86,7 @@ impl<'a> ManyRays<'a> {
             .collect();
 
         // integrate each. I think here is where I would use `par_iter` from rayon in the future.
-        let results: Vec<Option<(XOut, YOut)>> = rays
+        let results: Vec<Option<SolverResult<Time, State>>> = rays
             .par_iter()
             .map(
                 |r| match r.trace_individual(start_time, end_time, step_size) {
@@ -174,7 +178,7 @@ impl<'a> SingleRay<'a> {
         start_time: f64,
         end_time: f64,
         step_size: f64,
-    ) -> Result<(XOut, YOut), Error> {
+    ) -> Result<SolverResult<Time, State>, Error> {
         // do the calculations
         let system = WaveRayPath::new(self.bathymetry_data, None);
         let s0 = State::new(
@@ -186,22 +190,16 @@ impl<'a> SingleRay<'a> {
         let mut stepper = Box::new(Rk4::new(system, start_time, s0, end_time, step_size));
         stepper.integrate()?;
         // return the stepper results
-        let x_out: &XOut = stepper.x_out();
-        let y_out: &YOut = stepper.y_out();
+        let results: &SolverResult<Time, State> = stepper.results();
 
-        // FIXME: how to prevent copying this data? This will take longer,
-        // since it has to copy the data over, but I don't see another way
-        // since stepper is a local variable, and when it goes out of scope,
-        // it's references will too. The solution is I need to figure out
-        // the type of stepper and have it be stored inside Single as a
-        // member variable.
-        Ok((x_out.clone(), y_out.clone()))
+        Ok(results.clone())
     }
 }
 
 #[allow(dead_code)]
 // output to space separated file
-fn output_to_tsv_file(file_name: &str, x_out: &XOut, y_out: &YOut) -> Result<(), Error> {
+fn output_to_tsv_file(file_name: &str, results: &SolverResult<Time, State>) -> Result<(), Error> {
+    let (x_out, y_out) = results.get();
     let file = File::create(file_name)?;
     let mut writer = BufWriter::new(file);
     writeln!(&mut writer, "t x y kx ky")?;
@@ -220,7 +218,8 @@ fn output_to_tsv_file(file_name: &str, x_out: &XOut, y_out: &YOut) -> Result<(),
 }
 
 #[allow(dead_code)]
-fn output_or_append_to_tsv_file(file_name: &str, x_out: &XOut, y_out: &YOut) -> Result<(), Error> {
+fn output_or_append_to_tsv_file(file_name: &str, results: &SolverResult<Time, State>) -> Result<(), Error> {
+    let (x_out, y_out) = results.get();
     let file = OpenOptions::new()
         .write(true)
         .create(true)
@@ -331,7 +330,7 @@ mod test_single_wave {
         let res = wave.trace_individual(0.0, 8.0, 1.0).unwrap();
 
         let filename = temp_filename("constant_depth_shallow_x_out.txt");
-        let _ = output_to_tsv_file(&filename, &res.0, &res.1);
+        let _ = output_to_tsv_file(&filename, &res);
     }
 
     #[test]
@@ -345,7 +344,7 @@ mod test_single_wave {
         let wave = SingleRay::new(bathymetry_data, 10.0, 10.0, 0.007, 0.007);
         let res = wave.trace_individual(0.0, 8.0, 1.0).unwrap();
         let filename = temp_filename("constant_depth_shallow_xy_out.txt");
-        let _ = output_to_tsv_file(&filename, &res.0, &res.1);
+        let _ = output_to_tsv_file(&filename, &res);
     }
 
     #[test]
@@ -362,7 +361,7 @@ mod test_single_wave {
         let res = wave.trace_individual(0.0, 18.0, 1.0).unwrap();
 
         let filename = temp_filename("constant_depth_deep_x_out.txt");
-        let _ = output_to_tsv_file(&filename, &res.0, &res.1);
+        let _ = output_to_tsv_file(&filename, &res);
     }
 
     #[test]
@@ -375,7 +374,7 @@ mod test_single_wave {
         let wave = SingleRay::new(bathymetry_data, 10.0, 10.0, 0.7, 0.7);
         let res = wave.trace_individual(0.0, 18.0, 1.0).unwrap();
         let filename = temp_filename("constant_depth_deep_xy_out.txt");
-        let _ = output_to_tsv_file(&filename, &res.0, &res.1);
+        let _ = output_to_tsv_file(&filename, &res);
     }
 
     #[test]
@@ -393,7 +392,9 @@ mod test_single_wave {
         // make sure the starting point is at least 2 steps away from the edge.
         let res = wave.trace_individual(0.0, 6.0, 1.0).unwrap();
 
-        let _ = output_to_tsv_file("two_depth_shallow_out_x.txt", &res.0, &res.1);
+        let filename = temp_filename("two_depth_shallow_out_x.txt");
+
+        let _ = output_to_tsv_file(&filename, &res);
     }
 
     #[test]
@@ -411,7 +412,7 @@ mod test_single_wave {
         let wave = SingleRay::new(bathymetry_data, 10.0, 10.0, 0.007, 0.007);
         let res = wave.trace_individual(0.0, 7.0, 1.0).unwrap();
         let filename = temp_filename("two_depth_shallow_xy_out.txt");
-        let _ = output_to_tsv_file(&filename, &res.0, &res.1);
+        let _ = output_to_tsv_file(&filename, &res);
     }
 
     #[test]
@@ -430,7 +431,7 @@ mod test_single_wave {
         let res = wave.trace_individual(0.0, 30.0, 1.0).unwrap();
 
         let filename = temp_filename("two_depth_deep_x_out.txt");
-        let _ = output_to_tsv_file(&filename, &res.0, &res.1);
+        let _ = output_to_tsv_file(&filename, &res);
     }
 
     #[test]
@@ -446,7 +447,7 @@ mod test_single_wave {
         let wave = SingleRay::new(bathymetry_data, 10.0, 10.0, 0.7, 0.7);
         let res = wave.trace_individual(0.0, 40.0, 1.0).unwrap();
         let filename = temp_filename("two_depth_deep_xy_out.txt");
-        let _ = output_to_tsv_file(&filename, &res.0, &res.1);
+        let _ = output_to_tsv_file(&filename, &res);
     }
 
     #[test]
@@ -457,7 +458,7 @@ mod test_single_wave {
         let wave = SingleRay::new(bathymetry_data, 10.0, 1000.0, 0.01, 0.0);
         let res = wave.trace_individual(0.0, 100.0, 1.0).unwrap();
         let filename = temp_filename("slope_depth_x_out.txt");
-        let _ = output_to_tsv_file(&filename, &res.0, &res.1);
+        let _ = output_to_tsv_file(&filename, &res);
     }
 }
 
