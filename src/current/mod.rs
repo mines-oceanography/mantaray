@@ -14,7 +14,7 @@ pub(super) use cartesian::Cartesian;
 #[allow(unused_imports)]
 pub(super) use constant_current::ConstantCurrent;
 
-pub(crate) trait CurrentData: Sync {
+pub(crate) trait CurrentData {
     /// Return the current (u, v) at the given (x, y)
     fn current(&self, x: &f64, y: &f64) -> Result<(f64, f64), Error>;
     /// Return the current (u, v) and the gradient (du/dx, du/dy, dv/dx, dv/dy)

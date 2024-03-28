@@ -1,10 +1,12 @@
-use crate::error::Error;
-use crate::interpolator;
+//! Handle netcdf files in cartesian coordinates containing snapshot of current
+//! field. 
 
 use std::path::Path;
 
 use netcdf3::{DataType, FileReader};
 
+use crate::error::Error;
+use crate::interpolator;
 use super::CurrentData;
 
 #[derive(Debug)]
@@ -247,7 +249,7 @@ impl Cartesian {
         closest_index
     }
 
-    /// Returns the nearest x index, y index point to given x, y coordinate
+    /// Nearest (x, y) index point for given coordinate
     ///
     /// # Arguments
     /// `x`: `&f64`
@@ -578,8 +580,8 @@ mod test_cartesian_file_current {
         // end of copied from docs
     }
 
-    /// this will create a current file it will have x as i16 y will be i8 u
-    /// will be u8 v will be i32
+    /// create a current file with variable (x, y) as (i16, i8) and (u, v) as
+    /// (u8, i32)
     fn create_current_file_iu(path: &Path, x_len: usize, y_len: usize, x_step: f32, y_step: f32) {
         let x_data: Vec<i16> = (0..x_len).map(|x| x as i16 * x_step as i16).collect();
         let y_data: Vec<i8> = (0..y_len).map(|y| y as i8 * y_step as i8).collect();
