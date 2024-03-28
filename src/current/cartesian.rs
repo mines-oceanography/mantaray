@@ -1,21 +1,27 @@
 //! Handle netcdf files in cartesian coordinates containing snapshot of current
-//! field. 
+//! field.
 
 use std::path::Path;
 
 use netcdf3::{DataType, FileReader};
 
+use super::CurrentData;
 use crate::error::Error;
 use crate::interpolator;
-use super::CurrentData;
 
 #[derive(Debug)]
 #[allow(dead_code)]
 /// A struct to hold the data from a NetCDF file in a Cartesian coordinates with
 /// x, y, u, and v values constant in time.
 pub(crate) struct Cartesian {
-    /// a tuple of vectors containing the x, y, u, v data
-    vars_x_y_u_v: (Vec<f64>, Vec<f64>, Vec<f64>, Vec<f64>),
+    /// vector of the x variable
+    x_vec: Vec<f64>,
+    /// vector of the y variable
+    y_vec: Vec<f64>,
+    /// vector of the u variable
+    u_vec: Vec<f64>,
+    /// vector of the v variable
+    v_vec: Vec<f64>,
 }
 
 #[allow(dead_code)]
@@ -190,10 +196,12 @@ impl Cartesian {
             DataType::F64 => v_data.get_f64_into().unwrap(),
         };
 
-        let vars_x_y_u_v: (Vec<f64>, Vec<f64>, Vec<f64>, Vec<f64>) =
-            (x_data, y_data, u_data, v_data);
-
-        Cartesian { vars_x_y_u_v }
+        Cartesian {
+            x_vec: x_data,
+            y_vec: y_data,
+            u_vec: u_data,
+            v_vec: v_data,
+        }
     }
 
     /// Find nearest point
@@ -270,14 +278,10 @@ impl Cartesian {
     /// it will return the closest edge. To attempt to fix this problem,
     /// `nearest_point` should return `None` on points that are on the edges.
     fn nearest_point(&self, x: &f64, y: &f64) -> Option<(usize, usize)> {
-        let indx = self.nearest(x, &self.vars_x_y_u_v.0);
-        let indy = self.nearest(y, &self.vars_x_y_u_v.1);
+        let indx = self.nearest(x, &self.x_vec);
+        let indy = self.nearest(y, &self.y_vec);
 
-        if indx == 0
-            || indy == 0
-            || indx >= self.vars_x_y_u_v.0.len() - 1
-            || indy >= self.vars_x_y_u_v.1.len() - 1
-        {
+        if indx == 0 || indy == 0 || indx >= self.x_vec.len() - 1 || indy >= self.y_vec.len() - 1 {
             return None;
         }
 
@@ -305,8 +309,8 @@ impl Cartesian {
     fn four_corners(&self, indx: &usize, indy: &usize) -> Option<Vec<(usize, usize)>> {
         if *indx == 0
             || *indy == 0
-            || *indx >= self.vars_x_y_u_v.0.len() - 1
-            || *indy >= self.vars_x_y_u_v.1.len() - 1
+            || *indx >= self.x_vec.len() - 1
+            || *indy >= self.y_vec.len() - 1
         {
             return None;
         }
@@ -355,23 +359,23 @@ impl Cartesian {
 
         let pts = vec![
             (
-                self.vars_x_y_u_v.0[points[0].0] as f32, // x1
-                self.vars_x_y_u_v.1[points[0].1] as f32, // y1
+                self.x_vec[points[0].0] as f32,                                   // x1
+                self.y_vec[points[0].1] as f32,                                   // y1
                 self.val_from_arr(&points[0].0, &points[0].1, value_arr)? as f32, // z1
             ),
             (
-                self.vars_x_y_u_v.0[points[1].0] as f32,
-                self.vars_x_y_u_v.1[points[1].1] as f32,
+                self.x_vec[points[1].0] as f32,
+                self.y_vec[points[1].1] as f32,
                 self.val_from_arr(&points[1].0, &points[1].1, value_arr)? as f32,
             ),
             (
-                self.vars_x_y_u_v.0[points[2].0] as f32,
-                self.vars_x_y_u_v.1[points[2].1] as f32,
+                self.x_vec[points[2].0] as f32,
+                self.y_vec[points[2].1] as f32,
                 self.val_from_arr(&points[2].0, &points[2].1, value_arr)? as f32,
             ),
             (
-                self.vars_x_y_u_v.0[points[3].0] as f32,
-                self.vars_x_y_u_v.1[points[3].1] as f32,
+                self.x_vec[points[3].0] as f32,
+                self.y_vec[points[3].1] as f32,
                 self.val_from_arr(&points[3].0, &points[3].1, value_arr)? as f32,
             ),
         ];
@@ -400,7 +404,7 @@ impl Cartesian {
     /// `Err(Error::IndexOutOfBounds)` : this error is returned when `indx`
     /// and `indy` produce a value outside of the array.
     fn val_from_arr(&self, indx: &usize, indy: &usize, arr: &[f64]) -> Result<f64, Error> {
-        let index = self.vars_x_y_u_v.0.len() * indy + indx;
+        let index = self.x_vec.len() * indy + indx;
         if index >= arr.len() {
             return Err(Error::IndexOutOfBounds);
         }
@@ -440,8 +444,8 @@ impl CurrentData for Cartesian {
         };
 
         // interpolate the u and v values
-        let u = self.interpolate(&corners, &(*x as f32, *y as f32), &self.vars_x_y_u_v.2)?;
-        let v = self.interpolate(&corners, &(*x as f32, *y as f32), &self.vars_x_y_u_v.3)?;
+        let u = self.interpolate(&corners, &(*x as f32, *y as f32), &self.u_vec)?;
+        let v = self.interpolate(&corners, &(*x as f32, *y as f32), &self.v_vec)?;
 
         Ok((u as f64, v as f64))
     }
@@ -481,8 +485,8 @@ impl CurrentData for Cartesian {
         };
 
         // interpolate the u and v values
-        let u = self.interpolate(&corners, &(*x as f32, *y as f32), &self.vars_x_y_u_v.2)?;
-        let v = self.interpolate(&corners, &(*x as f32, *y as f32), &self.vars_x_y_u_v.3)?;
+        let u = self.interpolate(&corners, &(*x as f32, *y as f32), &self.u_vec)?;
+        let v = self.interpolate(&corners, &(*x as f32, *y as f32), &self.v_vec)?;
 
         // calculate the gradients
 
@@ -490,23 +494,23 @@ impl CurrentData for Cartesian {
         // and y directions, and since bilinear interpolation is used to
         // interpolate the depth at any given point, this is a good
         // approximation.
-        let x_space = self.vars_x_y_u_v.0[1] - self.vars_x_y_u_v.0[0];
-        let y_space = self.vars_x_y_u_v.1[1] - self.vars_x_y_u_v.1[0];
+        let x_space = self.x_vec[1] - self.x_vec[0];
+        let y_space = self.y_vec[1] - self.y_vec[0];
 
-        let dudx = (self.val_from_arr(&corners[1].0, &corners[1].1, &self.vars_x_y_u_v.2)?
-            - self.val_from_arr(&corners[3].0, &corners[3].1, &self.vars_x_y_u_v.2)?)
+        let dudx = (self.val_from_arr(&corners[1].0, &corners[1].1, &self.u_vec)?
+            - self.val_from_arr(&corners[3].0, &corners[3].1, &self.u_vec)?)
             / (2.0 * x_space);
 
-        let dudy = (self.val_from_arr(&corners[0].0, &corners[0].1, &self.vars_x_y_u_v.2)?
-            - self.val_from_arr(&corners[2].0, &corners[2].1, &self.vars_x_y_u_v.2)?)
+        let dudy = (self.val_from_arr(&corners[0].0, &corners[0].1, &self.u_vec)?
+            - self.val_from_arr(&corners[2].0, &corners[2].1, &self.u_vec)?)
             / (2.0 * y_space);
 
-        let dvdx = (self.val_from_arr(&corners[1].0, &corners[1].1, &self.vars_x_y_u_v.3)?
-            - self.val_from_arr(&corners[3].0, &corners[3].1, &self.vars_x_y_u_v.3)?)
+        let dvdx = (self.val_from_arr(&corners[1].0, &corners[1].1, &self.v_vec)?
+            - self.val_from_arr(&corners[3].0, &corners[3].1, &self.v_vec)?)
             / (2.0 * x_space);
 
-        let dvdy = (self.val_from_arr(&corners[0].0, &corners[0].1, &self.vars_x_y_u_v.3)?
-            - self.val_from_arr(&corners[2].0, &corners[2].1, &self.vars_x_y_u_v.3)?)
+        let dvdy = (self.val_from_arr(&corners[0].0, &corners[0].1, &self.v_vec)?
+            - self.val_from_arr(&corners[2].0, &corners[2].1, &self.v_vec)?)
             / (2.0 * y_space);
 
         Ok(((u as f64, v as f64), (dudx, dudy, dvdx, dvdy)))
@@ -794,11 +798,11 @@ mod test_cartesian_file_current {
         let data = Cartesian::new(Path::new(lockfile.path()), "x", "y", "u", "v");
 
         // inside the bounds
-        assert_eq!(data.nearest(&5499.0, &data.vars_x_y_u_v.0), 11);
+        assert_eq!(data.nearest(&5499.0, &data.x_vec), 11);
 
         // test out of bounds
-        assert_eq!(data.nearest(&-5499.0, &data.vars_x_y_u_v.0), 0);
-        assert_eq!(data.nearest(&50_001.0, &data.vars_x_y_u_v.0), 99);
+        assert_eq!(data.nearest(&-5499.0, &data.x_vec), 0);
+        assert_eq!(data.nearest(&50_001.0, &data.x_vec), 99);
     }
 
     #[test]
@@ -858,10 +862,10 @@ mod test_cartesian_file_current {
 
         let data = Cartesian::new(Path::new(lockfile.path()), "x", "y", "u", "v");
         let corners = data.four_corners(&10, &10).unwrap();
-        let interpolated = data.interpolate(&corners, &(5499.0, 499.0), &data.vars_x_y_u_v.2);
+        let interpolated = data.interpolate(&corners, &(5499.0, 499.0), &data.u_vec);
         assert!(interpolated.unwrap() == 5.0);
 
-        let interpolated = data.interpolate(&corners, &(5499.0, 499.0), &data.vars_x_y_u_v.3);
+        let interpolated = data.interpolate(&corners, &(5499.0, 499.0), &data.v_vec);
         assert!(interpolated.unwrap() == 0.0);
     }
 
@@ -875,14 +879,14 @@ mod test_cartesian_file_current {
         create_current_file(lockfile.path(), 101, 51, 500.0, 500.0);
 
         let data = Cartesian::new(Path::new(lockfile.path()), "x", "y", "u", "v");
-        let val = data.val_from_arr(&10, &10, &data.vars_x_y_u_v.2);
+        let val = data.val_from_arr(&10, &10, &data.u_vec);
         assert!(val.unwrap() == 5.0);
 
-        let val = data.val_from_arr(&10, &10, &data.vars_x_y_u_v.3);
+        let val = data.val_from_arr(&10, &10, &data.v_vec);
         assert!(val.unwrap() == 0.0);
 
         // test out of bounds
-        let val = data.val_from_arr(&100, &100, &data.vars_x_y_u_v.2);
+        let val = data.val_from_arr(&100, &100, &data.u_vec);
         assert!(val.is_err());
     }
 
