@@ -519,6 +519,8 @@ impl CurrentData for Cartesian {
 
 #[cfg(test)]
 mod test_cartesian_file_current {
+    use tempfile::{tempfile, NamedTempFile};
+
     use crate::current::{cartesian::Cartesian, CurrentData};
     use std::path::Path;
 
@@ -772,16 +774,15 @@ mod test_cartesian_file_current {
 
     #[test]
     fn test_all_types() {
-        use lockfile::Lockfile;
-        let lockfile = Lockfile::create(Path::new("tmp_curr1.nc")).unwrap();
+        let temp_file = NamedTempFile::new().unwrap();
+        let path = temp_file.into_temp_path();
 
         // test with f32 and f64
-        create_current_file(lockfile.path(), 1, 1, 1.0, 1.0);
-        let path = Path::new("tmp_curr1.nc");
+        create_current_file(&path, 1, 1, 1.0, 1.0);
         let _: Cartesian = Cartesian::new(&path, "x", "y", "u", "v");
 
         // test with i16, i8, u8, i32
-        create_current_file_iu(lockfile.path(), 1, 1, 1.0, 1.0);
+        create_current_file_iu(&path, 1, 1, 1.0, 1.0);
         let _: Cartesian = Cartesian::new(&path, "x", "y", "u", "v");
     }
 
@@ -790,12 +791,12 @@ mod test_cartesian_file_current {
     // case as in bathymetry/cartesian.rs
     fn test_get_nearest() {
         // create temporary file
-        use lockfile::Lockfile;
-        let lockfile = Lockfile::create(Path::new("tmp_curr2.nc")).unwrap();
+        let temp_file = NamedTempFile::new().unwrap();
+        let path = temp_file.into_temp_path();
 
-        create_current_file(lockfile.path(), 100, 100, 500.0, 500.0);
+        create_current_file(&path, 100, 100, 500.0, 500.0);
 
-        let data = Cartesian::new(Path::new(lockfile.path()), "x", "y", "u", "v");
+        let data = Cartesian::new(Path::new(&path), "x", "y", "u", "v");
 
         // inside the bounds
         assert_eq!(data.nearest(&5499.0, &data.x_vec), 11);
@@ -809,12 +810,12 @@ mod test_cartesian_file_current {
     // test the and nearest point function on one point
     fn test_get_nearest_point() {
         // create temporary file
-        use lockfile::Lockfile;
-        let lockfile = Lockfile::create(Path::new("tmp_curr3.nc")).unwrap();
+        let temp_file = NamedTempFile::new().unwrap();
+        let path = temp_file.into_temp_path();
 
-        create_current_file(lockfile.path(), 101, 51, 500.0, 500.0);
+        create_current_file(&path, 101, 51, 500.0, 500.0);
 
-        let data = Cartesian::new(Path::new(lockfile.path()), "x", "y", "u", "v");
+        let data = Cartesian::new(Path::new(&path), "x", "y", "u", "v");
 
         // inside the bounds
         assert!(data.nearest_point(&5499.0, &499.0) == Some((11, 1)));
@@ -829,12 +830,12 @@ mod test_cartesian_file_current {
     // check the output from four_corners function
     fn test_get_corners() {
         // create temporary file
-        use lockfile::Lockfile;
-        let lockfile = Lockfile::create(Path::new("tmp_curr4.nc")).unwrap();
+        let temp_file = NamedTempFile::new().unwrap();
+        let path = temp_file.into_temp_path();
 
-        create_current_file(lockfile.path(), 101, 51, 500.0, 500.0);
+        create_current_file(&path, 101, 51, 500.0, 500.0);
 
-        let data = Cartesian::new(Path::new(lockfile.path()), "x", "y", "u", "v");
+        let data = Cartesian::new(Path::new(&path), "x", "y", "u", "v");
 
         // in bounds
         let corners = data.four_corners(&10, &10).unwrap();
@@ -855,12 +856,12 @@ mod test_cartesian_file_current {
     // test the interpolate function
     fn test_interpolate() {
         // create temporary file
-        use lockfile::Lockfile;
-        let lockfile = Lockfile::create(Path::new("tmp_curr5.nc")).unwrap();
+        let temp_file = NamedTempFile::new().unwrap();
+        let path = temp_file.into_temp_path();
 
-        create_current_file(lockfile.path(), 101, 51, 500.0, 500.0);
+        create_current_file(&path, 101, 51, 500.0, 500.0);
 
-        let data = Cartesian::new(Path::new(lockfile.path()), "x", "y", "u", "v");
+        let data = Cartesian::new(Path::new(&path), "x", "y", "u", "v");
         let corners = data.four_corners(&10, &10).unwrap();
         let interpolated = data.interpolate(&corners, &(5499.0, 499.0), &data.u_vec);
         assert!(interpolated.unwrap() == 5.0);
@@ -873,12 +874,12 @@ mod test_cartesian_file_current {
     // test the value_from_arr function
     fn test_val_from_arr() {
         // create temporary file
-        use lockfile::Lockfile;
-        let lockfile = Lockfile::create(Path::new("tmp_curr8.nc")).unwrap();
+        let temp_file = NamedTempFile::new().unwrap();
+        let path = temp_file.into_temp_path();
 
-        create_current_file(lockfile.path(), 101, 51, 500.0, 500.0);
+        create_current_file(&path, 101, 51, 500.0, 500.0);
 
-        let data = Cartesian::new(Path::new(lockfile.path()), "x", "y", "u", "v");
+        let data = Cartesian::new(Path::new(&path), "x", "y", "u", "v");
         let val = data.val_from_arr(&10, &10, &data.u_vec);
         assert!(val.unwrap() == 5.0);
 
@@ -894,12 +895,12 @@ mod test_cartesian_file_current {
     // test the current function
     fn test_current() {
         // create temporary file
-        use lockfile::Lockfile;
-        let lockfile = Lockfile::create(Path::new("tmp_curr6.nc")).unwrap();
+        let temp_file = NamedTempFile::new().unwrap();
+        let path = temp_file.into_temp_path();
 
-        create_current_file(lockfile.path(), 101, 51, 500.0, 500.0);
+        create_current_file(&path, 101, 51, 500.0, 500.0);
 
-        let data = Cartesian::new(Path::new(lockfile.path()), "x", "y", "u", "v");
+        let data = Cartesian::new(Path::new(&path), "x", "y", "u", "v");
         let current = data.current(&5499.0, &499.0);
         assert!(current.unwrap() == (5.0, 0.0));
 
@@ -915,12 +916,12 @@ mod test_cartesian_file_current {
     // test the current_and_gradient function
     fn test_current_and_zero_grad() {
         // create temporary file
-        use lockfile::Lockfile;
-        let lockfile = Lockfile::create(Path::new("tmp_curr7.nc")).unwrap();
+        let temp_file = NamedTempFile::new().unwrap();
+        let path = temp_file.into_temp_path();
 
-        create_current_file(lockfile.path(), 101, 51, 500.0, 500.0);
+        create_current_file(&path, 101, 51, 500.0, 500.0);
 
-        let data = Cartesian::new(Path::new(lockfile.path()), "x", "y", "u", "v");
+        let data = Cartesian::new(Path::new(&path), "x", "y", "u", "v");
         let current = data.current_and_gradient(&5499.0, &499.0);
         assert!(current.unwrap() == ((5.0, 0.0), (0.0, 0.0, 0.0, 0.0)));
 
@@ -936,12 +937,12 @@ mod test_cartesian_file_current {
     // test the current_and_gradient function with constant gradients in x direction
     fn test_current_and_grad_x() {
         // create temporary file
-        use lockfile::Lockfile;
-        let lockfile = Lockfile::create(Path::new("tmp_curr9.nc")).unwrap();
+        let temp_file = NamedTempFile::new().unwrap();
+        let path = temp_file.into_temp_path();
 
-        create_grad_test_file(lockfile.path(), 100, 100, 1.0, 1.0);
+        create_grad_test_file(&path, 100, 100, 1.0, 1.0);
 
-        let data = Cartesian::new(Path::new(lockfile.path()), "x", "y", "u", "v");
+        let data = Cartesian::new(Path::new(&path), "x", "y", "u", "v");
         let current = data.current_and_gradient(&45.0, &45.0);
         assert_eq!(current.unwrap(), ((45.0, 45.0), (1.0, 0.0, 1.0, 0.0)));
     }
@@ -950,12 +951,12 @@ mod test_cartesian_file_current {
     // test the current_and_gradient function with constant gradients in y direction
     fn test_current_and_grad_y() {
         // create temporary file
-        use lockfile::Lockfile;
-        let lockfile = Lockfile::create(Path::new("tmp_curr10.nc")).unwrap();
+        let temp_file = NamedTempFile::new().unwrap();
+        let path = temp_file.into_temp_path();
 
-        create_grad_test_file_2(lockfile.path(), 100, 100, 1.0, 1.0);
+        create_grad_test_file_2(&path, 100, 100, 1.0, 1.0);
 
-        let data = Cartesian::new(Path::new(lockfile.path()), "x", "y", "u", "v");
+        let data = Cartesian::new(Path::new(&path), "x", "y", "u", "v");
         let current = data.current_and_gradient(&45.0, &45.0);
         assert_eq!(current.unwrap(), ((45.0, 45.0), (0.0, 1.0, 0.0, 1.0)));
     }
