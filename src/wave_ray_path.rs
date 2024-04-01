@@ -13,6 +13,8 @@ use ode_solvers::*;
 const G: f64 = 9.8;
 
 /// state of the ray system for `ode_solvers`
+/// the values in the state are x, y, kx, ky
+/// for example: State::new(x, y, kx, ky)
 pub(crate) type State = Vector4<f64>;
 
 /// time in seconds for `ode_solvers` to use
