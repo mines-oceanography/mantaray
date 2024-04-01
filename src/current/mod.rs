@@ -6,11 +6,11 @@
 
 use crate::error::Error;
 
-mod cartesian;
+mod cartesian_current;
 mod constant_current;
 
 #[allow(unused_imports)]
-pub(super) use cartesian::Cartesian;
+pub(super) use cartesian_current::CartesianCurrent;
 #[allow(unused_imports)]
 pub(super) use constant_current::ConstantCurrent;
 
