@@ -424,7 +424,12 @@ mod test_single_wave {
     }
 
     #[test]
-    fn constant_depth_constant_current() {
+    /// tests one wave with constant depth and zero current
+    /// 
+    /// Since there is no current, the y and kx and ky values will not change.
+    /// The x values will increase because kx = 0.1. Because the depth is not
+    /// constant, the speed should not change either. 
+    fn constant_depth_zero_current() {
         let bathymetry_data = &ConstantDepth::new(10.0);
         let current_data = &ConstantCurrent::new(0.0, 0.0);
 
