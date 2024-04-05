@@ -424,6 +424,29 @@ mod test_single_wave {
     }
 
     #[test]
+    fn constant_depth_constant_current() {
+        let bathymetry_data = &ConstantDepth::new(10.0);
+        let current_data = &ConstantCurrent::new(0.0, 0.0);
+
+        let wave = SingleRay::new(bathymetry_data, Some(current_data), 0.0, 0.0, 0.1, 0.0);
+        let res = wave.trace_individual(100.0, 102.0, 1.0).unwrap();
+
+        let (time, data) = &res.get();
+
+        // check to make sure all y values are zero
+        data.iter().for_each(|r| assert_eq!(r[1], 0.0));
+        data.iter().for_each(|r| assert_eq!(r[2], 0.1));
+        data.iter().for_each(|r| assert_eq!(r[3], 0.0));
+
+        // check to make sure the x values are increasing
+        let mut last_x = 0.0;
+        for x in time.iter() {
+            assert!(x >= &last_x);
+            last_x = *x;
+        }
+    }
+
+    #[test]
     // test with a constant current of 0.5 m/s in the y direction. The kx and ky
     // values should stay the same and the x and y values will increase.
     fn test_positive_v() {
