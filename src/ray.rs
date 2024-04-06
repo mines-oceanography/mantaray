@@ -425,10 +425,10 @@ mod test_single_wave {
 
     #[test]
     /// tests one wave with constant depth and zero current
-    /// 
+    ///
     /// Since there is no current, the y and kx and ky values will not change.
     /// The x values will increase because kx = 0.1. Because the depth is not
-    /// constant, the speed should not change either. 
+    /// constant, the speed should not change either.
     fn constant_depth_zero_current() {
         let bathymetry_data = &ConstantDepth::new(10.0);
         let current_data = &ConstantCurrent::new(0.0, 0.0);
@@ -436,7 +436,7 @@ mod test_single_wave {
         let wave = SingleRay::new(bathymetry_data, Some(current_data), 0.0, 0.0, 0.1, 0.0);
         let res = wave.trace_individual(100.0, 102.0, 1.0).unwrap();
 
-        let (time, data) = &res.get();
+        let (_, data) = &res.get();
 
         // check to make sure all y values are zero
         data.iter().for_each(|r| assert_eq!(r[1], 0.0));
@@ -444,10 +444,10 @@ mod test_single_wave {
         data.iter().for_each(|r| assert_eq!(r[3], 0.0));
 
         // check to make sure the x values are increasing
-        let mut last_x = 0.0;
-        for x in time.iter() {
-            assert!(x >= &last_x);
-            last_x = *x;
+        let mut last_x = data[0][0];
+        for r in data.iter() {
+            assert!(r[0] >= last_x);
+            last_x = r[0];
         }
     }
 
