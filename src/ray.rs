@@ -240,8 +240,6 @@ fn output_or_append_to_tsv_file(
 #[cfg(test)]
 mod test_single_wave {
 
-    use lockfile::Lockfile;
-    use std::path::Path;
     use tempfile::NamedTempFile;
 
     use crate::{
@@ -377,10 +375,12 @@ mod test_single_wave {
     /// ray tracing on a two-depth (half 50m and half 20m) shallow wave
     /// propagating in the x direction. The kx increases slightly.
     fn test_two_depth_wave_shallow_x() {
-        let lockfile = Lockfile::create(Path::new("tmp_two_depth_shallow_x.nc")).unwrap();
-        create_netcdf3_bathymetry(&lockfile.path(), 100, 100, 1.0, 1.0, two_depth_fn);
+        let tmp_file = NamedTempFile::new().unwrap();
+        let tmp_path = tmp_file.into_temp_path();
 
-        let bathymetry_data = &CartesianNetcdf3::open(&lockfile.path(), "x", "y", "depth").unwrap();
+        create_netcdf3_bathymetry(&tmp_path, 100, 100, 1.0, 1.0, two_depth_fn);
+
+        let bathymetry_data = &CartesianNetcdf3::open(&tmp_path, "x", "y", "depth").unwrap();
 
         let wave = SingleRay::new(bathymetry_data, None, 10.0, 50.0, 0.01, 0.0);
 
@@ -412,10 +412,12 @@ mod test_single_wave {
     /// ray tracing on a two-depth shallow wave propagating at an angle in the
     /// x=y direction. This shows a change in the kx and ky.
     fn test_two_depth_wave_shallow_xy() {
-        let lockfile = Lockfile::create(Path::new("tmp_two_depth_shallow_xy.nc")).unwrap();
-        create_netcdf3_bathymetry(&lockfile.path(), 100, 100, 1.0, 1.0, two_depth_fn);
+        let tmp_file = NamedTempFile::new().unwrap();
+        let tmp_path = tmp_file.into_temp_path();
 
-        let bathymetry_data = &CartesianNetcdf3::open(&lockfile.path(), "x", "y", "depth").unwrap();
+        create_netcdf3_bathymetry(&tmp_path, 100, 100, 1.0, 1.0, two_depth_fn);
+
+        let bathymetry_data = &CartesianNetcdf3::open(&tmp_path, "x", "y", "depth").unwrap();
 
         let wave = SingleRay::new(bathymetry_data, None, 10.0, 10.0, 0.007, 0.007);
         let res = wave.trace_individual(0.0, 6.8, 0.1).unwrap();
@@ -449,10 +451,12 @@ mod test_single_wave {
     /// ray tracing on a two-depth deep wave propagating in the x direction.
     /// This correcly shows no change in kx or ky.
     fn test_two_depth_wave_deep_x() {
-        let lockfile = Lockfile::create(Path::new("tmp_two_depth_deep_x.nc")).unwrap();
-        create_netcdf3_bathymetry(&lockfile.path(), 100, 100, 1.0, 1.0, two_depth_fn);
+        let tmp_file = NamedTempFile::new().unwrap();
+        let tmp_path = tmp_file.into_temp_path();
 
-        let bathymetry_data = &CartesianNetcdf3::open(&lockfile.path(), "x", "y", "depth").unwrap();
+        create_netcdf3_bathymetry(&tmp_path, 100, 100, 1.0, 1.0, two_depth_fn);
+
+        let bathymetry_data = &CartesianNetcdf3::open(&tmp_path, "x", "y", "depth").unwrap();
 
         let wave = SingleRay::new(bathymetry_data, None, 10.0, 50.0, 1.0, 0.0);
 
@@ -478,10 +482,12 @@ mod test_single_wave {
     /// ray tracing on a two-depth deep wave propagating at an angle in the x=y
     /// direction. This correcly shows no change in kx or ky.
     fn test_two_depth_wave_deep_xy() {
-        let lockfile = Lockfile::create(Path::new("tmp_two_depth_deep_xy.nc")).unwrap();
-        create_netcdf3_bathymetry(&lockfile.path(), 100, 100, 1.0, 1.0, two_depth_fn);
+        let tmp_file = NamedTempFile::new().unwrap();
+        let tmp_path = tmp_file.into_temp_path();
 
-        let bathymetry_data = &CartesianNetcdf3::open(&lockfile.path(), "x", "y", "depth").unwrap();
+        create_netcdf3_bathymetry(&tmp_path, 100, 100, 1.0, 1.0, two_depth_fn);
+
+        let bathymetry_data = &CartesianNetcdf3::open(&tmp_path, "x", "y", "depth").unwrap();
 
         let wave = SingleRay::new(bathymetry_data, None, 10.0, 10.0, 0.7, 0.7);
         let res = wave.trace_individual(0.0, 40.0, 1.0).unwrap();
