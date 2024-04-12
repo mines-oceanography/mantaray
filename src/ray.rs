@@ -568,6 +568,38 @@ mod test_single_wave {
         }
     }
 
+    // positive v, deflect north
+    // negative v, deflect south
+    // positive u, should reduce wavenumber
+    // negative u, should increase wavenumber
+    // both u and v
+    // constant gradient u and v
+    // jet
+    // eddy
+    #[test]
+    /// 
+    fn constant_depth_and_current() {
+        let bathymetry_data = &ConstantDepth::new(10.0);
+        let current_data = &ConstantCurrent::new(0.5, 0.0);
+
+        let wave = SingleRay::new(bathymetry_data, Some(current_data), 0.0, 0.0, 0.1, 0.0);
+        let res = wave.trace_individual(1.0, 10.0, 1.0).unwrap();
+
+        let (_, data) = &res.get();
+
+        // verify all y values are zero, kx values are 0.1, ky values are 0.0
+        data.iter().for_each(|r| assert_eq!(r[1], 0.0));
+        data.iter().for_each(|r| assert_eq!(r[2], 0.1));
+        data.iter().for_each(|r| assert_eq!(r[3], 0.0));
+
+        // check to make sure the x values are increasing
+        let mut last_x = data[0][0];
+        for r in data.iter() {
+            assert!(r[0] >= last_x);
+            last_x = r[0];
+        }
+    }
+
     #[test]
     // test with a constant current of 0.5 m/s in the y direction. The kx and ky
     // values should stay the same and the x and y values will increase.
@@ -1260,6 +1292,10 @@ mod test_many_waves {
         for res in results {
             assert!(res.is_some())
         }
+
+        // test to verify size of initial waves and result (number of rays) samen
+        // test to verify each instance of many ray against single ray
+        // 
     }
 
     #[test]
@@ -1290,7 +1326,8 @@ mod test_many_waves {
         // should be increasing. y value should stay the same or decrease.
         for res in results {
             match res {
-                Some((_, data)) => {
+                Some(res) => {
+                    let (_, data) = res.get();
                     // x values increase, y values decrease
                     let mut last_x = data[0][0];
                     let mut last_y = data[0][1];
@@ -1321,7 +1358,8 @@ mod test_many_waves {
         // increase. y should increase.
         for res in results {
             match res {
-                Some((_, data)) => {
+                Some(res) => {
+                    let (_, data) = res.get();
                     // x values increase, y values increase
                     let mut last_x = data[0][0];
                     let mut last_y = data[0][1];
