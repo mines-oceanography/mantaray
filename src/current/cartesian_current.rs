@@ -53,7 +53,7 @@ impl CartesianCurrent {
     /// # Note
     /// The variables `x`, `y`, `u`, `v` can be of any type that is in
     /// `netcdf3::DataType`.
-    pub(crate) fn new(path: &Path, x_name: &str, y_name: &str, u_name: &str, v_name: &str) -> Self {
+    pub(crate) fn open(path: &Path, x_name: &str, y_name: &str, u_name: &str, v_name: &str) -> Self {
         let mut data = FileReader::open(path).unwrap();
 
         let x_data = data.read_var(x_name).unwrap();
@@ -779,11 +779,11 @@ mod test_cartesian_file_current {
 
         // test with f32 and f64
         create_current_file(&path, 1, 1, 1.0, 1.0);
-        let _: CartesianCurrent = CartesianCurrent::new(&path, "x", "y", "u", "v");
+        let _: CartesianCurrent = CartesianCurrent::open(&path, "x", "y", "u", "v");
 
         // test with i16, i8, u8, i32
         create_current_file_iu(&path, 1, 1, 1.0, 1.0);
-        let _: CartesianCurrent = CartesianCurrent::new(&path, "x", "y", "u", "v");
+        let _: CartesianCurrent = CartesianCurrent::open(&path, "x", "y", "u", "v");
     }
 
     #[test]
@@ -796,7 +796,7 @@ mod test_cartesian_file_current {
 
         create_current_file(&path, 100, 100, 500.0, 500.0);
 
-        let data = CartesianCurrent::new(Path::new(&path), "x", "y", "u", "v");
+        let data = CartesianCurrent::open(Path::new(&path), "x", "y", "u", "v");
 
         // inside the bounds
         assert_eq!(data.nearest(&5499.0, &data.x_vec), 11);
@@ -815,7 +815,7 @@ mod test_cartesian_file_current {
 
         create_current_file(&path, 101, 51, 500.0, 500.0);
 
-        let data = CartesianCurrent::new(Path::new(&path), "x", "y", "u", "v");
+        let data = CartesianCurrent::open(Path::new(&path), "x", "y", "u", "v");
 
         // inside the bounds
         assert!(data.nearest_point(&5499.0, &499.0) == Some((11, 1)));
@@ -835,7 +835,7 @@ mod test_cartesian_file_current {
 
         create_current_file(&path, 101, 51, 500.0, 500.0);
 
-        let data = CartesianCurrent::new(Path::new(&path), "x", "y", "u", "v");
+        let data = CartesianCurrent::open(Path::new(&path), "x", "y", "u", "v");
 
         // in bounds
         let corners = data.four_corners(&10, &10).unwrap();
@@ -861,7 +861,7 @@ mod test_cartesian_file_current {
 
         create_current_file(&path, 101, 51, 500.0, 500.0);
 
-        let data = CartesianCurrent::new(Path::new(&path), "x", "y", "u", "v");
+        let data = CartesianCurrent::open(Path::new(&path), "x", "y", "u", "v");
         let corners = data.four_corners(&10, &10).unwrap();
         let interpolated = data.interpolate(&corners, &(5499.0, 499.0), &data.u_vec);
         assert!(interpolated.unwrap() == 5.0);
@@ -879,7 +879,7 @@ mod test_cartesian_file_current {
 
         create_current_file(&path, 101, 51, 500.0, 500.0);
 
-        let data = CartesianCurrent::new(Path::new(&path), "x", "y", "u", "v");
+        let data = CartesianCurrent::open(Path::new(&path), "x", "y", "u", "v");
         let val = data.val_from_arr(&10, &10, &data.u_vec);
         assert!(val.unwrap() == 5.0);
 
@@ -900,7 +900,7 @@ mod test_cartesian_file_current {
 
         create_current_file(&path, 101, 51, 500.0, 500.0);
 
-        let data = CartesianCurrent::new(Path::new(&path), "x", "y", "u", "v");
+        let data = CartesianCurrent::open(Path::new(&path), "x", "y", "u", "v");
         let current = data.current(&5499.0, &499.0);
         assert!(current.unwrap() == (5.0, 0.0));
 
@@ -921,7 +921,7 @@ mod test_cartesian_file_current {
 
         create_current_file(&path, 101, 51, 500.0, 500.0);
 
-        let data = CartesianCurrent::new(Path::new(&path), "x", "y", "u", "v");
+        let data = CartesianCurrent::open(Path::new(&path), "x", "y", "u", "v");
         let current = data.current_and_gradient(&5499.0, &499.0);
         assert!(current.unwrap() == ((5.0, 0.0), (0.0, 0.0, 0.0, 0.0)));
 
@@ -942,7 +942,7 @@ mod test_cartesian_file_current {
 
         create_grad_test_file(&path, 100, 100, 1.0, 1.0);
 
-        let data = CartesianCurrent::new(Path::new(&path), "x", "y", "u", "v");
+        let data = CartesianCurrent::open(Path::new(&path), "x", "y", "u", "v");
         let current = data.current_and_gradient(&45.0, &45.0);
         assert_eq!(current.unwrap(), ((45.0, 45.0), (1.0, 0.0, 1.0, 0.0)));
     }
@@ -956,7 +956,7 @@ mod test_cartesian_file_current {
 
         create_grad_test_file_2(&path, 100, 100, 1.0, 1.0);
 
-        let data = CartesianCurrent::new(Path::new(&path), "x", "y", "u", "v");
+        let data = CartesianCurrent::open(Path::new(&path), "x", "y", "u", "v");
         let current = data.current_and_gradient(&45.0, &45.0);
         assert_eq!(current.unwrap(), ((45.0, 45.0), (0.0, 1.0, 0.0, 1.0)));
     }
