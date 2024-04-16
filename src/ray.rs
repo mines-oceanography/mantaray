@@ -1360,6 +1360,7 @@ mod test_many_waves {
             match res {
                 Some(res) => {
                     let (_, data) = res.get();
+
                     // x values increase, y values increase
                     let mut last_x = data[0][0];
                     let mut last_y = data[0][1];
