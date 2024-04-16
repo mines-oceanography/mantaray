@@ -56,7 +56,7 @@ impl BathymetryData for CartesianNetcdf3 {
     /// # Returns
     /// `Result<f32, Error>`
     /// - `Ok(f32)` : depth at the point in meters
-    /// - `Err(Error)` : error during execution of `get_depth`.
+    /// - `Err(Error)` : error during execution of `depth`.
     ///
     /// # Errors
     /// - `Error::IndexOutOfBounds` : this error is returned when the `x` or `y`
@@ -91,7 +91,7 @@ impl BathymetryData for CartesianNetcdf3 {
     /// # Returns
     /// `Result<(f32, (f32, f32)), Error>`
     /// - `Ok((f32, (f32, f32)))` : (h, (dhdx, dhdy)), the depth and gradient at the point
-    /// - `Err(Error)` : error during execution of `get_depth`.
+    /// - `Err(Error)` : error during execution of `depth`.
     ///
     /// # Errors
     /// - `Error::IndexOutOfBounds` : this error is returned when the

@@ -40,7 +40,7 @@ impl<'a> WaveRayPath<'a> {
     /// # Arguments:
     ///
     /// `depth_data`: `&'a dyn BathymetryData`
-    /// - a variable that implements the `BathymetryData` trait's `get_depth`
+    /// - a variable that implements the `BathymetryData` trait's `depth`
     ///   methods. Note that the lifetime requires that the `WaveRayPath` struct
     ///   will only live as long as the `BathymetryData` is available.
     ///

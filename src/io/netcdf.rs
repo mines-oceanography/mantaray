@@ -104,10 +104,10 @@ mod tests {
         let bathymetry =
             BathymetryFromNetCDF::new("gaussian_island.nc", &"x", &"y", "depth".to_string());
 
-        let depth = bathymetry.get_depth(&800.0, &128.0).unwrap();
+        let depth = bathymetry.depth(&800.0, &128.0).unwrap();
         assert_eq!(depth, 21.388426);
         bathymetry
-            .get_depth_and_gradient(&1_000.0, &3_141.0)
+            .depth_and_gradient(&1_000.0, &3_141.0)
             .unwrap();
     }
 
@@ -116,7 +116,7 @@ mod tests {
         let bathymetry =
             BathymetryFromNetCDF::new("gaussian_island.nc", &"x", &"y", "depth".to_string());
 
-        let (depth, (dx, dy)) = bathymetry.get_depth_and_gradient(&800.0, &128.0).unwrap();
+        let (depth, (dx, dy)) = bathymetry.depth_and_gradient(&800.0, &128.0).unwrap();
         assert_eq!(depth, 21.388426);
         assert_eq!(dx, 0.056151398);
         assert_eq!(dy, 0.09486287);
