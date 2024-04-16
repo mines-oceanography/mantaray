@@ -10,6 +10,7 @@ use rayon::prelude::*;
 
 use ode_solvers::Rk4;
 
+use crate::current::CurrentData;
 use crate::{
     bathymetry::BathymetryData, error::Error, wave_ray_path::State, wave_ray_path::Time,
     wave_ray_path::WaveRayPath,
@@ -18,6 +19,7 @@ use crate::{
 /// a struct that creates many rays
 pub struct ManyRays<'a> {
     bathymetry_data: &'a dyn BathymetryData,
+    current_data: Option<&'a dyn CurrentData>,
     /// a vector of initial x, y, kx, and ky values for the many waves
     init_rays: &'a Vec<(f64, f64, f64, f64)>,
 }
@@ -31,6 +33,11 @@ impl<'a> ManyRays<'a> {
     /// - the data on depth that implements the `get_depth` and
     ///   `get_depth_gradient` methods.
     ///
+    /// `current_data`: `Option<&'a dyn CurrentData>`
+    /// - the data on current that implements the `get_current` and
+    ///  `get_current_gradient` methods. If `None`, then the current is assumed
+    /// to be zero.
+    ///
     /// `init_rays`: `&'a Vec<(f64, f64, f64, f64)>`
     /// - a vector of initial x, y, kx, and ky values for the many waves
     ///
@@ -38,10 +45,12 @@ impl<'a> ManyRays<'a> {
     /// `Self`: a constructed `ManyRays` struct
     pub fn new(
         bathymetry_data: &'a dyn BathymetryData,
+        current_data: Option<&'a dyn CurrentData>,
         init_rays: &'a Vec<(f64, f64, f64, f64)>,
     ) -> Self {
         ManyRays {
             bathymetry_data,
+            current_data,
             init_rays,
         }
     }
@@ -76,7 +85,16 @@ impl<'a> ManyRays<'a> {
         let rays: Vec<SingleRay> = self
             .init_rays
             .par_iter()
-            .map(|(x0, y0, kx0, ky0)| SingleRay::new(self.bathymetry_data, *x0, *y0, *kx0, *ky0))
+            .map(|(x0, y0, kx0, ky0)| {
+                SingleRay::new(
+                    self.bathymetry_data,
+                    self.current_data,
+                    *x0,
+                    *y0,
+                    *kx0,
+                    *ky0,
+                )
+            })
             .collect();
 
         // integrate each. I think here is where I would use `par_iter` from rayon in the future.
@@ -101,6 +119,7 @@ impl<'a> ManyRays<'a> {
 // A struct with methods for tracing an individual wave and returning the result.
 struct SingleRay<'a> {
     bathymetry_data: &'a dyn BathymetryData,
+    current_data: Option<&'a dyn CurrentData>,
     initial_conditions: (f64, f64, f64, f64),
 }
 
@@ -112,7 +131,10 @@ impl<'a> SingleRay<'a> {
     /// `bathymetry_data` : `&'a dyn BathymetryData`
     /// - a struct that implements the `get_depth` function
     ///
-    /// # Arguments
+    /// `current_data` : `Option<&'a dyn CurrentData>`
+    /// - a struct that implements the `get_current` function. If `None`, then
+    ///  the current is assumed to be zero.
+    ///
     /// `x0` : `f64`
     /// - the initial x coordinate
     ///
@@ -127,8 +149,9 @@ impl<'a> SingleRay<'a> {
     ///
     /// # Returns
     /// `Self` : the new `SingleRay` struct
-    pub fn new(
+    fn new(
         bathymetry_data: &'a dyn BathymetryData,
+        current_data: Option<&'a dyn CurrentData>,
         x0: f64,
         y0: f64,
         kx0: f64,
@@ -136,6 +159,7 @@ impl<'a> SingleRay<'a> {
     ) -> Self {
         SingleRay {
             bathymetry_data,
+            current_data,
             initial_conditions: (x0, y0, kx0, ky0),
         }
     }
@@ -163,14 +187,14 @@ impl<'a> SingleRay<'a> {
     /// # Note
     /// This struct still copies the data when it returns, which could be an
     /// inefficiency, but the arguments are now less.
-    pub fn trace_individual(
+    fn trace_individual(
         &self,
         start_time: f64,
         end_time: f64,
         step_size: f64,
     ) -> Result<SolverResult<Time, State>, Error> {
         // do the calculations
-        let system = WaveRayPath::new(self.bathymetry_data, None);
+        let system = WaveRayPath::new(self.bathymetry_data, self.current_data);
         let s0 = State::new(
             self.initial_conditions.0,
             self.initial_conditions.1,
@@ -252,7 +276,8 @@ mod test_single_wave {
     /// shallow wave propagating in the x direction.
     fn test_constant_wave_shallow_x() {
         let bathymetry_data: &dyn BathymetryData = &ConstantDepth::new(10.0);
-        let wave = SingleRay::new(bathymetry_data, 10.0, 50.0, 0.01, 0.0);
+
+        let wave = SingleRay::new(bathymetry_data, None, 10.0, 50.0, 0.01, 0.0);
 
         // make sure the starting point is at least 2 steps away from the edge.
         let res = wave.trace_individual(0.0, 8.0, 1.0).unwrap();
@@ -269,7 +294,7 @@ mod test_single_wave {
         let bathymetry_data: &dyn BathymetryData = &ConstantDepth::new(10.0);
 
         // test wave 2 starting in the corner
-        let wave = SingleRay::new(bathymetry_data, 10.0, 10.0, 0.007, 0.007);
+        let wave = SingleRay::new(bathymetry_data, None, 10.0, 10.0, 0.007, 0.007);
         let res = wave.trace_individual(0.0, 8.0, 1.0).unwrap();
         let filename = temp_filename("constant_depth_shallow_x_out.txt");
         let _ = RayResults::from(res).save_file(Path::new(&filename));
@@ -283,7 +308,7 @@ mod test_single_wave {
         let bathymetry_data: &dyn BathymetryData = &ConstantDepth::new(10.0);
 
         // test wave 1
-        let wave = SingleRay::new(bathymetry_data, 10.0, 50.0, 1.0, 0.0);
+        let wave = SingleRay::new(bathymetry_data, None, 10.0, 50.0, 1.0, 0.0);
 
         // make sure the starting point is at least 2 steps away from the edge.
         let res = wave.trace_individual(0.0, 18.0, 1.0).unwrap();
@@ -299,7 +324,7 @@ mod test_single_wave {
     fn test_constant_wave_deep_xy() {
         let bathymetry_data: &dyn BathymetryData = &ConstantDepth::new(10.0);
 
-        let wave = SingleRay::new(bathymetry_data, 10.0, 10.0, 0.7, 0.7);
+        let wave = SingleRay::new(bathymetry_data, None, 10.0, 10.0, 0.7, 0.7);
         let res = wave.trace_individual(0.0, 18.0, 1.0).unwrap();
 
         let filename = temp_filename("constant_depth_deep_xy_out.txt");
@@ -316,7 +341,7 @@ mod test_single_wave {
 
         let bathymetry_data: &dyn BathymetryData = &CartesianFile::new(&lockfile.path());
 
-        let wave = SingleRay::new(bathymetry_data, 10.0, 50.0, 0.01, 0.0);
+        let wave = SingleRay::new(bathymetry_data, None, 10.0, 50.0, 0.01, 0.0);
 
         // make sure the starting point is at least 2 steps away from the edge.
         let res = wave.trace_individual(0.0, 6.0, 1.0).unwrap();
@@ -337,7 +362,7 @@ mod test_single_wave {
 
         let bathymetry_data: &dyn BathymetryData = &CartesianFile::new(&lockfile.path());
 
-        let wave = SingleRay::new(bathymetry_data, 10.0, 10.0, 0.007, 0.007);
+        let wave = SingleRay::new(bathymetry_data, None, 10.0, 10.0, 0.007, 0.007);
         let res = wave.trace_individual(0.0, 7.0, 1.0).unwrap();
 
         let filename = temp_filename("two_depth_shallow_xy_out.txt");
@@ -354,7 +379,7 @@ mod test_single_wave {
 
         let bathymetry_data: &dyn BathymetryData = &CartesianFile::new(&lockfile.path());
 
-        let wave = SingleRay::new(bathymetry_data, 10.0, 50.0, 1.0, 0.0);
+        let wave = SingleRay::new(bathymetry_data, None, 10.0, 50.0, 1.0, 0.0);
 
         // make sure the starting point is at least 2 steps away from the edge.
         let res = wave.trace_individual(0.0, 30.0, 1.0).unwrap();
@@ -373,7 +398,7 @@ mod test_single_wave {
 
         let bathymetry_data: &dyn BathymetryData = &CartesianFile::new(&lockfile.path());
 
-        let wave = SingleRay::new(bathymetry_data, 10.0, 10.0, 0.7, 0.7);
+        let wave = SingleRay::new(bathymetry_data, None, 10.0, 10.0, 0.7, 0.7);
         let res = wave.trace_individual(0.0, 40.0, 1.0).unwrap();
 
         let filename = temp_filename("two_depth_deep_xy_out.txt");
@@ -385,7 +410,7 @@ mod test_single_wave {
     fn test_slope_depth_wave_x() {
         let bathymetry_data: &dyn BathymetryData = &ConstantSlope::builder().build().unwrap();
 
-        let wave = SingleRay::new(bathymetry_data, 10.0, 1000.0, 0.01, 0.0);
+        let wave = SingleRay::new(bathymetry_data, None, 10.0, 1000.0, 0.01, 0.0);
         let res = wave.trace_individual(0.0, 100.0, 1.0).unwrap();
 
         let filename = temp_filename("slope_depth_x_out.txt");
@@ -418,9 +443,9 @@ mod test_many_waves {
             (10.0, 90.0, 1.0, 0.0),
         ];
 
-        let waves = ManyRays::new(bathymetry_data, &initial_waves);
+        let waves = ManyRays::new(bathymetry_data, None, &initial_waves);
 
-        let results = waves.trace_many(0.0, 55.0, 1.0);
+        let results = waves.trace_many(0.0, 100000.0, 1.0);
 
         for res in results {
             assert!(res.is_some())
