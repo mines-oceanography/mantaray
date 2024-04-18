@@ -1,18 +1,20 @@
 //! RayResults struct which holds the results of the ray tracing as vectors.
 //! Contains methods to convert from `SolverResult` and to `RayResults` and
-//! implements the `Writable` trait. 
+//! write using serde and serde_json.
 
 use std::fs::File;
 use std::io::BufWriter;
 use std::io::Write;
+use std::path::Path;
 
 use ode_solvers::dop_shared::SolverResult;
+use serde::Deserialize;
+use serde::Serialize;
 
 use crate::error::Error;
 use crate::wave_ray_path::{State, Time};
-use crate::writable::Writable;
 
-#[allow(dead_code)]
+#[derive(Serialize, Deserialize, PartialEq, Debug)]
 /// struct to hold the results of the ray tracing simulation as vectors. Note
 /// that the vectors are not indexed by time, but by the number of steps of the
 /// simulation.
@@ -24,8 +26,30 @@ pub struct RayResults {
     ky_vec: Vec<f64>,
 }
 
+#[allow(dead_code)]
 impl RayResults {
     /// Create a new RayResults struct with the given vectors.
+    ///
+    /// # Arguments
+    ///
+    /// `t_vec` : `Vec<f64>`
+    /// - a vector of time values
+    ///
+    /// `x_vec` : `Vec<f64>`
+    /// - a vector of x values
+    ///
+    /// `y_vec` : `Vec<f64>`
+    /// - a vector of y values
+    ///
+    /// `kx_vec` : `Vec<f64>`
+    /// - a vector of kx values
+    ///
+    /// `ky_vec` : `Vec<f64>`
+    /// - a vector of ky values
+    ///
+    /// # Returns
+    ///
+    /// constructed `RayResults` struct
     pub fn new(
         t_vec: Vec<f64>,
         x_vec: Vec<f64>,
@@ -40,6 +64,59 @@ impl RayResults {
             kx_vec,
             ky_vec,
         }
+    }
+
+    /// Convert the `RayResults` struct to a JSON string.
+    ///
+    /// # Returns
+    ///
+    /// JSON string of the `RayResults` struct
+    pub fn as_json(&self) -> String {
+        serde_json::to_string(&self).unwrap()
+    }
+
+    /// Write the `RayResults` struct to a writer.
+    ///
+    /// # Arguments
+    ///
+    /// `writer` : `&mut W`
+    /// - object that implements `Write` to write the `RayResults` struct to
+    ///
+    /// # Returns
+    ///
+    /// `Ok(usize)` : the number of bytes written
+    ///
+    /// `Err(Error)` : an error occurred while writing
+    ///
+    /// # Note
+    ///
+    /// This method writes the `RayResults` struct as a JSON string.
+    pub fn write<W: Write>(&self, writer: &mut W) -> Result<usize, Error> {
+        writer.write_all(self.as_json().as_bytes())?;
+        writer.flush()?;
+        Ok(self.as_json().as_bytes().len())
+    }
+
+    /// Save the `RayResults` struct to a file at the given path.
+    ///
+    /// # Arguments
+    ///
+    /// `path` : `&Path`
+    /// - the path to save the `RayResults` struct to
+    ///
+    /// # Returns
+    ///
+    /// `Ok(usize)` : the number of bytes written
+    ///
+    /// `Err(Error)` : an error occurred while writing
+    ///
+    /// # Note
+    ///
+    /// This method writes the `RayResults` struct as a JSON string at the given file path.
+    pub fn save_file(&self, path: &Path) -> Result<usize, Error> {
+        let file = File::create(path)?;
+        let mut writer = BufWriter::new(file);
+        self.write(&mut writer)
     }
 }
 
@@ -69,34 +146,33 @@ impl From<SolverResult<Time, State>> for RayResults {
     }
 }
 
-impl Writable for RayResults {
-    fn write_to_csv_file(&self, path: &std::path::Path, delimiter: &str) -> Result<(), Error> {
-        let file = File::create(path)?;
-        let mut writer = BufWriter::new(file);
+#[cfg(test)]
+mod test_ray_result {
 
-        writeln!(
-            &mut writer,
-            "t{}x{}y{}kx{}ky{}",
-            delimiter, delimiter, delimiter, delimiter, delimiter
-        )?;
-        for i in 0..self.t_vec.len() {
-            writeln!(
-                &mut writer,
-                "{}{}{}{}{}{}{}{}{}{}",
-                self.t_vec[i],
-                delimiter,
-                self.x_vec[i],
-                delimiter,
-                self.y_vec[i],
-                delimiter,
-                self.kx_vec[i],
-                delimiter,
-                self.ky_vec[i],
-                delimiter
-            )?;
-        }
+    use super::*;
 
-        writer.flush()?;
-        Ok(())
+    #[test]
+    /// test the converted RayResults struct from a SolverResult with constructor
+    fn test_ray_result() {
+        let solver_result: SolverResult<Time, State> = SolverResult::default();
+
+        let converted_ray_results = RayResults::from(solver_result);
+
+        let constructed_ray_results = RayResults::new(vec![], vec![], vec![], vec![], vec![]);
+
+        assert_eq!(converted_ray_results, constructed_ray_results);
+    }
+
+    #[test]
+    /// test the as_json method
+    fn test_as_json() {
+        let ray_results = RayResults::new(vec![1.0], vec![2.0], vec![3.0], vec![4.0], vec![5.0]);
+
+        let json_string = ray_results.as_json();
+
+        assert_eq!(
+            json_string,
+            "{\"t_vec\":[1.0],\"x_vec\":[2.0],\"y_vec\":[3.0],\"kx_vec\":[4.0],\"ky_vec\":[5.0]}"
+        );
     }
 }

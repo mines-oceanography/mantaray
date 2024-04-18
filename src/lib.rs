@@ -32,7 +32,6 @@ mod io;
 pub mod ray;
 mod ray_result;
 mod wave_ray_path;
-mod writable;
 
 #[allow(unused_imports)]
 use datatype::{Coordinate, Current, Point};
