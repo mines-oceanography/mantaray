@@ -63,7 +63,7 @@ impl BathymetryData for BathymetryFromNetCDF {
             .file
             .variable(&self.depth_name)
             .expect("Could not find variable 'x'")
-            .get_value::<f64, _>([i, j])
+            .get_value::<f64, _>([j, i])
             .expect("Could not get value of variable 'x'");
 
         Ok(depth as f32)
@@ -87,7 +87,8 @@ mod tests {
             "ROSE".to_string(),
         );
 
-        bathymetry.get_depth(&11.234, &0.0).unwrap();
+        let z = bathymetry.get_depth(&11.234, &0.0).unwrap();
+        dbg!(z);
         assert!(false);
     }
 
