@@ -534,10 +534,9 @@ mod test_single_wave {
             last_x = r[0];
         }
 
-        // FIXME: check this test case below. it does not pass
         // verify that the last kx value is greater than the first. this is because
         // the wave is getting more and more shallow.
-        // assert!(data.iter().last().unwrap()[2] > data.iter().next().unwrap()[2]);
+        assert!(data.iter().last().unwrap()[2] > data.iter().next().unwrap()[2]);
     }
 
     #[test]
