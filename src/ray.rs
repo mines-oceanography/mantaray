@@ -22,7 +22,7 @@ type XOut = Vec<f64>;
 type YOut = Vec<OVector<f64, nalgebra::base::dimension::Const<4>>>;
 
 /// a struct that creates many rays
-struct ManyRays<'a> {
+pub struct ManyRays<'a> {
     bathymetry_data: &'a dyn BathymetryData,
     /// a vector of initial x, y, kx, and ky values for the many waves
     init_rays: &'a Vec<(f64, f64, f64, f64)>,
@@ -42,7 +42,7 @@ impl<'a> ManyRays<'a> {
     ///
     /// # Returns
     /// `Self`: a constructed `ManyRays` struct
-    fn new(
+    pub fn new(
         bathymetry_data: &'a dyn BathymetryData,
         init_rays: &'a Vec<(f64, f64, f64, f64)>,
     ) -> Self {
@@ -72,7 +72,7 @@ impl<'a> ManyRays<'a> {
     /// Returns: `Vec<Option<(XOut, YOut)>>`: A vector of optional values. Each
     /// value in the vector is either `None`, which represents an error during
     /// that ray's integration, or they are a tuple of (XOut, YOut).
-    fn trace_many(
+    pub fn trace_many(
         &self,
         start_time: f64,
         end_time: f64,

@@ -1,3 +1,5 @@
+//! FIXME: document this module
+
 use std::path::Path;
 
 use netcdf3::FileReader;
@@ -17,7 +19,7 @@ use crate::{error::Error, interpolator};
 /// In this struct, None is used when the current function will not panic,
 /// but the value is not useful to the other structs. Error is used when the
 /// function would panic, so instead, it returns an error.
-pub(crate) struct CartesianFile {
+pub struct CartesianFile {
     variables: (Vec<f32>, Vec<f32>, Vec<f32>),
 }
 
@@ -140,7 +142,7 @@ impl CartesianFile {
     /// # Note
     /// in the future, be able to check attributes and verify that the file is
     /// correct.
-    pub(crate) fn new(path: &Path) -> Self {
+    pub fn new(path: &Path) -> Self {
         let mut data = FileReader::open(path).unwrap();
 
         let variables = (
