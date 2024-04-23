@@ -503,7 +503,7 @@ mod test_single_wave {
         let mut last_x = data[0][0];
         for r in data.iter() {
             assert!(r[0] >= last_x);
-            assert!(r[0] == r[1]);
+            assert!((r[0] - r[1]).abs() < f64::EPSILON);
             last_x = r[0];
         }
     }
@@ -569,7 +569,7 @@ mod test_single_wave {
 
     #[test]
     /// test one wave with constant depth and current.
-    /// 
+    ///
     /// This test sets u to 0.5 and kx to 0.1. The wave should move in the x
     /// direction and the y value should stay the same. The kx value should stay
     /// the same and the ky value should stay the same.
@@ -1257,9 +1257,7 @@ mod test_single_wave {
 #[cfg(test)]
 mod test_many_waves {
 
-    use std::path::Path;
-
-    use crate::bathymetry::{CartesianFile, ConstantSlope};
+    use crate::bathymetry::ConstantSlope;
 
     use super::ManyRays;
 
@@ -1292,87 +1290,5 @@ mod test_many_waves {
         // TODO: test to verify size of initial waves and result (number of rays) same
         // TODO: test to verify each instance of many ray against single ray
         //
-    }
-
-    #[test]
-    // FIXME: change this to an integration test similar to GSW-rs
-    /// verify the linear_sea_mount netcdf test works as expected. rays
-    /// should bend towards the circular island such that rays above the island
-    /// curve down and rays below the island curve up.
-    fn test_sea_mount() {
-        use std::process::Command;
-
-        // create the netcdf file from python script
-        Command::new("python")
-            .arg("support/linear_sea_mount.py")
-            .output()
-            .expect("failed to execute process");
-
-        let bathymetry_data = CartesianFile::new(Path::new("island.nc"));
-
-        // top half
-        let initial_waves: Vec<(f64, f64, f64, f64)> = (0..10)
-            .map(|v| (-9990.0, (v * 1000) as f64, 0.01, 0.0))
-            .collect();
-
-        let waves = ManyRays::new(&bathymetry_data, None, &initial_waves);
-
-        let results = waves.trace_many(0.0, 1000.0, 1.0);
-
-        // verify the top half curves down towards the island. the x value
-        // should be increasing. y value should stay the same or decrease.
-        for res in results {
-            match res {
-                Some(res) => {
-                    let (_, data) = res.get();
-                    // x values increase, y values decrease
-                    let mut last_x = data[0][0];
-                    let mut last_y = data[0][1];
-                    for r in data.iter() {
-                        if r[0].is_nan() {
-                            continue;
-                        }
-                        assert!(r[0] >= last_x);
-                        assert!(r[1] <= last_y);
-                        last_x = r[0];
-                        last_y = r[1];
-                    }
-                }
-                None => (),
-            }
-        }
-
-        // bottom half
-        let initial_waves: Vec<(f64, f64, f64, f64)> = (1..10)
-            .map(|v| (-9990.0, (v * -1000) as f64, 0.01, 0.0))
-            .collect();
-
-        let waves = ManyRays::new(&bathymetry_data, None, &initial_waves);
-
-        let results = waves.trace_many(0.0, 1000.0, 1.0);
-
-        // verify the bottom half curves up towards the island. x should
-        // increase. y should increase.
-        for res in results {
-            match res {
-                Some(res) => {
-                    let (_, data) = res.get();
-
-                    // x values increase, y values increase
-                    let mut last_x = data[0][0];
-                    let mut last_y = data[0][1];
-                    for r in data.iter() {
-                        if r[0].is_nan() {
-                            continue;
-                        }
-                        assert!(r[0] >= last_x);
-                        assert!(r[1] >= last_y);
-                        last_x = r[0];
-                        last_y = r[1];
-                    }
-                }
-                None => (),
-            }
-        }
     }
 }
