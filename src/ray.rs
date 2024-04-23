@@ -567,20 +567,17 @@ mod test_single_wave {
         }
     }
 
-    // positive v, deflect north
-    // negative v, deflect south
-    // positive u, should reduce wavenumber
-    // negative u, should increase wavenumber
-    // both u and v
-    // constant gradient u and v
-    // jet
-    // eddy
     #[test]
+    /// test one wave with constant depth and current.
     /// 
+    /// This test sets u to 0.5 and kx to 0.1. The wave should move in the x
+    /// direction and the y value should stay the same. The kx value should stay
+    /// the same and the ky value should stay the same.
     fn constant_depth_and_current() {
         let bathymetry_data = &ConstantDepth::new(10.0);
+        // current is 0.5 m/s in the x direction
         let current_data = &ConstantCurrent::new(0.5, 0.0);
-
+        // wave starts at (x,y,kx,ky) = (0,0,0.1,0.0)
         let wave = SingleRay::new(bathymetry_data, Some(current_data), 0.0, 0.0, 0.1, 0.0);
         let res = wave.trace_individual(1.0, 10.0, 1.0).unwrap();
 
@@ -1292,12 +1289,13 @@ mod test_many_waves {
             assert!(res.is_some())
         }
 
-        // test to verify size of initial waves and result (number of rays) samen
-        // test to verify each instance of many ray against single ray
-        // 
+        // TODO: test to verify size of initial waves and result (number of rays) same
+        // TODO: test to verify each instance of many ray against single ray
+        //
     }
 
     #[test]
+    // FIXME: change this to an integration test similar to GSW-rs
     /// verify the linear_sea_mount netcdf test works as expected. rays
     /// should bend towards the circular island such that rays above the island
     /// curve down and rays below the island curve up.
