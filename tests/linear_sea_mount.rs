@@ -7,11 +7,11 @@ use ray_tracing;
 /// should bend towards the circular island such that rays above the island
 /// curve down and rays below the island curve up.
 fn test_sea_mount() {
-    let bathymetry_data = ray_tracing::bathymetry::cartesian::CartesianFile::new(Path::new("tests/data/island.nc"));
+    let bathymetry_data = ray_tracing::bathymetry::cartesian::CartesianFile::new(Path::new("tests/data/island_slice.nc"));
 
     // top half
     let initial_waves: Vec<(f64, f64, f64, f64)> = (0..10)
-        .map(|v| (-9990.0, (v * 1000) as f64, 0.01, 0.0))
+        .map(|v| (-990.0, (v * 100) as f64, 0.01, 0.0))
         .collect();
 
     let waves = ray_tracing::ray::ManyRays::new(&bathymetry_data, &initial_waves);
@@ -43,7 +43,7 @@ fn test_sea_mount() {
 
     // bottom half
     let initial_waves: Vec<(f64, f64, f64, f64)> = (1..10)
-        .map(|v| (-9990.0, (v * -1000) as f64, 0.01, 0.0))
+        .map(|v| (-990.0, (v * -100) as f64, 0.01, 0.0))
         .collect();
 
     let waves = ray_tracing::ray::ManyRays::new(&bathymetry_data, &initial_waves);
@@ -52,7 +52,7 @@ fn test_sea_mount() {
 
     // verify the bottom half curves up towards the island. x should
     // increase. y should increase.
-    for res in results {
+    for res in &results {
         match res {
             Some(res) => {
                 let (_, data) = &res.get();
