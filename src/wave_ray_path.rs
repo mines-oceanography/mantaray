@@ -199,10 +199,12 @@ impl<'a> WaveRayPath<'a> {
     /// # Returns
     /// `(f64, f64)` : values cooresponding to (dkx/dt, dky/dt)
     pub(crate) fn dk_vector_dt(&self, k_mag: &f64, h: &f64, dhdx: &f64, dhdy: &f64) -> (f64, f64) {
-        let dkxdt_bathy = (0.5) * k_mag * 1.0 / (k_mag * h).sinh() * 1.0 / (k_mag * h).cosh()
+        let dkxdt_bathy = (-0.5) * k_mag * 1.0 / (k_mag * h).sinh() * 1.0
+            / (k_mag * h).cosh()
             * (G * k_mag * (k_mag * h).tanh()).sqrt()
             * dhdx;
-        let dkydt_bathy = (0.5) * k_mag * 1.0 / (k_mag * h).sinh() * 1.0 / (k_mag * h).cosh()
+        let dkydt_bathy = (-0.5) * k_mag * 1.0 / (k_mag * h).sinh() * 1.0
+            / (k_mag * h).cosh()
             * (G * k_mag * (k_mag * h).tanh()).sqrt()
             * dhdy;
 

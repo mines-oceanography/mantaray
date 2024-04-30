@@ -105,11 +105,11 @@ $$
 $$
 
 $$
-\frac{d k_x}{dt}=  \frac{1}{2}k\frac{\left[ gk \tanh{(kH)}\right]^{1/2}}{ \sinh{(kH)} \cosh{(kH)}}\frac{\partial H}{\partial x},
+\frac{d k_x}{dt}=  -\frac{1}{2}k\frac{\left[ gk \tanh{(kH)}\right]^{1/2}}{ \sinh{(kH)} \cosh{(kH)}}\frac{\partial H}{\partial x},
 $$
 
 $$
-\frac{d k_y}{dt}= \frac{1}{2}k\frac{\left[ gk \tanh{(kH)}\right]^{1/2}}{ \sinh{(kH)} \cosh{(kH)}}\frac{\partial H}{\partial y},
+\frac{d k_y}{dt}= -\frac{1}{2}k\frac{\left[ gk \tanh{(kH)}\right]^{1/2}}{ \sinh{(kH)} \cosh{(kH)}}\frac{\partial H}{\partial y},
 $$
 
 #### Current effects
