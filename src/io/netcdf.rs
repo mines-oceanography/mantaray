@@ -45,9 +45,9 @@ impl BathymetryData for BathymetryFromNetCDF {
         let y = self
             .file
             .variable(&self.y_name)
-            .expect("Could not find variable 'x'")
+            .expect("Could not find variable 'y'")
             .get::<f64, _>(..)
-            .expect("Could not get value of variable 'x'");
+            .expect("Could not get value of variable 'y'");
 
         // Find the closest value to y0
         let j = y
@@ -62,9 +62,9 @@ impl BathymetryData for BathymetryFromNetCDF {
         let depth = self
             .file
             .variable(&self.depth_name)
-            .expect("Could not find variable 'x'")
+            .expect("Could not find variable 'depth'")
             .get_value::<f64, _>([j, i])
-            .expect("Could not get value of variable 'x'");
+            .expect("Could not get value of variable 'depth'");
 
         Ok(depth as f32)
     }
