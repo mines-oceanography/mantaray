@@ -109,12 +109,12 @@ impl BathymetryData for CartesianFile {
         let x_space = self.variables.0[1] - self.variables.0[0];
         let y_space = self.variables.1[1] - self.variables.1[0];
 
-        let x_grad = (self.depth_from_arr(&edge_points[3].0, &edge_points[3].1)?
-            - self.depth_from_arr(&edge_points[1].0, &edge_points[1].1)?)
+        let x_grad = (self.depth_from_arr(&edge_points[1].0, &edge_points[1].1)?
+            - self.depth_from_arr(&edge_points[3].0, &edge_points[3].1)?)
             / (2.0 * x_space);
 
-        let y_grad = (self.depth_from_arr(&edge_points[2].0, &edge_points[2].1)?
-            - self.depth_from_arr(&edge_points[0].0, &edge_points[0].1)?)
+        let y_grad = (self.depth_from_arr(&edge_points[0].0, &edge_points[0].1)?
+            - self.depth_from_arr(&edge_points[2].0, &edge_points[2].1)?)
             / (2.0 * y_space);
 
         Ok((depth, (x_grad, y_grad)))
@@ -666,9 +666,9 @@ mod test_cartesian_file {
 
         // check to see if gradient is the same
         let check_gradient = vec![
-            (50.0, 50.0, -0.05, 0.0),
-            (14.0, 12.0, -0.05, 0.0),
-            (10.0, 80.0, -0.05, 0.0),
+            (50.0, 50.0, 0.05, 0.0),
+            (14.0, 12.0, 0.05, 0.0),
+            (10.0, 80.0, 0.05, 0.0),
         ];
 
         for (x, y, dhdx, dhdy) in &check_gradient {
@@ -718,9 +718,9 @@ mod test_cartesian_file {
 
         // check to see if gradient is the same
         let check_gradient = vec![
-            (50.0, 50.0, 0.0, -0.05),
-            (14.0, 12.0, 0.0, -0.05),
-            (10.0, 80.0, 0.0, -0.05),
+            (50.0, 50.0, 0.0, 0.05),
+            (14.0, 12.0, 0.0, 0.05),
+            (10.0, 80.0, 0.0, 0.05),
         ];
 
         for (x, y, dhdx, dhdy) in &check_gradient {
