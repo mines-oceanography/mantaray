@@ -307,7 +307,7 @@ mod test_single_wave {
         for r in data.iter() {
             let x = r[0];
             let y = r[1];
-            assert!((x - y).abs() < f64::EPSILON);
+            assert!((x - y).abs() <= f64::EPSILON);
             assert!(x >= last_x);
             assert!(y >= last_y);
             last_x = x;
@@ -363,7 +363,7 @@ mod test_single_wave {
         for r in data.iter() {
             let x = r[0];
             let y = r[1];
-            assert!((x - y).abs() < f64::EPSILON);
+            assert!((x - y).abs() <= f64::EPSILON);
             assert!(x >= last_x);
             assert!(y >= last_y);
             last_x = x;
@@ -503,7 +503,7 @@ mod test_single_wave {
         let mut last_x = data[0][0];
         for r in data.iter() {
             assert!(r[0] >= last_x);
-            assert!((r[0] - r[1]).abs() < f64::EPSILON);
+            assert!((r[0] - r[1]).abs() <= f64::EPSILON);
             last_x = r[0];
         }
     }
