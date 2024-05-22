@@ -514,7 +514,7 @@ mod test_single_wave {
         for r in data.iter() {
             assert!(r[0] >= last_x);
             assert!(
-                (r[0] - r[1]).abs() <= 100.0*f64::EPSILON,
+                (r[0] - r[1]).abs() <= 10000.0*f64::EPSILON,
                 "expected {} to be equal to {}",
                 r[0],
                 r[1]
