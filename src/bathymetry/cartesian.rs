@@ -330,141 +330,25 @@ mod test_cartesian_file {
     use crate::{
         bathymetry::{cartesian::CartesianFile, BathymetryData},
         error::Error,
+        io::utility::create_netcdf3_bathymetry,
     };
     use std::path::Path;
 
-    /// Create a test file like the test_bathy.nc
-    fn create_file(path: &Path, x_len: usize, y_len: usize, x_step: f32, y_step: f32) {
-        let x_data: Vec<f32> = (0..x_len).map(|x| x as f32 * x_step).collect();
-        let y_data: Vec<f32> = (0..y_len).map(|y| y as f32 * y_step).collect();
-
-        let mut depth_data: Vec<f64> = Vec::new();
-        for y in &y_data {
-            for x in &x_data {
-                if *x < 25000.0 {
-                    if *y < 12500.0 {
-                        depth_data.push(20.0);
-                    } else {
-                        depth_data.push(10.0);
-                    }
-                } else {
-                    if *y < 12500.0 {
-                        depth_data.push(5.0);
-                    } else {
-                        depth_data.push(15.0);
-                    }
-                }
+    /// create a file with four quadrants each with a different depth
+    fn four_depth_fn(x: f32, y: f32) -> f64 {
+        if x < 25000.0 {
+            if y < 12500.0 {
+                20.0
+            } else {
+                10.0
+            }
+        } else {
+            if y < 12500.0 {
+                5.0
+            } else {
+                15.0
             }
         }
-
-        // most below copied from the docs
-        use netcdf3::{DataSet, FileWriter, Version};
-        let y_dim_name: &str = "y";
-        let y_var_name: &str = y_dim_name;
-        let y_var_len: usize = y_len;
-
-        let x_dim_name: &str = "x";
-        let x_var_name: &str = x_dim_name;
-        let x_var_len: usize = x_len;
-
-        let depth_var_name: &str = "depth";
-        let depth_var_len: usize = depth_data.len();
-
-        // Create the NetCDF-3 definition
-        // ------------------------------
-        let data_set: DataSet = {
-            let mut data_set: DataSet = DataSet::new();
-            // Define the dimensions
-            data_set.add_fixed_dim(y_dim_name, y_var_len).unwrap();
-            data_set.add_fixed_dim(x_dim_name, x_var_len).unwrap();
-            // Define the variable
-            data_set.add_var_f32(y_var_name, &[y_dim_name]).unwrap();
-            data_set.add_var_f32(x_var_name, &[x_var_name]).unwrap();
-            data_set
-                .add_var_f64(depth_var_name, &[y_dim_name, x_var_name])
-                .unwrap();
-
-            data_set
-        };
-
-        // ...
-
-        // Create and write the NetCDF-3 file
-        // ----------------------------------
-        let mut file_writer: FileWriter = FileWriter::open(path).unwrap();
-        // Set the NetCDF-3 definition
-        file_writer.set_def(&data_set, Version::Classic, 0).unwrap();
-        assert_eq!(depth_var_len, x_var_len * y_var_len);
-        file_writer.write_var_f32(y_var_name, &y_data[..]).unwrap();
-        file_writer.write_var_f32(x_var_name, &x_data[..]).unwrap();
-        file_writer
-            .write_var_f64(depth_var_name, &depth_data[..])
-            .unwrap();
-        // file_writer.close().unwrap();
-        // end of copied from docs
-    }
-
-    /// Create a test file like the test_bathy.nc
-    fn create_fn_file(
-        path: &Path,
-        x_len: usize,
-        y_len: usize,
-        x_step: f32,
-        y_step: f32,
-        depth_fn: fn(usize, usize) -> f64,
-    ) {
-        let x_data: Vec<f32> = (0..x_len).map(|x| x as f32 * x_step).collect();
-        let y_data: Vec<f32> = (0..y_len).map(|y| y as f32 * y_step).collect();
-
-        let depth_data: Vec<f64> = (0..x_len * y_len)
-            .map(|p| depth_fn(p % x_len, p / y_len))
-            .collect();
-
-        // most below copied from the docs
-        use netcdf3::{DataSet, FileWriter, Version};
-        let y_dim_name: &str = "y";
-        let y_var_name: &str = y_dim_name;
-        let y_var_len: usize = y_len;
-
-        let x_dim_name: &str = "x";
-        let x_var_name: &str = x_dim_name;
-        let x_var_len: usize = x_len;
-
-        let depth_var_name: &str = "depth";
-        let depth_var_len: usize = depth_data.len();
-
-        // Create the NetCDF-3 definition
-        // ------------------------------
-        let data_set: DataSet = {
-            let mut data_set: DataSet = DataSet::new();
-            // Define the dimensions
-            data_set.add_fixed_dim(y_dim_name, y_var_len).unwrap();
-            data_set.add_fixed_dim(x_dim_name, x_var_len).unwrap();
-            // Define the variable
-            data_set.add_var_f32(y_var_name, &[y_dim_name]).unwrap();
-            data_set.add_var_f32(x_var_name, &[x_var_name]).unwrap();
-            data_set
-                .add_var_f64(depth_var_name, &[y_dim_name, x_var_name])
-                .unwrap();
-
-            data_set
-        };
-
-        // ...
-
-        // Create and write the NetCDF-3 file
-        // ----------------------------------
-        let mut file_writer: FileWriter = FileWriter::open(path).unwrap();
-        // Set the NetCDF-3 definition
-        file_writer.set_def(&data_set, Version::Classic, 0).unwrap();
-        assert_eq!(depth_var_len, x_var_len * y_var_len);
-        file_writer.write_var_f32(y_var_name, &y_data[..]).unwrap();
-        file_writer.write_var_f32(x_var_name, &x_data[..]).unwrap();
-        file_writer
-            .write_var_f64(depth_var_name, &depth_data[..])
-            .unwrap();
-        // file_writer.close().unwrap();
-        // end of copied from docs
     }
 
     #[test]
@@ -474,7 +358,7 @@ mod test_cartesian_file {
         use lockfile::Lockfile;
         let lockfile = Lockfile::create(Path::new("tmp_bathy1.nc")).unwrap();
 
-        create_file(lockfile.path(), 101, 51, 500.0, 500.0);
+        create_netcdf3_bathymetry(lockfile.path(), 101, 51, 500.0, 500.0, four_depth_fn);
 
         assert_eq!(lockfile.path(), Path::new("tmp_bathy1.nc"))
     }
@@ -486,7 +370,7 @@ mod test_cartesian_file {
         use lockfile::Lockfile;
         let lockfile = Lockfile::create(Path::new("tmp_bathy2.nc")).unwrap();
 
-        create_file(lockfile.path(), 101, 51, 500.0, 500.0);
+        create_netcdf3_bathymetry(lockfile.path(), 101, 51, 500.0, 500.0, four_depth_fn);
 
         let data = CartesianFile::new(Path::new(lockfile.path()));
         assert!((data.variables.0[10] - 5000.0).abs() < f32::EPSILON)
@@ -499,7 +383,7 @@ mod test_cartesian_file {
         use lockfile::Lockfile;
         let lockfile = Lockfile::create(Path::new("tmp_bathy3.nc")).unwrap();
 
-        create_file(lockfile.path(), 101, 51, 500.0, 500.0);
+        create_netcdf3_bathymetry(lockfile.path(), 101, 51, 500.0, 500.0, four_depth_fn);
 
         let data = CartesianFile::new(Path::new(lockfile.path()));
         assert!(data.nearest(&5499.0, &data.variables.0) == 11);
@@ -512,7 +396,7 @@ mod test_cartesian_file {
         use lockfile::Lockfile;
         let lockfile = Lockfile::create(Path::new("tmp_bathy4.nc")).unwrap();
 
-        create_file(lockfile.path(), 101, 51, 500.0, 500.0);
+        create_netcdf3_bathymetry(lockfile.path(), 101, 51, 500.0, 500.0, four_depth_fn);
 
         let data = CartesianFile::new(Path::new(lockfile.path()));
         let corners = data.four_corners(&10, &10).unwrap();
@@ -529,7 +413,7 @@ mod test_cartesian_file {
         use lockfile::Lockfile;
         let lockfile = Lockfile::create(Path::new("tmp_bathy5.nc")).unwrap();
 
-        create_file(lockfile.path(), 101, 51, 500.0, 500.0);
+        create_netcdf3_bathymetry(lockfile.path(), 101, 51, 500.0, 500.0, four_depth_fn);
 
         let data = CartesianFile::new(Path::new(lockfile.path()));
 
@@ -560,7 +444,7 @@ mod test_cartesian_file {
         use lockfile::Lockfile;
         let lockfile = Lockfile::create(Path::new("tmp_bathy6.nc")).unwrap();
 
-        create_file(lockfile.path(), 101, 51, 500.0, 500.0);
+        create_netcdf3_bathymetry(lockfile.path(), 101, 51, 500.0, 500.0, four_depth_fn);
 
         let data = CartesianFile::new(Path::new(lockfile.path()));
         if let Error::NoNearestPoint = data.get_depth(&-500.1, &500.1).unwrap_err() {
@@ -578,7 +462,7 @@ mod test_cartesian_file {
         use lockfile::Lockfile;
         let lockfile = Lockfile::create(Path::new("tmp_bathy7.nc")).unwrap();
 
-        create_file(lockfile.path(), 101, 51, 500.0, 500.0);
+        create_netcdf3_bathymetry(lockfile.path(), 101, 51, 500.0, 500.0, four_depth_fn);
 
         let data = CartesianFile::new(Path::new(lockfile.path()));
         if let Error::NoNearestPoint = data.get_depth(&500.1, &-500.1).unwrap_err() {
@@ -597,7 +481,7 @@ mod test_cartesian_file {
         use lockfile::Lockfile;
         let lockfile = Lockfile::create(Path::new("tmp_bathy8.nc")).unwrap();
 
-        create_file(lockfile.path(), 101, 51, 500.0, 500.0);
+        create_netcdf3_bathymetry(lockfile.path(), 101, 51, 500.0, 500.0, four_depth_fn);
 
         let data = CartesianFile::new(Path::new(lockfile.path()));
 
@@ -626,7 +510,7 @@ mod test_cartesian_file {
         use lockfile::Lockfile;
         let lockfile = Lockfile::create(Path::new("tmp_bathy9.nc")).unwrap();
 
-        create_file(lockfile.path(), 101, 51, 500.0, 500.0);
+        create_netcdf3_bathymetry(lockfile.path(), 101, 51, 500.0, 500.0, four_depth_fn);
 
         let data = CartesianFile::new(Path::new(lockfile.path()));
 
@@ -643,11 +527,11 @@ mod test_cartesian_file {
         use lockfile::Lockfile;
         let lockfile = Lockfile::create(Path::new("tmp_bathy10.nc")).unwrap();
 
-        fn depth_fn(indx: usize, _indy: usize) -> f64 {
-            indx as f64 * 0.05
+        fn depth_fn(x: f32, _y: f32) -> f64 {
+            x as f64 * 0.05
         }
 
-        create_fn_file(lockfile.path(), 100, 100, 1.0, 1.0, depth_fn);
+        create_netcdf3_bathymetry(lockfile.path(), 100, 100, 1.0, 1.0, depth_fn);
 
         let data = CartesianFile::new(Path::new(lockfile.path()));
 
@@ -695,11 +579,11 @@ mod test_cartesian_file {
         use lockfile::Lockfile;
         let lockfile = Lockfile::create(Path::new("tmp_bathy11.nc")).unwrap();
 
-        fn depth_fn(_indx: usize, indy: usize) -> f64 {
-            indy as f64 * 0.05
+        fn depth_fn(_x: f32, y: f32) -> f64 {
+            y as f64 * 0.05
         }
 
-        create_fn_file(lockfile.path(), 100, 100, 1.0, 1.0, depth_fn);
+        create_netcdf3_bathymetry(lockfile.path(), 100, 100, 1.0, 1.0, depth_fn);
 
         let data = CartesianFile::new(Path::new(lockfile.path()));
 
