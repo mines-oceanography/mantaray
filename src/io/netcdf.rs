@@ -24,9 +24,9 @@ impl BathymetryFromNetCDF {
 
         let y: Vec<f32> = file
             .variable(y_name)
-            .expect("Could not find variable 'x'")
+            .expect("Could not find variable 'y'")
             .get::<f32, _>(..)
-            .expect("Could not get value of variable 'x'")
+            .expect("Could not get value of variable 'y'")
             .into_raw_vec();
 
         Self {
