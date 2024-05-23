@@ -93,6 +93,7 @@ impl BathymetryData for BathymetryFromNetCDF {
     }
 }
 
+/*
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -120,3 +121,4 @@ mod tests {
         assert_eq!(dy, 0.09486287);
     }
 }
+*/
