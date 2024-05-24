@@ -249,63 +249,17 @@ mod test_single_wave {
     use std::path::Path;
     use tempfile::tempdir;
 
-    use crate::bathymetry::{BathymetryData, CartesianFile, ConstantDepth, ConstantSlope};
+    use crate::{bathymetry::{BathymetryData, CartesianFile, ConstantDepth, ConstantSlope}, io::utility::create_netcdf3_bathymetry};
 
     use super::{output_to_tsv_file, SingleRay};
 
     /// Create a test file with depths split down the middle
-    fn create_two_depth_file(path: &Path, x_len: usize, y_len: usize, x_step: f32, y_step: f32) {
-        let x_data: Vec<f32> = (0..x_len).map(|x| x as f32 * x_step).collect();
-        let y_data: Vec<f32> = (0..y_len).map(|y| y as f32 * y_step).collect();
-        let depth_data: Vec<f64> = (0..(x_len * y_len))
-            .map(|p| if p % x_len >= 50 { 20.0f64 } else { 50.0f64 })
-            .collect();
-
-        // most below copied from the docs
-        use netcdf3::{DataSet, FileWriter, Version};
-        let y_dim_name: &str = "y";
-        let y_var_name: &str = y_dim_name;
-        let y_var_len: usize = y_len;
-
-        let x_dim_name: &str = "x";
-        let x_var_name: &str = x_dim_name;
-        let x_var_len: usize = x_len;
-
-        let depth_var_name: &str = "depth";
-        let depth_var_len: usize = depth_data.len();
-
-        // Create the NetCDF-3 definition
-        // ------------------------------
-        let data_set: DataSet = {
-            let mut data_set: DataSet = DataSet::new();
-            // Define the dimensions
-            data_set.add_fixed_dim(y_dim_name, y_var_len).unwrap();
-            data_set.add_fixed_dim(x_dim_name, x_var_len).unwrap();
-            // Define the variable
-            data_set.add_var_f32(y_var_name, &[y_dim_name]).unwrap();
-            data_set.add_var_f32(x_var_name, &[x_var_name]).unwrap();
-            data_set
-                .add_var_f64(depth_var_name, &[y_dim_name, x_var_name])
-                .unwrap();
-
-            data_set
-        };
-
-        // ...
-
-        // Create and write the NetCDF-3 file
-        // ----------------------------------
-        let mut file_writer: FileWriter = FileWriter::open(path).unwrap();
-        // Set the NetCDF-3 definition
-        file_writer.set_def(&data_set, Version::Classic, 0).unwrap();
-        assert_eq!(depth_var_len, x_var_len * y_var_len);
-        file_writer.write_var_f32(y_var_name, &y_data[..]).unwrap();
-        file_writer.write_var_f32(x_var_name, &x_data[..]).unwrap();
-        file_writer
-            .write_var_f64(depth_var_name, &depth_data[..])
-            .unwrap();
-        file_writer.close().unwrap();
-        // end of copied from docs
+    fn two_depth_fn(x: f32, _y: f32) -> f64 {
+        if x >= 50.0 {
+            20.0
+        } else {
+            50.0
+        }
     }
 
     fn temp_filename(filename: &str) -> String {
@@ -383,7 +337,7 @@ mod test_single_wave {
     /// wave propagating in the x direction. The kx increases slightly.
     fn test_two_depth_wave_shallow_x() {
         let lockfile = Lockfile::create(Path::new("tmp_two_depth_shallow_x.nc")).unwrap();
-        create_two_depth_file(&lockfile.path(), 100, 100, 1.0, 1.0);
+        create_netcdf3_bathymetry(&lockfile.path(), 100, 100, 1.0, 1.0, two_depth_fn);
 
         let bathymetry_data: &dyn BathymetryData = &CartesianFile::new(&lockfile.path());
 
@@ -405,7 +359,7 @@ mod test_single_wave {
     /// decreasing the step size will make the kx and ky change.
     fn test_two_depth_wave_shallow_xy() {
         let lockfile = Lockfile::create(Path::new("tmp_two_depth_shallow_xy.nc")).unwrap();
-        create_two_depth_file(&lockfile.path(), 100, 100, 1.0, 1.0);
+        create_netcdf3_bathymetry(&lockfile.path(), 100, 100, 1.0, 1.0, two_depth_fn);
 
         let bathymetry_data: &dyn BathymetryData = &CartesianFile::new(&lockfile.path());
 
@@ -421,7 +375,7 @@ mod test_single_wave {
     /// propagating in the x direction. This correcly shows no change in kx or ky.
     fn test_two_depth_wave_deep_x() {
         let lockfile = Lockfile::create(Path::new("tmp_two_depth_deep_x.nc")).unwrap();
-        create_two_depth_file(&lockfile.path(), 100, 100, 1.0, 1.0);
+        create_netcdf3_bathymetry(&lockfile.path(), 100, 100, 1.0, 1.0, two_depth_fn);
 
         let bathymetry_data: &dyn BathymetryData = &CartesianFile::new(&lockfile.path());
 
@@ -440,7 +394,7 @@ mod test_single_wave {
     /// propagating at an angle in the x=y direction. This correcly shows no change in kx or ky.
     fn test_two_depth_wave_deep_xy() {
         let lockfile = Lockfile::create(Path::new("tmp_two_depth_deep_xy.nc")).unwrap();
-        create_two_depth_file(&lockfile.path(), 100, 100, 1.0, 1.0);
+        create_netcdf3_bathymetry(&lockfile.path(), 100, 100, 1.0, 1.0, two_depth_fn);
 
         let bathymetry_data: &dyn BathymetryData = &CartesianFile::new(&lockfile.path());
 

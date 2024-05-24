@@ -521,74 +521,41 @@ impl CurrentData for CartesianCurrent {
 mod test_cartesian_file_current {
     use tempfile::NamedTempFile;
 
-    use crate::current::{cartesian_current::CartesianCurrent, CurrentData};
+    use crate::{
+        current::{cartesian_current::CartesianCurrent, CurrentData},
+        io::utility::create_netcdf3_current,
+    };
     use std::path::Path;
 
+    /// returns a simple current with u = 5 and v = 0
+    fn simple_current(_x: f32, _y: f32) -> (f64, f64) {
+        (5.0, 0.0)
+    }
+
     /// this will create a current file it will have x and y as f32 and u and v
-    /// as f64
-    fn create_current_file(path: &Path, x_len: usize, y_len: usize, x_step: f32, y_step: f32) {
-        let x_data: Vec<f32> = (0..x_len).map(|x| x as f32 * x_step).collect();
-        let y_data: Vec<f32> = (0..y_len).map(|y| y as f32 * y_step).collect();
+    /// as f64. this will have a gradient in the u and v fields
+    fn simple_x_gradient(x: f32, _y: f32) -> (f64, f64) {
+        let x = x as f64;
+        (x, x)
+    }
 
-        let u_data: Vec<f64> = (0..x_len * y_len).map(|_| 5.0_f64).collect();
-        let v_data: Vec<f64> = (0..x_len * y_len).map(|_| 0.0_f64).collect();
-
-        // most below copied from the docs
-        use netcdf3::{DataSet, FileWriter, Version};
-        let y_dim_name: &str = "y";
-        let y_var_name: &str = y_dim_name;
-        let y_var_len: usize = y_len;
-
-        let x_dim_name: &str = "x";
-        let x_var_name: &str = x_dim_name;
-        let x_var_len: usize = x_len;
-
-        let u_dim_name: &str = "u";
-        let u_var_name: &str = u_dim_name;
-        let u_var_len: usize = u_data.len();
-
-        let v_dim_name: &str = "v";
-        let v_var_name: &str = v_dim_name;
-        let v_var_len: usize = v_data.len();
-
-        // Create the NetCDF-3 definition
-        // ------------------------------
-        assert_eq!(u_var_len, y_var_len * x_var_len);
-        assert_eq!(v_var_len, y_var_len * x_var_len);
-        let data_set: DataSet = {
-            let mut data_set: DataSet = DataSet::new();
-            // Define the dimensions
-            data_set.add_fixed_dim(y_dim_name, y_var_len).unwrap();
-            data_set.add_fixed_dim(x_dim_name, x_var_len).unwrap();
-            // Define the variable
-            data_set.add_var_f32(y_var_name, &[y_dim_name]).unwrap();
-            data_set.add_var_f32(x_var_name, &[x_var_name]).unwrap();
-            data_set
-                .add_var_f64(u_var_name, &[y_dim_name, x_var_name])
-                .unwrap();
-            data_set
-                .add_var_f64(v_var_name, &[y_dim_name, x_var_name])
-                .unwrap();
-
-            data_set
-        };
-
-        // Create and write the NetCDF-3 file
-        // ----------------------------------
-        let mut file_writer: FileWriter = FileWriter::open(path).unwrap();
-        // Set the NetCDF-3 definition
-        file_writer.set_def(&data_set, Version::Classic, 0).unwrap();
-        file_writer.write_var_f32(y_var_name, &y_data[..]).unwrap();
-        file_writer.write_var_f32(x_var_name, &x_data[..]).unwrap();
-        file_writer.write_var_f64(u_var_name, &u_data[..]).unwrap();
-        file_writer.write_var_f64(v_var_name, &v_data[..]).unwrap();
-        // file_writer.close().unwrap();
-        // end of copied from docs
+    /// this will create a current file it will have x and y as f32 and u and v
+    /// as f64. this will have a gradient in the u and v fields
+    fn simple_y_gradient(_x: f32, y: f32) -> (f64, f64) {
+        let y = y as f64;
+        (y, y)
     }
 
     /// create a current file with variable (x, y) as (i16, i8) and (u, v) as
-    /// (u8, i32)
-    fn create_current_file_iu(path: &Path, x_len: usize, y_len: usize, x_step: f32, y_step: f32) {
+    /// (u8, i32). this is a special case file just for testing purposes, so it
+    /// stays for now.
+    fn create_netcdf3_current_iu(
+        path: &Path,
+        x_len: usize,
+        y_len: usize,
+        x_step: f32,
+        y_step: f32,
+    ) {
         let x_data: Vec<i16> = (0..x_len).map(|x| x as i16 * x_step as i16).collect();
         let y_data: Vec<i8> = (0..y_len).map(|y| y as i8 * y_step as i8).collect();
 
@@ -648,141 +615,17 @@ mod test_cartesian_file_current {
         // end of copied from docs
     }
 
-    /// this will create a current file it will have x and y as f32 and u and v
-    /// as f64. this will have a gradient in the u and v fields
-    fn create_grad_test_file(path: &Path, x_len: usize, y_len: usize, x_step: f32, y_step: f32) {
-        let x_data: Vec<f32> = (0..x_len).map(|x| x as f32 * x_step).collect();
-        let y_data: Vec<f32> = (0..y_len).map(|y| y as f32 * y_step).collect();
-
-        let u_data: Vec<f64> = (0..x_len * y_len).map(|x| (x % 100) as f64).collect();
-        let v_data: Vec<f64> = (0..x_len * y_len).map(|x| (x % 100) as f64).collect();
-
-        // most below copied from the docs
-        use netcdf3::{DataSet, FileWriter, Version};
-        let y_dim_name: &str = "y";
-        let y_var_name: &str = y_dim_name;
-        let y_var_len: usize = y_len;
-
-        let x_dim_name: &str = "x";
-        let x_var_name: &str = x_dim_name;
-        let x_var_len: usize = x_len;
-
-        let u_dim_name: &str = "u";
-        let u_var_name: &str = u_dim_name;
-        let u_var_len: usize = u_data.len();
-
-        let v_dim_name: &str = "v";
-        let v_var_name: &str = v_dim_name;
-        let v_var_len: usize = v_data.len();
-
-        // Create the NetCDF-3 definition
-        // ------------------------------
-        assert_eq!(u_var_len, y_var_len * x_var_len);
-        assert_eq!(v_var_len, y_var_len * x_var_len);
-        let data_set: DataSet = {
-            let mut data_set: DataSet = DataSet::new();
-            // Define the dimensions
-            data_set.add_fixed_dim(y_dim_name, y_var_len).unwrap();
-            data_set.add_fixed_dim(x_dim_name, x_var_len).unwrap();
-            // Define the variable
-            data_set.add_var_f32(y_var_name, &[y_dim_name]).unwrap();
-            data_set.add_var_f32(x_var_name, &[x_var_name]).unwrap();
-            data_set
-                .add_var_f64(u_var_name, &[y_dim_name, x_var_name])
-                .unwrap();
-            data_set
-                .add_var_f64(v_var_name, &[y_dim_name, x_var_name])
-                .unwrap();
-
-            data_set
-        };
-
-        // Create and write the NetCDF-3 file
-        // ----------------------------------
-        let mut file_writer: FileWriter = FileWriter::open(path).unwrap();
-        // Set the NetCDF-3 definition
-        file_writer.set_def(&data_set, Version::Classic, 0).unwrap();
-        file_writer.write_var_f32(y_var_name, &y_data[..]).unwrap();
-        file_writer.write_var_f32(x_var_name, &x_data[..]).unwrap();
-        file_writer.write_var_f64(u_var_name, &u_data[..]).unwrap();
-        file_writer.write_var_f64(v_var_name, &v_data[..]).unwrap();
-        // file_writer.close().unwrap();
-        // end of copied from docs
-    }
-
-    /// this will create a current file it will have x and y as f32 and u and v
-    /// as f64. this will have a gradient in the u and v fields
-    fn create_grad_test_file_2(path: &Path, x_len: usize, y_len: usize, x_step: f32, y_step: f32) {
-        let x_data: Vec<f32> = (0..x_len).map(|x| x as f32 * x_step).collect();
-        let y_data: Vec<f32> = (0..y_len).map(|y| y as f32 * y_step).collect();
-
-        let u_data: Vec<f64> = (0..x_len * y_len).map(|x| (x / 100) as f64).collect();
-        let v_data: Vec<f64> = (0..x_len * y_len).map(|x| (x / 100) as f64).collect();
-
-        // most below copied from the docs
-        use netcdf3::{DataSet, FileWriter, Version};
-        let y_dim_name: &str = "y";
-        let y_var_name: &str = y_dim_name;
-        let y_var_len: usize = y_len;
-
-        let x_dim_name: &str = "x";
-        let x_var_name: &str = x_dim_name;
-        let x_var_len: usize = x_len;
-
-        let u_dim_name: &str = "u";
-        let u_var_name: &str = u_dim_name;
-        let u_var_len: usize = u_data.len();
-
-        let v_dim_name: &str = "v";
-        let v_var_name: &str = v_dim_name;
-        let v_var_len: usize = v_data.len();
-
-        // Create the NetCDF-3 definition
-        // ------------------------------
-        assert_eq!(u_var_len, y_var_len * x_var_len);
-        assert_eq!(v_var_len, y_var_len * x_var_len);
-        let data_set: DataSet = {
-            let mut data_set: DataSet = DataSet::new();
-            // Define the dimensions
-            data_set.add_fixed_dim(y_dim_name, y_var_len).unwrap();
-            data_set.add_fixed_dim(x_dim_name, x_var_len).unwrap();
-            // Define the variable
-            data_set.add_var_f32(y_var_name, &[y_dim_name]).unwrap();
-            data_set.add_var_f32(x_var_name, &[x_var_name]).unwrap();
-            data_set
-                .add_var_f64(u_var_name, &[y_dim_name, x_var_name])
-                .unwrap();
-            data_set
-                .add_var_f64(v_var_name, &[y_dim_name, x_var_name])
-                .unwrap();
-
-            data_set
-        };
-
-        // Create and write the NetCDF-3 file
-        // ----------------------------------
-        let mut file_writer: FileWriter = FileWriter::open(path).unwrap();
-        // Set the NetCDF-3 definition
-        file_writer.set_def(&data_set, Version::Classic, 0).unwrap();
-        file_writer.write_var_f32(y_var_name, &y_data[..]).unwrap();
-        file_writer.write_var_f32(x_var_name, &x_data[..]).unwrap();
-        file_writer.write_var_f64(u_var_name, &u_data[..]).unwrap();
-        file_writer.write_var_f64(v_var_name, &v_data[..]).unwrap();
-        // file_writer.close().unwrap();
-        // end of copied from docs
-    }
-
     #[test]
     fn test_all_types() {
         let temp_file = NamedTempFile::new().unwrap();
         let path = temp_file.into_temp_path();
 
         // test with f32 and f64
-        create_current_file(&path, 1, 1, 1.0, 1.0);
+        create_netcdf3_current(&path, 1, 1, 1.0, 1.0, simple_current);
         let _: CartesianCurrent = CartesianCurrent::open(&path, "x", "y", "u", "v");
 
         // test with i16, i8, u8, i32
-        create_current_file_iu(&path, 1, 1, 1.0, 1.0);
+        create_netcdf3_current_iu(&path, 1, 1, 1.0, 1.0);
         let _: CartesianCurrent = CartesianCurrent::open(&path, "x", "y", "u", "v");
     }
 
@@ -794,7 +637,7 @@ mod test_cartesian_file_current {
         let temp_file = NamedTempFile::new().unwrap();
         let path = temp_file.into_temp_path();
 
-        create_current_file(&path, 100, 100, 500.0, 500.0);
+        create_netcdf3_current(&path, 100, 100, 500.0, 500.0, simple_current);
 
         let data = CartesianCurrent::open(Path::new(&path), "x", "y", "u", "v");
 
@@ -813,7 +656,7 @@ mod test_cartesian_file_current {
         let temp_file = NamedTempFile::new().unwrap();
         let path = temp_file.into_temp_path();
 
-        create_current_file(&path, 101, 51, 500.0, 500.0);
+        create_netcdf3_current(&path, 101, 51, 500.0, 500.0, simple_current);
 
         let data = CartesianCurrent::open(Path::new(&path), "x", "y", "u", "v");
 
@@ -833,7 +676,7 @@ mod test_cartesian_file_current {
         let temp_file = NamedTempFile::new().unwrap();
         let path = temp_file.into_temp_path();
 
-        create_current_file(&path, 101, 51, 500.0, 500.0);
+        create_netcdf3_current(&path, 101, 51, 500.0, 500.0, simple_current);
 
         let data = CartesianCurrent::open(Path::new(&path), "x", "y", "u", "v");
 
@@ -859,7 +702,7 @@ mod test_cartesian_file_current {
         let temp_file = NamedTempFile::new().unwrap();
         let path = temp_file.into_temp_path();
 
-        create_current_file(&path, 101, 51, 500.0, 500.0);
+        create_netcdf3_current(&path, 101, 51, 500.0, 500.0, simple_current);
 
         let data = CartesianCurrent::open(Path::new(&path), "x", "y", "u", "v");
         let corners = data.four_corners(&10, &10).unwrap();
@@ -877,7 +720,7 @@ mod test_cartesian_file_current {
         let temp_file = NamedTempFile::new().unwrap();
         let path = temp_file.into_temp_path();
 
-        create_current_file(&path, 101, 51, 500.0, 500.0);
+        create_netcdf3_current(&path, 101, 51, 500.0, 500.0, simple_current);
 
         let data = CartesianCurrent::open(Path::new(&path), "x", "y", "u", "v");
         let val = data.val_from_arr(&10, &10, &data.u_vec);
@@ -898,7 +741,7 @@ mod test_cartesian_file_current {
         let temp_file = NamedTempFile::new().unwrap();
         let path = temp_file.into_temp_path();
 
-        create_current_file(&path, 101, 51, 500.0, 500.0);
+        create_netcdf3_current(&path, 101, 51, 500.0, 500.0, simple_current);
 
         let data = CartesianCurrent::open(Path::new(&path), "x", "y", "u", "v");
         let current = data.current(&5499.0, &499.0);
@@ -919,7 +762,7 @@ mod test_cartesian_file_current {
         let temp_file = NamedTempFile::new().unwrap();
         let path = temp_file.into_temp_path();
 
-        create_current_file(&path, 101, 51, 500.0, 500.0);
+        create_netcdf3_current(&path, 101, 51, 500.0, 500.0, simple_current);
 
         let data = CartesianCurrent::open(Path::new(&path), "x", "y", "u", "v");
         let current = data.current_and_gradient(&5499.0, &499.0);
@@ -940,7 +783,7 @@ mod test_cartesian_file_current {
         let temp_file = NamedTempFile::new().unwrap();
         let path = temp_file.into_temp_path();
 
-        create_grad_test_file(&path, 100, 100, 1.0, 1.0);
+        create_netcdf3_current(&path, 100, 100, 1.0, 1.0, simple_x_gradient);
 
         let data = CartesianCurrent::open(Path::new(&path), "x", "y", "u", "v");
         let current = data.current_and_gradient(&45.0, &45.0);
@@ -954,7 +797,7 @@ mod test_cartesian_file_current {
         let temp_file = NamedTempFile::new().unwrap();
         let path = temp_file.into_temp_path();
 
-        create_grad_test_file_2(&path, 100, 100, 1.0, 1.0);
+        create_netcdf3_current(&path, 100, 100, 1.0, 1.0, simple_y_gradient);
 
         let data = CartesianCurrent::open(Path::new(&path), "x", "y", "u", "v");
         let current = data.current_and_gradient(&45.0, &45.0);

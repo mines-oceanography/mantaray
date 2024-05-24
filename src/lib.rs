@@ -27,6 +27,7 @@ mod bathymetry;
 mod current;
 mod datatype;
 mod error;
+mod io;
 mod interpolator;
 mod ray;
 mod wave_ray_path;
