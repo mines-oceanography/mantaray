@@ -27,7 +27,6 @@ mod bathymetry;
 mod current;
 mod datatype;
 mod error;
-mod io;
 mod interpolator;
 mod io;
 mod ray;
