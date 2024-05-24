@@ -14,8 +14,6 @@ thiserror = "1.0.57"
 nalgebra = "0.32.3"
 rayon = "1.8.1"
 
-
 [dev-dependencies]
 lockfile = "0.4.0"
 tempfile = "3.10.0"
-
