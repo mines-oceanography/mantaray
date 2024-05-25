@@ -117,7 +117,7 @@ impl<'a> ManyRays<'a> {
 }
 
 // A struct with methods for tracing an individual wave and returning the result.
-struct SingleRay<'a> {
+pub(crate) struct SingleRay<'a> {
     bathymetry_data: &'a dyn BathymetryData,
     current_data: Option<&'a dyn CurrentData>,
     initial_conditions: (f64, f64, f64, f64),
