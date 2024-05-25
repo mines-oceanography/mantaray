@@ -6,9 +6,9 @@ use std::os::raw::c_char;
 use std::path::Path;
 use std::str;
 
+use crate::bathymetry::BathymetryData;
 use crate::bathymetry::CartesianFile;
 use crate::ray::SingleRay;
-use crate::BathymetryData;
 
 #[no_mangle]
 pub unsafe extern "C" fn single_ray(
