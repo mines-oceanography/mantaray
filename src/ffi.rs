@@ -26,8 +26,6 @@ pub unsafe extern "C" fn single_ray(
     let bathymetry = CartesianFile::new(path);
     let wave = SingleRay::new(&bathymetry, x0, y0, kx0, ky0);
     let res = wave.trace_individual(0.0, end_time, step_size).unwrap();
-    for r in res.1.iter() {
-        println!("{}", r);
-    }
+    dbg!(&res);
     42
 }
