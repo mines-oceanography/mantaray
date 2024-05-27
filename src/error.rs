@@ -37,3 +37,5 @@ pub enum Error {
     /// the domain.
     NoNearestPoint,
 }
+
+pub type Result<T> = core::result::Result<T, Error>;
