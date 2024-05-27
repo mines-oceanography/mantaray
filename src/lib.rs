@@ -31,7 +31,9 @@ mod ffi;
 mod interpolator;
 mod io;
 pub mod ray;
+mod ray;
 mod ray_result;
+/// cbindgen:ignore
 mod wave_ray_path;
 
 #[allow(unused_imports)]

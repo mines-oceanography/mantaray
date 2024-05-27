@@ -1,0 +1,39 @@
+[build-system]
+requires = [
+  "maturin>=1.5,<2.0",
+  "cffi",
+  ]
+build-backend = "maturin"
+
+[project]
+name = "ray_tracing"
+requires-python = ">=3.10"
+classifiers = [
+    "Programming Language :: Rust",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: Python :: Implementation :: PyPy",
+]
+dynamic = ["version"]
+dependencies = [
+  "cffi>=1.14.0",
+  ]
+
+#[tool.cibuildwheel]
+#build = "cp310-*"
+
+[tool.maturin]
+bindings = "cffi"
+#compatibility = "linux"
+#features = ["pyo3/extension-module"]
+python-source = "python"
+#profile = "release"
+#features = ["netcdf"]
+#manifest-path = "Cargo.toml"
+# Strip the library for minimum file size
+#strip = true
+# Source distribution generator,
+# supports cargo (default) and git.
+#sdist-generator = "cargo"
+
+#include = [{ path = "path/**/*", format = "sdist" }]
+

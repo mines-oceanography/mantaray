@@ -1,12 +1,11 @@
 #![allow(unused)]
 
-extern crate std;
+// extern crate std;
 use std::ffi::CStr;
 use std::os::raw::c_char;
 use std::path::Path;
 use std::str;
 
-use crate::bathymetry::BathymetryData;
 use crate::bathymetry::CartesianFile;
 use crate::ray::SingleRay;
 

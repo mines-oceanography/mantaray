@@ -6,6 +6,10 @@ rust-version = "1.76.0"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[lib]
+name = "ray_tracing"
+crate-type = ["cdylib"]
+
 [dependencies]
 derive_builder = "0.20.0"
 libc = { version = "0.2", optional = true }
