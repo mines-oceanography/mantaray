@@ -14,6 +14,8 @@ ode_solvers = "0.4.0"
 thiserror = "1.0.57"
 nalgebra = "0.32.3"
 rayon = "1.8.1"
+serde_json = "1.0.115"
+serde = {version="1.0", features=["derive"]}
 
 [dev-dependencies]
 lockfile = "0.4.0"
