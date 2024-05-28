@@ -321,7 +321,8 @@ mod test_single_wave {
         // make sure the starting point is at least 2 steps away from the edge.
         let res = wave.trace_individual(0.0, 6.0, 1.0).unwrap();
 
-        let _ = RayResults::from(res).save_file(Path::new("two_depth_shallow_x_out.txt"));
+        let filename = temp_filename("two_depth_shallow_x_out.txt");
+        let _ = RayResults::from(res).save_file(Path::new(&filename));
     }
 
     #[test]
