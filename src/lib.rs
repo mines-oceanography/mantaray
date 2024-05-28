@@ -23,13 +23,13 @@
 // enforce documentation
 #![deny(missing_docs)]
 
-mod bathymetry;
+pub mod bathymetry;
 mod current;
 mod datatype;
 mod error;
 mod interpolator;
 mod io;
-mod ray;
+pub mod ray;
 mod wave_ray_path;
 
 #[allow(unused_imports)]

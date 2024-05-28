@@ -1,7 +1,7 @@
 //! Bathymetry
 
 mod array_depth;
-mod cartesian;
+pub mod cartesian;
 mod constant_depth;
 mod constant_slope;
 
@@ -16,7 +16,7 @@ pub(super) use constant_depth::ConstantDepth;
 pub(super) use constant_slope::ConstantSlope;
 
 /// A trait used to give the function get_depth
-pub(crate) trait BathymetryData: Sync {
+pub trait BathymetryData: Sync {
     /// Returns the nearest depth for the given x, y coordinate.
     fn get_depth(&self, x: &f32, y: &f32) -> Result<f32, Error>;
     /// Returns the nearest depth and depth gradient for the given x, y coordinates

@@ -3,7 +3,7 @@
 //! The enum depends on thiserror::Error.
 
 #[derive(Debug, thiserror::Error)]
-pub(crate) enum Error {
+pub enum Error {
     #[error("Argument passed was out of bounds")]
     /// The value k = |(kx, ky)| can only be positive. If k <=0, the function will pass ArgumentOutOfBounds.
     ArgumentOutOfBounds,
