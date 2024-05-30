@@ -242,12 +242,11 @@ mod test_single_wave {
 
     use lockfile::Lockfile;
     use std::path::Path;
-    use tempfile::tempdir;
+    use tempfile::{tempdir, NamedTempFile};
 
     use crate::{
-        {bathymetry::{BathymetryData, CartesianFile, ConstantDepth, ConstantSlope},
-        ray_result::RayResults,
-    }, io::utility::create_netcdf3_bathymetry};
+        bathymetry::{BathymetryData, CartesianFile, ConstantDepth, ConstantSlope}, current::{CartesianCurrent, ConstantCurrent}, io::utility::{create_netcdf3_bathymetry, create_netcdf3_current}, ray_result::RayResults
+    };
 
     use super::SingleRay;
 
@@ -415,6 +414,663 @@ mod test_single_wave {
 
         let filename = temp_filename("slope_depth_x_out.txt");
         let _ = RayResults::from(res).save_file(Path::new(&filename));
+    }
+
+    #[test]
+    // test with a constant current of 0.5 m/s in the y direction. The kx and ky
+    // values should stay the same and the x and y values will increase.
+    fn test_positive_v() {
+        // deep water
+        let bathymetry_data = &ConstantDepth::new(1000.0);
+        // the current is 0.5 m/s in the y direction
+        let current_data = &ConstantCurrent::new(0.0, 0.5);
+        // wave starts at (x,y,kx,ky) = (0,0,0.1,0.0)
+        let wave = SingleRay::new(bathymetry_data, Some(current_data), 0.0, 0.0, 0.1, 0.0);
+        // trace the wave for 10 seconds
+        let res = wave.trace_individual(1.0, 10.0, 1.0).unwrap();
+
+        let (_, data) = &res.get();
+
+        // verify all kx and ky values are the same
+        data.iter().for_each(|r| assert_eq!(r[2], 0.1));
+        data.iter().for_each(|r| assert_eq!(r[3], 0.0));
+
+        // verify that the x and y values are increasing
+        let mut last_x = data[0][0];
+        let mut last_y = data[0][1];
+        for r in data.iter() {
+            assert!(r[0] >= last_x);
+            assert!(r[1] >= last_y);
+            last_x = r[0];
+            last_y = r[1];
+        }
+
+        // verify that the last x and y value is greater than the first. this is
+        // because above only checked greater than or equal to
+        assert!(data.iter().last().unwrap()[0] > data.iter().next().unwrap()[0]);
+        assert!(data.iter().last().unwrap()[1] > data.iter().next().unwrap()[1]);
+    }
+
+    #[test]
+    // test a wave with a constant current of -0.5 m/s in the y direction. since
+    // the direction initially of the wave is (0, 0, 0.1, 0.0) in the x direction, the x values
+    // will increase and the y values will decrease. the kx and ky values will
+    // stay the same.
+    fn test_negative_v() {
+        // deep water
+        let bathymetry_data = &ConstantDepth::new(1000.0);
+        // the current is -0.5 m/s in the y direction
+        let current_data = &ConstantCurrent::new(0.0, -0.5);
+        // wave starts at (x,y,kx,ky) = (0,0,0.1,0.0)
+        let wave = SingleRay::new(bathymetry_data, Some(current_data), 0.0, 0.0, 0.1, 0.0);
+        // trace the wave for 10 seconds
+        let res = wave.trace_individual(1.0, 10.0, 1.0).unwrap();
+
+        let (_, data) = &res.get();
+
+        // verify all kx and ky values are the same
+        data.iter().for_each(|r| assert_eq!(r[2], 0.1));
+        data.iter().for_each(|r| assert_eq!(r[3], 0.0));
+
+        // verify that the x values are increasing and y values are decreasing
+        let mut last_x = data[0][0];
+        let mut last_y = data[0][1];
+        for r in data.iter() {
+            assert!(r[0] >= last_x);
+            assert!(r[1] <= last_y);
+            last_x = r[0];
+            last_y = r[1];
+        }
+
+        // verify that the last x value is greater than the first and the last y value is less than the first. this is
+        // because above only checked greater than or equal to or less than or equal to
+        assert!(data.iter().last().unwrap()[0] > data.iter().next().unwrap()[0]);
+        assert!(data.iter().last().unwrap()[1] < data.iter().next().unwrap()[1]);
+    }
+
+    #[test]
+    // test a wave with a constant current of 0.5 m/s in the x direction. since
+    // the initially travels in the y direction, the x and y values are
+    // increasing. The kx and ky values will stay the same.
+    fn test_positive_u() {
+        // deep water
+        let bathymetry_data = &ConstantDepth::new(1000.0);
+        // the current is 0.5 m/s in the x direction
+        let current_data = &ConstantCurrent::new(0.5, 0.0);
+        // wave starts at (x,y,kx,ky) = (0,0,0.0,0.1)
+        let wave = SingleRay::new(bathymetry_data, Some(current_data), 0.0, 0.0, 0.0, 0.1);
+
+        // trace the wave for 10 seconds
+        let res = wave.trace_individual(1.0, 10.0, 1.0).unwrap();
+
+        let (_, data) = &res.get();
+
+        // verify all kx and ky values are the same
+        data.iter().for_each(|r| assert_eq!(r[2], 0.0));
+        data.iter().for_each(|r| assert_eq!(r[3], 0.1));
+
+        // verify that the x and y values are increasing
+        let mut last_x = data[0][0];
+        let mut last_y = data[0][1];
+        for r in data.iter() {
+            assert!(r[0] >= last_x);
+            assert!(r[1] >= last_y);
+            last_x = r[0];
+            last_y = r[1];
+        }
+
+        // verify that the last x and y value is greater than the first. this is
+        // because above only checked greater than or equal to
+        assert!(data.iter().last().unwrap()[0] > data.iter().next().unwrap()[0]);
+        assert!(data.iter().last().unwrap()[1] > data.iter().next().unwrap()[1]);
+    }
+
+    #[test]
+    // test a wave with a constant current of -0.5 m/s in the x direction since
+    // the wave starts initially at (0,0,0.0,0.1), the x values are decreasing
+    // and the y values are increasing. the kx and ky values will stay the same.
+    fn test_negative_u() {
+        // deep water
+        let bathymetry_data = &ConstantDepth::new(1000.0);
+        // the current is -0.5 m/s in the x direction
+        let current_data = &ConstantCurrent::new(-0.5, 0.0);
+        // wave starts at (x,y,kx,ky) = (0,0,0.0,0.1)
+        let wave = SingleRay::new(bathymetry_data, Some(current_data), 0.0, 0.0, 0.0, 0.1);
+        // trace the wave for 10 seconds
+        let res = wave.trace_individual(1.0, 10.0, 1.0).unwrap();
+
+        let (_, data) = &res.get();
+
+        // verify all kx and ky values are the same
+        data.iter().for_each(|r| assert_eq!(r[2], 0.0));
+        data.iter().for_each(|r| assert_eq!(r[3], 0.1));
+
+        // verify that the x values are decreasing and y values are increasing
+        let mut last_x = data[0][0];
+        let mut last_y = data[0][1];
+        for r in data.iter() {
+            assert!(r[0] <= last_x);
+            assert!(r[1] >= last_y);
+            last_x = r[0];
+            last_y = r[1];
+        }
+
+        // verify that the last x value is less than the first and the last y value is greater than the first. this is
+        // because above only checked greater than or equal to or less than or equal to
+        assert!(data.iter().last().unwrap()[0] < data.iter().next().unwrap()[0]);
+        assert!(data.iter().last().unwrap()[1] > data.iter().next().unwrap()[1]);
+    }
+
+    #[test]
+    // test a wave with a constant current of 0.5 m/s in the x and y direction
+    // since the wave starts initially at (0,0,0.1,0.0), the x and y values
+    // will increase and the kx and ky values will stay the same.
+    fn test_positive_u_and_v() {
+        // deep water
+        let bathymetry_data = &ConstantDepth::new(1000.0);
+        // the current is 0.5 m/s in the x direction and 0.5 m/s in the y direction
+        let current_data = &ConstantCurrent::new(0.5, 0.5);
+        // wave starts at (x,y,kx,ky) = (0,0,0.1,0.0)
+        let wave = SingleRay::new(bathymetry_data, Some(current_data), 0.0, 0.0, 0.1, 0.0);
+
+        // trace the wave for 10 seconds
+        let res = wave.trace_individual(1.0, 10.0, 1.0).unwrap();
+
+        let (_, data) = &res.get();
+
+        // verify all kx and ky values are the same
+        data.iter().for_each(|r| assert_eq!(r[2], 0.1));
+        data.iter().for_each(|r| assert_eq!(r[3], 0.0));
+
+        // verify that the x and y values are increasing
+        let mut last_x = data[0][0];
+        let mut last_y = data[0][1];
+        for r in data.iter() {
+            assert!(r[0] >= last_x);
+            assert!(r[1] >= last_y);
+            last_x = r[0];
+            last_y = r[1];
+        }
+
+        // verify that the last x and y value is greater than the first. this is
+        // because above only checked greater than or equal to
+        assert!(data.iter().last().unwrap()[0] > data.iter().next().unwrap()[0]);
+        assert!(data.iter().last().unwrap()[1] > data.iter().next().unwrap()[1]);
+    }
+
+    #[test]
+    /// test a wave with a constant current of -0.5 m/s in the x and y direction
+    /// since the wave starts initially at (0,0,-0.1,0.0), the x and y values
+    /// will decrease and the kx and ky values will stay the same.
+    fn test_negative_u_and_v() {
+        // deep water
+        let bathymetry_data = &ConstantDepth::new(1000.0);
+        // the current is -0.5 m/s in the x direction and -0.5 m/s in the y direction
+        let current_data = &ConstantCurrent::new(-0.5, -0.5);
+        // wave starts at (x,y,kx,ky) = (0,0,-0.1,0.0)
+        let wave = SingleRay::new(bathymetry_data, Some(current_data), 0.0, 0.0, -0.1, 0.0);
+        // trace the wave for 10 seconds
+        let res = wave.trace_individual(1.0, 10.0, 1.0).unwrap();
+
+        let (_, data) = &res.get();
+
+        // verify all kx and ky values are the same
+        data.iter().for_each(|r| assert_eq!(r[2], -0.1));
+        data.iter().for_each(|r| assert_eq!(r[3], 0.0));
+
+        // verify that the x values are decreasing and y values are decreasing
+        let mut last_x = data[0][0];
+        let mut last_y = data[0][1];
+        for r in data.iter() {
+            assert!(r[0] <= last_x);
+            assert!(r[1] <= last_y);
+            last_x = r[0];
+            last_y = r[1];
+        }
+
+        // verify that the last x value is less than the first and the last y value is less than the first. this is
+        // because above only checked greater than or equal to or less than or equal to
+        assert!(data.iter().last().unwrap()[0] < data.iter().next().unwrap()[0]);
+        assert!(data.iter().last().unwrap()[1] < data.iter().next().unwrap()[1]);
+    }
+
+    #[test]
+    /// test a wave with a nonzero dudx where u = x/100.0 and v = 0.0 this
+    /// test first creates the gradient file and then tests the wave
+    /// propogation. It verifies two cases:
+    /// 1) a wave starting at (1,1,0.1,0.0) will propogate in the x direction
+    ///    and the kx value will decrease, but y and ky values will stay the
+    ///    same
+    /// 2) a wave starting at (1,1,0.0,0.1) will propogate in the y direction
+    ///    with slight positive x direction, but both kx and ky will remain the
+    ///    same.
+    fn test_simple_dudx_gradient() {
+        // function that takes in x and y as f32 and returns u and v as f64.
+        // this only will create a gradient in the u direction
+        fn u_gradient_fn(x: f32, _y: f32) -> (f64, f64) {
+            ((x / 100.0) as f64, 0.0)
+        }
+
+        // create the current file
+        let tmp_file = NamedTempFile::new().unwrap();
+        let tmp_path = tmp_file.into_temp_path();
+        create_netcdf3_current(&tmp_path, 100, 100, 1.0, 1.0, u_gradient_fn);
+
+        // open the current data
+        let current_data = &CartesianCurrent::open(&tmp_path, "x", "y", "u", "v");
+
+        // deep water
+        let bathymetry_data = &ConstantDepth::new(1000.0);
+        // wave starts at (x,y,kx,ky) = (1,1,0.1,0.0)
+        let wave = SingleRay::new(bathymetry_data, Some(current_data), 1.0, 1.0, 0.1, 0.0);
+
+        // trace the wave for 10 seconds
+        let res = wave.trace_individual(1.0, 10.0, 1.0).unwrap();
+
+        let (_, data) = &res.get();
+
+        // verify all ky and y values are the same
+        data.iter().for_each(|r| assert_eq!(r[3], 0.0)); // ky
+        data.iter().for_each(|r| assert_eq!(r[1], 1.0)); // y
+
+        // verify that the x values are increasing
+        let mut last_x = data[0][0];
+        for r in data.iter() {
+            assert!(r[0] >= last_x);
+            last_x = r[0];
+        }
+
+        // verify that the kx value is decreasing
+        let mut last_kx = data[0][2];
+        for r in data.iter() {
+            assert!(r[2] <= last_kx);
+            last_kx = r[2];
+        }
+
+        // verify that the last kx value is less than the first. this is
+        // because above only checked less than or equal to
+        assert!(data.iter().last().unwrap()[2] < data.iter().next().unwrap()[2]);
+
+        // verify that the last x value is greater than the first. this is
+        // because above only checked greater than or equal to
+        assert!(data.iter().last().unwrap()[0] > data.iter().next().unwrap()[0]);
+
+        // new wave (x, y, kx, ky) = (1, 1, 0.0, 0.1)
+        let wave = SingleRay::new(bathymetry_data, Some(current_data), 1.0, 1.0, 0.0, 0.1);
+
+        // trace the wave for 10 seconds
+        let res = wave.trace_individual(1.0, 10.0, 1.0).unwrap();
+
+        let (_, data) = &res.get();
+
+        // verify all ky and kx values are the same
+        data.iter().for_each(|r| assert_eq!(r[3], 0.1)); // ky
+        data.iter().for_each(|r| assert_eq!(r[2], 0.0)); // kx
+
+        // verify that the x and y values are increasing
+        let mut last_x = data[0][0];
+        let mut last_y = data[0][1];
+        for r in data.iter() {
+            assert!(r[0] >= last_x);
+            assert!(r[1] >= last_y);
+            last_x = r[0];
+            last_y = r[1];
+        }
+
+        // verify that the last x and y value is greater than the first. this is
+        // because above only checked greater than or equal to
+        assert!(data.iter().last().unwrap()[0] > data.iter().next().unwrap()[0]);
+        assert!(data.iter().last().unwrap()[1] > data.iter().next().unwrap()[1]);
+    }
+
+    #[test]
+    /// This test will create a current file with a nonzero du/dy. The tests
+    /// will verify two cases:
+    /// 1) a wave starting at (1,1,0.1,0.0) will propogate in the x direction,
+    ///    the kx values will stay the same, x will increase, and y and ky will
+    ///    decrease
+    /// 2) a wave starting at (1,1,0.0,0.1) will propogate in the y direction,
+    ///    the kx and ky values stay the same, and the x and y values increase
+    fn test_simple_dudy_gradient() {
+        // function that takes in x and y as f32 and returns u and v as f64.
+        // this will only create the dudy gradient
+        fn u_gradient_fn(_x: f32, y: f32) -> (f64, f64) {
+            ((y / 100.0) as f64, 0.0)
+        }
+
+        // create the current file
+        let tmp_file = NamedTempFile::new().unwrap();
+        let tmp_path = tmp_file.into_temp_path();
+        create_netcdf3_current(&tmp_path, 100, 100, 1.0, 1.0, u_gradient_fn);
+
+        // open the current data
+        let current_data = &CartesianCurrent::open(&tmp_path, "x", "y", "u", "v");
+
+        // deep water
+        let bathymetry_data = &ConstantDepth::new(1000.0);
+
+        // wave starts at (x,y,kx,ky) = (1,1,0.1,0.0)
+        let wave = SingleRay::new(bathymetry_data, Some(current_data), 1.0, 50.0, 0.1, 0.0);
+
+        // trace the wave for 10 seconds
+        let res = wave.trace_individual(1.0, 10.0, 1.0).unwrap();
+
+        let (_, data) = &res.get();
+
+        // verify that all kx values are the same.
+        data.iter().for_each(|r| assert_eq!(r[2], 0.1)); // kx
+
+        // verify that the x values are increasing
+        let mut last_x = data[0][0];
+        for r in data.iter() {
+            assert!(r[0] >= last_x);
+            last_x = r[0];
+        }
+
+        // verify last x value is greater than the first. this is
+        // because above only checked greater than or equal to
+        assert!(data.iter().last().unwrap()[0] > data.iter().next().unwrap()[0]);
+
+        // verify that the y and ky values are decreasing
+        let mut last_y = data[0][1];
+        let mut last_ky = data[0][3];
+        for r in data.iter() {
+            assert!(r[1] <= last_y);
+            assert!(r[3] <= last_ky);
+            last_ky = r[3];
+            last_y = r[1];
+        }
+
+        // check that the last y and ky value is less than the first. this is
+        // because above only checked less than or equal to
+        assert!(data.iter().last().unwrap()[1] < data.iter().next().unwrap()[1]);
+        assert!(data.iter().last().unwrap()[3] < data.iter().next().unwrap()[3]);
+
+        // new wave (x, y, kx, ky) = (1, 1, 0.0, 0.1)
+        let wave = SingleRay::new(bathymetry_data, Some(current_data), 1.0, 1.0, 0.0, 0.1);
+
+        // trace the wave for 10 seconds
+        let res = wave.trace_individual(1.0, 10.0, 1.0).unwrap();
+
+        let (_, data) = &res.get();
+
+        // verify that kx and ky values are the same
+        data.iter().for_each(|r| assert_eq!(r[2], 0.0)); // kx
+        data.iter().for_each(|r| assert_eq!(r[3], 0.1)); // ky
+
+        // verify that x and y values are increasing
+        let mut last_x = data[0][0];
+        let mut last_y = data[0][1];
+        for r in data.iter() {
+            assert!(r[0] >= last_x);
+            assert!(r[1] >= last_y);
+            last_x = r[0];
+            last_y = r[1];
+        }
+
+        // verify that the last x and y value is greater than the first. this is
+        // because above only checked greater than or equal to
+        assert!(data.iter().last().unwrap()[0] > data.iter().next().unwrap()[0]);
+        assert!(data.iter().last().unwrap()[1] > data.iter().next().unwrap()[1]);
+    }
+
+    #[test]
+    /// This test will create a current file with a gradient in the v direction
+    /// where v = (x / 100.0) and u = 0.0. This will create a gradient of dv/dy
+    /// The tests will verify two cases:
+    /// 1) a wave starting at (1,1,0.1,0.0) will propogate in the x direction,
+    ///    all the kx and ky values will stay the same, but x and y values are
+    ///    increasing
+    /// 2) a wave starting at (1,1,0.0,0.1) will propogate in the y direction
+    ///    and the x and kx values will stay the same, but the y values will be
+    ///    increasing and the ky values decreasing
+    fn test_simple_dvdy_gradient() {
+        // function that takes in x and y as f32 and returns u and v as f64.
+        // this only will create a gradient in the v direction
+        fn v_gradient_fn(_x: f32, y: f32) -> (f64, f64) {
+            (0.0, (y / 100.0) as f64)
+        }
+
+        // create the current file
+        let tmp_file = NamedTempFile::new().unwrap();
+        let tmp_path = tmp_file.into_temp_path();
+        create_netcdf3_current(&tmp_path, 100, 100, 1.0, 1.0, v_gradient_fn);
+
+        // open the current data
+        let current_data = &CartesianCurrent::open(&tmp_path, "x", "y", "u", "v");
+
+        // deep water
+        let bathymetry_data = &ConstantDepth::new(1000.0);
+        // wave starts at (x,y,kx,ky) = (1,1,0.1,0.0)
+        let wave = SingleRay::new(bathymetry_data, Some(current_data), 1.0, 1.0, 0.1, 0.0);
+
+        // trace the wave for 10 seconds
+        let res = wave.trace_individual(1.0, 10.0, 1.0).unwrap();
+
+        let (_, data) = &res.get();
+
+        // verify all kx and ky values are the same
+        data.iter().for_each(|r| assert_eq!(r[2], 0.1)); // kx
+        data.iter().for_each(|r| assert_eq!(r[3], 0.0)); // ky
+
+        // verify that the x and y values are increasing
+        let mut last_x = data[0][0];
+        let mut last_y = data[0][1];
+        for r in data.iter() {
+            assert!(r[0] >= last_x);
+            assert!(r[1] >= last_y);
+            last_x = r[0];
+            last_y = r[1];
+        }
+
+        // check that the last x and y value is greater than the first. this is
+        // because above only checked greater than or equal to (if they were
+        // always equal, it would have passed too)
+        assert!(data.iter().last().unwrap()[0] > data.iter().next().unwrap()[0]);
+        assert!(data.iter().last().unwrap()[1] > data.iter().next().unwrap()[1]);
+
+        // new wave (x, y, kx, ky) = (1, 1, 0.0, 0.1)
+        let wave = SingleRay::new(bathymetry_data, Some(current_data), 1.0, 1.0, 0.0, 0.1);
+
+        // trace the wave for 10 seconds
+        let res = wave.trace_individual(1.0, 10.0, 1.0).unwrap();
+
+        let (_, data) = &res.get();
+
+        // verify that the x and kx values are the same
+        data.iter().for_each(|r| assert_eq!(r[2], 0.0)); // kx
+                                                         // FIXME: why is the x value slowing increasing by almost f64::EPSILON each iteration?
+        data.iter().for_each(|r| {
+            assert!(
+                (r[0] - 1.0).abs() < 10.0 * f64::EPSILON,
+                "expected: 1.0, got: {}",
+                r[0]
+            )
+        }); // x
+
+        // verify that the y values are increasing
+        let mut last_y = data[0][1];
+        for r in data.iter() {
+            assert!(r[1] >= last_y);
+            last_y = r[1];
+        }
+
+        // check that the last y value is greater than the first. this is
+        // because above only checked greater than or equal to (if they were
+        // always equal, it would have passed too)
+        assert!(data.iter().last().unwrap()[1] > data.iter().next().unwrap()[1]);
+
+        // verify that the ky values are decreasing
+        let mut last_ky = data[0][3];
+        for r in data.iter() {
+            assert!(r[3] <= last_ky);
+            last_ky = r[3];
+        }
+
+        // check that the last ky value is less than the first. this is'
+        // because above only checked less than or equal to
+        assert!(data.iter().last().unwrap()[3] < data.iter().next().unwrap()[3]);
+    }
+
+    #[test]
+    /// This test will create a current file with a gradient in the v direction
+    /// where v = (x / 100.0) and u = 0.0. This will create a gradient of dv/dx
+    /// The test will verify that:
+    /// 1) a wave starting at (1,1,0.1,0.0) will propogate in the x direction
+    /// and the kx and ky values will stay the same, but x and y values are
+    /// increasing
+    /// 2) a wave starting at (1,1,0.0,0.1) will propogate in the y direction
+    ///    and only the ky values will stay the same. The y values will increase
+    ///    and the x and kx values will decrease.
+    fn test_simple_dvdx_gradient() {
+        // function that takes in x and y as f32 and returns u and v as f64.
+        // this only will create a gradient in the v direction
+        fn v_gradient_fn(x: f32, _y: f32) -> (f64, f64) {
+            (0.0, (x / 100.0) as f64)
+        }
+
+        // create the current file
+        let tmp_file = NamedTempFile::new().unwrap();
+        let tmp_path = tmp_file.into_temp_path();
+        create_netcdf3_current(&tmp_path, 100, 100, 1.0, 1.0, v_gradient_fn);
+
+        // open the current data
+        let current_data = &CartesianCurrent::open(&tmp_path, "x", "y", "u", "v");
+
+        // deep water
+        let bathymetry_data = &ConstantDepth::new(1000.0);
+        // wave starts at (x,y,kx,ky) = (1,1,0.1,0.0)
+        let wave = SingleRay::new(bathymetry_data, Some(current_data), 1.0, 1.0, 0.1, 0.0);
+
+        // trace the wave for 10 seconds
+        let res = wave.trace_individual(1.0, 10.0, 1.0).unwrap();
+
+        let (_, data) = &res.get();
+
+        // verify all kx and ky values are the same
+        data.iter().for_each(|r| assert_eq!(r[2], 0.1)); // kx
+        data.iter().for_each(|r| assert_eq!(r[3], 0.0)); // ky
+
+        // verify that the x and y values are increasing
+        let mut last_x = data[0][0];
+        let mut last_y = data[0][1];
+        for r in data.iter() {
+            assert!(r[0] >= last_x);
+            assert!(r[1] >= last_y);
+            last_x = r[0];
+            last_y = r[1];
+        }
+
+        // check that the last x and y value is greater than the first. this is
+        // because above only checked greater than or equal to (if they were
+        // always equal, it would have passed too)
+        assert!(data.iter().last().unwrap()[0] > data.iter().next().unwrap()[0]);
+        assert!(data.iter().last().unwrap()[1] > data.iter().next().unwrap()[1]);
+
+        // new wave (x, y, kx, ky) = (1, 1, 0.0, 0.1)
+        let wave = SingleRay::new(bathymetry_data, Some(current_data), 50.0, 1.0, 0.0, 0.1);
+
+        // trace the wave for 10 seconds
+        let res = wave.trace_individual(1.0, 10.0, 1.0).unwrap();
+
+        let (_, data) = &res.get();
+
+        // verify that the ky values are the same
+        data.iter().for_each(|r| assert_eq!(r[3], 0.1)); // ky
+
+        // verify that the y values are increasing
+        let mut last_y = data[0][1];
+        for r in data.iter() {
+            assert!(r[1] >= last_y);
+            last_y = r[1];
+        }
+
+        // check that the last y value is greater than the first. this is
+        // because above only checked greater than or equal to (if they were
+        // always equal, it would have passed too)
+        assert!(data.iter().last().unwrap()[1] > data.iter().next().unwrap()[1]);
+
+        // verify that the x and kx values are decreasing
+        let mut last_x = data[0][0];
+        let mut last_kx = data[0][2];
+        for r in data.iter() {
+            assert!(r[0] <= last_x);
+            assert!(r[2] <= last_kx);
+            last_kx = r[2];
+            last_x = r[0];
+        }
+
+        // check that the last x and kx value is less than the first. this is
+        // because above only checked less than or equal to
+        assert!(data.iter().last().unwrap()[0] < data.iter().next().unwrap()[0]);
+        assert!(data.iter().last().unwrap()[2] < data.iter().next().unwrap()[2]);
+    }
+
+    #[test]
+    /// This test will create a current file with a gradient in the u and v
+    /// direction. The gradient is u = (x + y) / 100.0 and v = (x + y) / 100.0.
+    /// This will create a gradient in the u and v direction for all du/dx,
+    /// du/dy, dv/dx, dv/dy. The test will verify that the x and y values are
+    /// increasing and the kx and ky values are decreasing.
+    fn test_all_gradients() {
+        // function that takes in x and y as f32 and returns u and v as f64.
+        // this will create a gradient in the u and v direction for all du/dx,
+        // du/dy, dv/dx, dv/dy
+        fn all_gradient_fn(x: f32, y: f32) -> (f64, f64) {
+            (((x + y) / 100.0) as f64, ((x + y) / 100.0) as f64)
+        }
+
+        // create the current file
+        let tmp_file = NamedTempFile::new().unwrap();
+        let tmp_path = tmp_file.into_temp_path();
+        create_netcdf3_current(&tmp_path, 100, 100, 1.0, 1.0, all_gradient_fn);
+
+        // open the current data
+        let current_data = &CartesianCurrent::open(&tmp_path, "x", "y", "u", "v");
+
+        // deep water
+        let bathymetry_data = &ConstantDepth::new(1000.0);
+
+        // wave starts at (x,y,kx,ky) = (1,1,0.1,0.1)
+        let wave = SingleRay::new(bathymetry_data, Some(current_data), 1.0, 1.0, 0.1, 0.1);
+
+        // trace the wave for 10 seconds
+        let res = wave.trace_individual(1.0, 10.0, 1.0).unwrap();
+
+        let (_, data) = &res.get();
+
+        // Note: no values should stay the same
+
+        // verify that the x and y values are increasing
+        let mut last_x = data[0][0];
+        let mut last_y = data[0][1];
+        for r in data.iter() {
+            assert!(r[0] >= last_x);
+            assert!(r[1] >= last_y);
+            last_x = r[0];
+            last_y = r[1];
+        }
+
+        // check that the last x and y value is greater than the first. this is
+        // because above only checked greater than or equal to (if they were
+        // always equal, it would have passed too)
+        assert!(data.iter().last().unwrap()[0] > data.iter().next().unwrap()[0]);
+        assert!(data.iter().last().unwrap()[1] > data.iter().next().unwrap()[1]);
+
+        // verify that the kx and ky values are decreasing
+        let mut last_kx = data[0][2];
+        let mut last_ky = data[0][3];
+        for r in data.iter() {
+            assert!(r[2] <= last_kx);
+            assert!(r[3] <= last_ky);
+            last_kx = r[2];
+            last_ky = r[3];
+        }
+
+        // check that the last kx and ky value is less than the first. this is
+        // because above only checked less than or equal to
+        assert!(data.iter().last().unwrap()[2] < data.iter().next().unwrap()[2]);
+        assert!(data.iter().last().unwrap()[3] < data.iter().next().unwrap()[3]);
     }
 }
 
