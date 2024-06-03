@@ -7,24 +7,31 @@ use netcdf3::FileReader;
 use super::BathymetryData;
 use crate::{error::Error, interpolator};
 
-/// A struct that stores a netcdf3 dataset named test_bathy_3.nc with
-/// methods to access, find nearest values, interpolate, and return depth.
+/// A struct that stores a netcdf3 dataset with methods to access, find nearest
+/// values, interpolate, and return depth and gradient.
+///
+/// TODO: examples
 ///
 /// # Note
-/// Currently, the methods do not know the difference between an out of
-/// bounds point and a just inside the bounds point. The nearest to each of
-/// these will be on the edge, so it will return None for both. In the
-/// future, the methods should be able to distinguish these two cases.
+/// Currently, the methods do not know the difference between an out of bounds
+/// point and a just inside the bounds point. The nearest to each of these will
+/// be on the edge, so it will return None for both. In the future, the methods
+/// should be able to distinguish these two cases.
 ///
-/// In this struct, None is used when the current function will not panic,
-/// but the value is not useful to the other structs. Error is used when the
+/// In this struct, None is used when the current function will not panic, but
+/// the value is not useful to the other structs. Error is used when the
 /// function would panic, so instead, it returns an error.
-pub struct CartesianFile {
-    variables: (Vec<f32>, Vec<f32>, Vec<f32>),
+pub struct CartesianNetCDF3 {
+    /// TODO
+    x_vector: Vec<f32>,
+    /// TODO
+    y_vector: Vec<f32>,
+    /// TODO
+    depth_vector: Vec<f32>,
 }
 
-impl BathymetryData for CartesianFile {
-    /// Returns the interpolated depth for the given x, y coordinate.
+impl BathymetryData for CartesianNetCDF3 {
+    /// Depth at the inputted (x ,y) coordinate.
     ///
     /// # Arguments
     /// `x` : `&f32`
@@ -48,24 +55,25 @@ impl BathymetryData for CartesianFile {
     ///   `interpolator::bilinear` due to incorrect argument passed.
     /// - `Error::NoNearestPoint` : The target point was either outside the
     /// domain or closest to the edge of the domain.
-    fn get_depth(&self, x: &f32, y: &f32) -> Result<f32, Error> {
+    fn depth(&self, x: &f32, y: &f32) -> Result<f32, Error> {
         if x.is_nan() || y.is_nan() {
             return Ok(f32::NAN);
         }
 
-        let nearest_pt = match self.nearest_point(x, y) {
+        let (nearest_x, nearest_y) = match self.nearest_point(x, y) {
             Some(p) => p,
-            None => return Err(Error::NoNearestPoint),
+            None => return Err(Error::IndexOutOfBounds),
         };
-        let edge_points = match self.four_corners(&nearest_pt.0, &nearest_pt.1) {
+        let corner_points = match self.four_corners(&nearest_x, &nearest_y) {
             Some(p) => p,
-            None => return Err(Error::CornersOutOfBounds),
+            None => return Err(Error::IndexOutOfBounds),
         };
-        let depth = self.interpolate(&edge_points, &(*x, *y))?;
-        Ok(depth)
+        let depth = self.interpolate(&corner_points, &(*x, *y));
+
+        depth
     }
 
-    /// Returns the interpolated depth and gradient for the given x, y coordinate.
+    /// Depth and gradient at the given (x ,y) coordinate.
     ///
     /// # Arguments
     /// `x` : `&f32`
@@ -84,7 +92,7 @@ impl BathymetryData for CartesianFile {
     /// `x` or `y` input give an out of bounds output.
     /// - `Error::InvalidArgument` : this error is returned from
     ///   `interpolator::bilinear` due to incorrect argument passed.
-    fn get_depth_and_gradient(&self, x: &f32, y: &f32) -> Result<(f32, (f32, f32)), Error> {
+    fn depth_and_gradient(&self, x: &f32, y: &f32) -> Result<(f32, (f32, f32)), Error> {
         if x.is_nan() || y.is_nan() {
             return Ok((f32::NAN, (f32::NAN, f32::NAN)));
         }
@@ -92,15 +100,15 @@ impl BathymetryData for CartesianFile {
         // find nearest and surrounding edge points
         let nearest_pt = match self.nearest_point(x, y) {
             Some(p) => p,
-            None => return Err(Error::IndexOutOfBounds), // TODO: for none should it error or NAN or something else?
+            None => return Err(Error::IndexOutOfBounds),
         };
-        let edge_points = match self.four_corners(&nearest_pt.0, &nearest_pt.1) {
+        let corner_points = match self.four_corners(&nearest_pt.0, &nearest_pt.1) {
             Some(p) => p,
-            None => return Err(Error::IndexOutOfBounds), // TODO: same as above comment
+            None => return Err(Error::IndexOutOfBounds),
         };
 
         // interpolate the depth
-        let depth = self.interpolate(&edge_points, &(*x, *y))?;
+        let depth = self.interpolate(&corner_points, &(*x, *y))?;
 
         // get the gradient
 
@@ -108,22 +116,27 @@ impl BathymetryData for CartesianFile {
         // and y directions, and since bilinear interpolation is used to
         // interpolate the depth at any given point, this is a good
         // approximation.
-        let x_space = self.variables.0[1] - self.variables.0[0];
-        let y_space = self.variables.1[1] - self.variables.1[0];
+        let x_space = self.x_vector[1] - self.x_vector[0];
+        let y_space = self.y_vector[1] - self.y_vector[0];
 
-        let x_grad = (self.depth_from_arr(&edge_points[1].0, &edge_points[1].1)?
-            - self.depth_from_arr(&edge_points[3].0, &edge_points[3].1)?)
+        let north_point = &corner_points[0];
+        let east_point = &corner_points[1];
+        let south_point = &corner_points[2];
+        let west_point = &corner_points[3];
+
+        let x_gradient = (self.depth_from_arr(&east_point.0, &east_point.1)?
+            - self.depth_from_arr(&west_point.0, &west_point.1)?)
             / (2.0 * x_space);
 
-        let y_grad = (self.depth_from_arr(&edge_points[0].0, &edge_points[0].1)?
-            - self.depth_from_arr(&edge_points[2].0, &edge_points[2].1)?)
+        let y_gradient = (self.depth_from_arr(&north_point.0, &north_point.1)?
+            - self.depth_from_arr(&south_point.0, &south_point.1)?)
             / (2.0 * y_space);
 
-        Ok((depth, (x_grad, y_grad)))
+        Ok((depth, (x_gradient, y_gradient)))
     }
 }
 
-impl CartesianFile {
+impl CartesianNetCDF3 {
     #[allow(dead_code)]
     /// Construct CartesianFile
     ///
@@ -136,8 +149,7 @@ impl CartesianFile {
     ///
     /// # Panics
     /// `new` will panic if the data type is invalid or if any of the names are
-    /// invalid. But this should never panic for test_bathy_3.nc, unless the
-    /// path to this file is incorrect.
+    /// invalid.
     ///
     /// # Note
     /// in the future, be able to check attributes and verify that the file is
@@ -145,16 +157,20 @@ impl CartesianFile {
     pub fn new(path: &Path) -> Self {
         let mut data = FileReader::open(path).unwrap();
 
-        let variables = (
-            data.read_var_f32("x").unwrap(),
-            data.read_var_f32("y").unwrap(),
-            data.read_var_f64("depth")
-                .unwrap()
-                .iter()
-                .map(|x| *x as f32)
-                .collect(),
-        );
-        CartesianFile { variables }
+        let x_vector = data.read_var_f32("x").unwrap();
+        let y_vector = data.read_var_f32("y").unwrap();
+        let depth_vector = data
+            .read_var_f64("depth")
+            .unwrap()
+            .iter()
+            .map(|x| *x as f32)
+            .collect();
+
+        CartesianNetCDF3 {
+            x_vector,
+            y_vector,
+            depth_vector,
+        }
     }
 
     /// Find nearest point
@@ -183,7 +199,7 @@ impl CartesianFile {
         closest_index
     }
 
-    /// Returns the nearest x index, y index point to given x, y coordinate
+    /// Returns the nearest (x_index, y_index) point to given (x ,y) coordinate
     ///
     /// # Arguments
     /// `x`: `&f32`
@@ -204,125 +220,130 @@ impl CartesianFile {
     /// it will return the closest edge. To attempt to fix this problem,
     /// `nearest_point` should return `None` on points that are on the edges.
     fn nearest_point(&self, x: &f32, y: &f32) -> Option<(usize, usize)> {
-        let indx = self.nearest(x, &self.variables.0);
-        let indy = self.nearest(y, &self.variables.1);
+        let x_index = self.nearest(x, &self.x_vector);
+        let y_index = self.nearest(y, &self.y_vector);
 
-        if indx == 0
-            || indy == 0
-            || indx >= self.variables.0.len() - 1
-            || indy >= self.variables.1.len()
+        if x_index == 0
+            || y_index == 0
+            || x_index >= self.x_vector.len() - 1
+            || y_index >= self.y_vector.len()
         {
             return None;
         }
 
-        Some((indx, indy))
+        Some((x_index, y_index))
     }
 
-    /// Get four adjecent points
+    /// Get four adjacent points
     ///
     /// # Arguments
-    /// `indx` : `&usize`
+    /// `x_index` : `&usize`
     /// - index of the x location
     ///
-    /// `indy` : `&usize`
+    /// `y_index` : `&usize`
     /// - index of the y location
     ///
     /// # Returns
     /// `Option<Vec<(usize, usize)>>`
     /// - `Some(Vec<(usize, usize)>)` : corner points in surrounding given
-    ///   `indx` and `indy` in clockwise order.
-    /// - `None` : `indx` or `indy` is out of range and no value exists.
-    fn four_corners(&self, indx: &usize, indy: &usize) -> Option<Vec<(usize, usize)>> {
-        if *indx == 0
-            || *indy == 0
-            || *indx >= self.variables.0.len() - 1
-            || *indy >= self.variables.1.len() - 1
+    ///   `x_index` and `y_index` in clockwise order.
+    /// - `None` : `x_index` or `y_index` is out of range and no value exists.
+    fn four_corners(&self, x_index: &usize, y_index: &usize) -> Option<Vec<(usize, usize)>> {
+        if *x_index == 0
+            || *y_index == 0
+            || *x_index >= self.x_vector.len() - 1
+            || *y_index >= self.y_vector.len() - 1
         {
             return None;
         }
         // clockwise in order
         Some(vec![
-            (*indx, indy + 1),
-            (indx + 1, *indy),
-            (*indx, indy - 1),
-            (indx - 1, *indy),
+            (*x_index, y_index + 1),
+            (x_index + 1, *y_index),
+            (*x_index, y_index - 1),
+            (x_index - 1, *y_index),
         ])
     }
 
     /// Interpolate the depth using crate::interpolator::bilinear
     ///
     /// First, the index points are converted to the x and y values at those
-    /// indexes, then the depth at that index is taken. Finally, these are
-    /// used as arguments to `interpolator::bilinear`.
+    /// indexes, then the depth at that index is taken. Finally, these are used
+    /// as arguments to `interpolator::bilinear`.
     ///
     /// # Arguments
-    /// `points`: `&Vec<(usize, usize)>`
-    /// - a vector of defined points in the depth grid
+    /// `index_points`: `&Vec<(usize, usize)>`
+    /// - a vector of (x_index, y_index) points representing the indices of the
+    ///   corners that the target location is within.
     ///
     /// `target`: `&(f32, f32)`
-    /// - interpolate the depth at this point
+    /// - interpolate the depth at this (x, y) point
     ///
     /// # Returns
     /// `Result<f32, Error>`
     /// - `Ok(f32)` : the depth at the target point
-    /// - `Err(Error)` : cannot read depths from at coordinates in the
-    ///   `points` vector.
+    /// - `Err(Error)` : cannot read depths from at coordinates in the `points`
+    ///   vector.
     ///
     /// # Errors
     /// - `Error::IndexOutOfBounds` : one or more of the points passed to
     /// `points` is out of bounds.
     /// - `Error::InvalidArgument` : error during execution of
     /// `interpolator::bilinear` due to invalid arguments.
-    fn interpolate(&self, points: &[(usize, usize)], target: &(f32, f32)) -> Result<f32, Error> {
-        let pts = vec![
+    fn interpolate(
+        &self,
+        index_points: &[(usize, usize)],
+        target_point: &(f32, f32),
+    ) -> Result<f32, Error> {
+        let depth_points = vec![
             (
-                self.variables.0[points[0].0],
-                self.variables.1[points[0].1],
-                self.depth_from_arr(&points[0].0, &points[0].1)?,
+                self.x_vector[index_points[0].0],
+                self.y_vector[index_points[0].1],
+                self.depth_from_arr(&index_points[0].0, &index_points[0].1)?,
             ),
             (
-                self.variables.0[points[1].0],
-                self.variables.1[points[1].1],
-                self.depth_from_arr(&points[1].0, &points[1].1)?,
+                self.x_vector[index_points[1].0],
+                self.y_vector[index_points[1].1],
+                self.depth_from_arr(&index_points[1].0, &index_points[1].1)?,
             ),
             (
-                self.variables.0[points[2].0],
-                self.variables.1[points[2].1],
-                self.depth_from_arr(&points[2].0, &points[2].1)?,
+                self.x_vector[index_points[2].0],
+                self.y_vector[index_points[2].1],
+                self.depth_from_arr(&index_points[2].0, &index_points[2].1)?,
             ),
             (
-                self.variables.0[points[3].0],
-                self.variables.1[points[3].1],
-                self.depth_from_arr(&points[3].0, &points[3].1)?,
+                self.x_vector[index_points[3].0],
+                self.y_vector[index_points[3].1],
+                self.depth_from_arr(&index_points[3].0, &index_points[3].1)?,
             ),
         ];
-        interpolator::bilinear(&pts, target)
+        interpolator::bilinear(&depth_points, target_point)
     }
 
     /// Access values in flattened array as you would a 2d array
     ///
     /// # Arguments
-    /// `indx` : `usize`
-    /// - index of location in x array
+    /// `x_index` : `usize`
+    /// - index of location in x array (column)
     ///
-    /// `indy` : `usize`
-    /// - index of location in y array
+    /// `y_index` : `usize`
+    /// - index of location in y array (row)
     ///
     /// # Returns
     /// `Result<f32, Error>`
     /// - `Ok(f32)` : depth
     /// - `Err(Error::IndexOutOfBounds)` : the combined index (x_length *
-    ///   indy + indx) is out of bounds of the depth array.
+    ///   y_index + x_index) is out of bounds of the depth array.
     ///
     /// # Errors
-    /// `Err(Error::IndexOutOfBounds)` : this error is returned when `indx`
-    /// and `indy` produce a value outside of the depth array.
-    fn depth_from_arr(&self, indx: &usize, indy: &usize) -> Result<f32, Error> {
-        let index = self.variables.0.len() * indy + indx;
-        if index >= self.variables.2.len() {
+    /// `Err(Error::IndexOutOfBounds)` : this error is returned when `x_index`
+    /// and `y_index` produce a value outside of the depth array.
+    fn depth_from_arr(&self, x_index: &usize, y_index: &usize) -> Result<f32, Error> {
+        let index = self.x_vector.len() * y_index + x_index;
+        if index >= self.depth_vector.len() {
             return Err(Error::IndexOutOfBounds);
         }
-        Ok(self.variables.2[index])
+        Ok(self.depth_vector[index])
     }
 }
 
@@ -330,7 +351,7 @@ impl CartesianFile {
 mod test_cartesian_file {
 
     use crate::{
-        bathymetry::{cartesian::CartesianFile, BathymetryData},
+        bathymetry::{cartesian_netcdf3::CartesianNetCDF3, BathymetryData},
         error::Error,
         io::utility::create_netcdf3_bathymetry,
     };
@@ -355,14 +376,14 @@ mod test_cartesian_file {
 
     #[test]
     /// This test checks that the file was created.
-    fn test_create_test_bathy() {
+    fn test_create_test_bathymetry() {
         // create temporary file
         use lockfile::Lockfile;
-        let lockfile = Lockfile::create(Path::new("tmp_bathy1.nc")).unwrap();
+        let lockfile = Lockfile::create(Path::new("tmp_bathymetry1.nc")).unwrap();
 
         create_netcdf3_bathymetry(lockfile.path(), 101, 51, 500.0, 500.0, four_depth_fn);
 
-        assert_eq!(lockfile.path(), Path::new("tmp_bathy1.nc"))
+        assert_eq!(lockfile.path(), Path::new("tmp_bathymetry1.nc"))
     }
 
     #[test]
@@ -370,12 +391,12 @@ mod test_cartesian_file {
     fn test_vars() {
         // create temporary file
         use lockfile::Lockfile;
-        let lockfile = Lockfile::create(Path::new("tmp_bathy2.nc")).unwrap();
+        let lockfile = Lockfile::create(Path::new("tmp_bathymetry2.nc")).unwrap();
 
         create_netcdf3_bathymetry(lockfile.path(), 101, 51, 500.0, 500.0, four_depth_fn);
 
-        let data = CartesianFile::new(Path::new(lockfile.path()));
-        assert!((data.variables.0[10] - 5000.0).abs() < f32::EPSILON)
+        let data = CartesianNetCDF3::new(Path::new(lockfile.path()));
+        assert!((data.x_vector[10] - 5000.0).abs() < f32::EPSILON)
     }
 
     #[test]
@@ -383,12 +404,12 @@ mod test_cartesian_file {
     fn test_get_nearest() {
         // create temporary file
         use lockfile::Lockfile;
-        let lockfile = Lockfile::create(Path::new("tmp_bathy3.nc")).unwrap();
+        let lockfile = Lockfile::create(Path::new("tmp_bathymetry3.nc")).unwrap();
 
         create_netcdf3_bathymetry(lockfile.path(), 101, 51, 500.0, 500.0, four_depth_fn);
 
-        let data = CartesianFile::new(Path::new(lockfile.path()));
-        assert!(data.nearest(&5499.0, &data.variables.0) == 11);
+        let data = CartesianNetCDF3::new(Path::new(lockfile.path()));
+        assert!(data.nearest(&5499.0, &data.x_vector) == 11);
     }
 
     #[test]
@@ -396,11 +417,11 @@ mod test_cartesian_file {
     fn test_get_corners() {
         // create temporary file
         use lockfile::Lockfile;
-        let lockfile = Lockfile::create(Path::new("tmp_bathy4.nc")).unwrap();
+        let lockfile = Lockfile::create(Path::new("tmp_bathymetry4.nc")).unwrap();
 
         create_netcdf3_bathymetry(lockfile.path(), 101, 51, 500.0, 500.0, four_depth_fn);
 
-        let data = CartesianFile::new(Path::new(lockfile.path()));
+        let data = CartesianNetCDF3::new(Path::new(lockfile.path()));
         let corners = data.four_corners(&10, &10).unwrap();
         assert!(corners[0].0 == 10 && corners[0].1 == 11);
         assert!(corners[1].0 == 11 && corners[1].1 == 10);
@@ -413,11 +434,11 @@ mod test_cartesian_file {
     fn test_depth() {
         // create temporary file
         use lockfile::Lockfile;
-        let lockfile = Lockfile::create(Path::new("tmp_bathy5.nc")).unwrap();
+        let lockfile = Lockfile::create(Path::new("tmp_bathymetry5.nc")).unwrap();
 
         create_netcdf3_bathymetry(lockfile.path(), 101, 51, 500.0, 500.0, four_depth_fn);
 
-        let data = CartesianFile::new(Path::new(lockfile.path()));
+        let data = CartesianNetCDF3::new(Path::new(lockfile.path()));
 
         // check to see if depth is the same as above
         let check_depth = vec![
@@ -428,7 +449,7 @@ mod test_cartesian_file {
         ];
 
         for (x, y, h) in &check_depth {
-            let depth = data.get_depth_and_gradient(x, y).unwrap().0;
+            let depth = data.depth_and_gradient(x, y).unwrap().0;
             assert!(
                 (depth - h).abs() < f32::EPSILON,
                 "Expected {}, but got {}",
@@ -444,12 +465,12 @@ mod test_cartesian_file {
     fn test_x_out_of_bounds() {
         // create temporary file
         use lockfile::Lockfile;
-        let lockfile = Lockfile::create(Path::new("tmp_bathy6.nc")).unwrap();
+        let lockfile = Lockfile::create(Path::new("tmp_bathymetry6.nc")).unwrap();
 
         create_netcdf3_bathymetry(lockfile.path(), 101, 51, 500.0, 500.0, four_depth_fn);
 
-        let data = CartesianFile::new(Path::new(lockfile.path()));
-        if let Error::NoNearestPoint = data.get_depth(&-500.1, &500.1).unwrap_err() {
+        let data = CartesianNetCDF3::new(Path::new(lockfile.path()));
+        if let Error::IndexOutOfBounds = data.depth(&-500.1, &500.1).unwrap_err() {
             assert!(true);
         } else {
             assert!(false);
@@ -462,12 +483,12 @@ mod test_cartesian_file {
     fn test_y_out_of_bounds() {
         // create temporary file
         use lockfile::Lockfile;
-        let lockfile = Lockfile::create(Path::new("tmp_bathy7.nc")).unwrap();
+        let lockfile = Lockfile::create(Path::new("tmp_bathymetry7.nc")).unwrap();
 
         create_netcdf3_bathymetry(lockfile.path(), 101, 51, 500.0, 500.0, four_depth_fn);
 
-        let data = CartesianFile::new(Path::new(lockfile.path()));
-        if let Error::NoNearestPoint = data.get_depth(&500.1, &-500.1).unwrap_err() {
+        let data = CartesianNetCDF3::new(Path::new(lockfile.path()));
+        if let Error::IndexOutOfBounds = data.depth(&500.1, &-500.1).unwrap_err() {
             assert!(true);
         } else {
             assert!(false);
@@ -481,11 +502,11 @@ mod test_cartesian_file {
     fn test_more_depths() {
         // create temporary file
         use lockfile::Lockfile;
-        let lockfile = Lockfile::create(Path::new("tmp_bathy8.nc")).unwrap();
+        let lockfile = Lockfile::create(Path::new("tmp_bathymetry8.nc")).unwrap();
 
         create_netcdf3_bathymetry(lockfile.path(), 101, 51, 500.0, 500.0, four_depth_fn);
 
-        let data = CartesianFile::new(Path::new(lockfile.path()));
+        let data = CartesianNetCDF3::new(Path::new(lockfile.path()));
 
         // check to see if depth is the same as above
         let check_depth = vec![
@@ -496,7 +517,7 @@ mod test_cartesian_file {
         ];
 
         for (x, y, h) in &check_depth {
-            let depth = data.get_depth_and_gradient(x, y).unwrap().0;
+            let depth = data.depth_and_gradient(x, y).unwrap().0;
             assert!(
                 (depth - h).abs() < f32::EPSILON,
                 "Expected {}, but got {}",
@@ -510,24 +531,24 @@ mod test_cartesian_file {
     fn test_nan() {
         // create temporary file
         use lockfile::Lockfile;
-        let lockfile = Lockfile::create(Path::new("tmp_bathy9.nc")).unwrap();
+        let lockfile = Lockfile::create(Path::new("tmp_bathymetry9.nc")).unwrap();
 
         create_netcdf3_bathymetry(lockfile.path(), 101, 51, 500.0, 500.0, four_depth_fn);
 
-        let data = CartesianFile::new(Path::new(lockfile.path()));
+        let data = CartesianNetCDF3::new(Path::new(lockfile.path()));
 
         let nan = f32::NAN;
 
-        assert!(data.get_depth(&nan, &nan).unwrap().is_nan());
-        assert!(data.get_depth(&10000.0, &nan).unwrap().is_nan());
-        assert!(data.get_depth(&nan, &10000.0).unwrap().is_nan());
+        assert!(data.depth(&nan, &nan).unwrap().is_nan());
+        assert!(data.depth(&10000.0, &nan).unwrap().is_nan());
+        assert!(data.depth(&nan, &10000.0).unwrap().is_nan());
     }
 
     #[test]
     fn test_depth_and_gradient_x() {
         // create temporary file
         use lockfile::Lockfile;
-        let lockfile = Lockfile::create(Path::new("tmp_bathy10.nc")).unwrap();
+        let lockfile = Lockfile::create(Path::new("tmp_bathymetry10.nc")).unwrap();
 
         fn depth_fn(x: f32, _y: f32) -> f64 {
             x as f64 * 0.05
@@ -535,13 +556,13 @@ mod test_cartesian_file {
 
         create_netcdf3_bathymetry(lockfile.path(), 100, 100, 1.0, 1.0, depth_fn);
 
-        let data = CartesianFile::new(Path::new(lockfile.path()));
+        let data = CartesianNetCDF3::new(Path::new(lockfile.path()));
 
         // check to see if depth is the same as above
         let check_depth = vec![(10.0, 30.0, 0.5), (30.0, 10.0, 1.5)];
 
         for (x, y, h) in &check_depth {
-            let depth = data.get_depth_and_gradient(x, y).unwrap().0;
+            let depth = data.depth_and_gradient(x, y).unwrap().0;
             assert!(
                 (depth - h).abs() < f32::EPSILON,
                 "Expected {}, but got {}",
@@ -558,19 +579,19 @@ mod test_cartesian_file {
         ];
 
         for (x, y, dhdx, dhdy) in &check_gradient {
-            let x_grad = data.get_depth_and_gradient(x, y).unwrap().1 .0;
-            let y_grad = data.get_depth_and_gradient(x, y).unwrap().1 .1;
+            let x_gradient = data.depth_and_gradient(x, y).unwrap().1 .0;
+            let y_gradient = data.depth_and_gradient(x, y).unwrap().1 .1;
             assert!(
-                (x_grad - dhdx).abs() < f32::EPSILON,
+                (x_gradient - dhdx).abs() < f32::EPSILON,
                 "Expected {}, but got {}",
                 dhdx,
-                x_grad
+                x_gradient
             );
             assert!(
-                (y_grad - dhdy).abs() < f32::EPSILON,
+                (y_gradient - dhdy).abs() < f32::EPSILON,
                 "Expected {}, but got {}",
                 dhdy,
-                y_grad
+                y_gradient
             );
         }
     }
@@ -579,7 +600,7 @@ mod test_cartesian_file {
     fn test_depth_and_gradient_y() {
         // create temporary file
         use lockfile::Lockfile;
-        let lockfile = Lockfile::create(Path::new("tmp_bathy11.nc")).unwrap();
+        let lockfile = Lockfile::create(Path::new("tmp_bathymetry11.nc")).unwrap();
 
         fn depth_fn(_x: f32, y: f32) -> f64 {
             y as f64 * 0.05
@@ -587,13 +608,13 @@ mod test_cartesian_file {
 
         create_netcdf3_bathymetry(lockfile.path(), 100, 100, 1.0, 1.0, depth_fn);
 
-        let data = CartesianFile::new(Path::new(lockfile.path()));
+        let data = CartesianNetCDF3::new(Path::new(lockfile.path()));
 
         // check to see if depth is the same as above
         let check_depth = vec![(10.0, 30.0, 1.5), (30.0, 10.0, 0.5)];
 
         for (x, y, h) in &check_depth {
-            let depth = data.get_depth_and_gradient(x, y).unwrap().0;
+            let depth = data.depth_and_gradient(x, y).unwrap().0;
             assert!(
                 (depth - h).abs() < f32::EPSILON,
                 "Expected {}, but got {}",
@@ -610,19 +631,19 @@ mod test_cartesian_file {
         ];
 
         for (x, y, dhdx, dhdy) in &check_gradient {
-            let x_grad = data.get_depth_and_gradient(x, y).unwrap().1 .0;
-            let y_grad = data.get_depth_and_gradient(x, y).unwrap().1 .1;
+            let x_gradient = data.depth_and_gradient(x, y).unwrap().1 .0;
+            let y_gradient = data.depth_and_gradient(x, y).unwrap().1 .1;
             assert!(
-                (x_grad - dhdx).abs() < f32::EPSILON,
+                (x_gradient - dhdx).abs() < f32::EPSILON,
                 "Expected {}, but got {}",
                 dhdx,
-                x_grad
+                x_gradient
             );
             assert!(
-                (y_grad - dhdy).abs() < f32::EPSILON,
+                (y_gradient - dhdy).abs() < f32::EPSILON,
                 "Expected {}, but got {}",
                 dhdy,
-                y_grad
+                y_gradient
             );
         }
     }

@@ -7,7 +7,7 @@ use std::path::Path;
 /// should bend towards the circular island such that rays above the island
 /// curve down and rays below the island curve up.
 fn test_sea_mount() {
-    let bathymetry_data = mantaray::bathymetry::cartesian::CartesianFile::new(Path::new(
+    let bathymetry_data = mantaray::bathymetry::cartesian_netcdf3::CartesianNetCDF3::new(Path::new(
         "tests/data/island_slice.nc",
     ));
 

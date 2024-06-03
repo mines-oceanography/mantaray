@@ -112,7 +112,7 @@ impl<'a> WaveRayPath<'a> {
     ) -> Result<(f64, f64, f64, f64), Error> {
         let (h, (dhdx, dhdy)) = self
             .bathy_data
-            .get_depth_and_gradient(&(*x as f32), &(*y as f32))?;
+            .depth_and_gradient(&(*x as f32), &(*y as f32))?;
 
         let (u, v, dudx, dudy, dvdx, dvdy) = if let Some(cd) = self.current_data {
             let ((u, v), (dudx, dudy, dvdx, dvdy)) = cd.current_and_gradient(x, y)?;
@@ -199,12 +199,10 @@ impl<'a> WaveRayPath<'a> {
     /// # Returns
     /// `(f64, f64)` : values cooresponding to (dkx/dt, dky/dt)
     pub(crate) fn dk_vector_dt(&self, k_mag: &f64, h: &f64, dhdx: &f64, dhdy: &f64) -> (f64, f64) {
-        let dkxdt_bathy = (-0.5) * k_mag * 1.0 / (k_mag * h).sinh() * 1.0
-            / (k_mag * h).cosh()
+        let dkxdt_bathy = (-0.5) * k_mag * 1.0 / (k_mag * h).sinh() * 1.0 / (k_mag * h).cosh()
             * (G * k_mag * (k_mag * h).tanh()).sqrt()
             * dhdx;
-        let dkydt_bathy = (-0.5) * k_mag * 1.0 / (k_mag * h).sinh() * 1.0
-            / (k_mag * h).cosh()
+        let dkydt_bathy = (-0.5) * k_mag * 1.0 / (k_mag * h).sinh() * 1.0 / (k_mag * h).cosh()
             * (G * k_mag * (k_mag * h).tanh()).sqrt()
             * dhdy;
 
@@ -616,7 +614,7 @@ mod test_current {
 
         // build pattern with supplying current data
         let wave = WaveRayPath::builder()
-            .bathy_data(&bd) 
+            .bathy_data(&bd)
             .current_data(Some(&cd))
             .build()
             .unwrap();

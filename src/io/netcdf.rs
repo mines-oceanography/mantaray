@@ -75,12 +75,12 @@ impl BathymetryFromNetCDF {
 }
 
 impl BathymetryData for BathymetryFromNetCDF {
-    fn get_depth(&self, x0: &f32, y0: &f32) -> Result<f32> {
+    fn depth(&self, x0: &f32, y0: &f32) -> Result<f32> {
         let (i, j) = self.nearest_location_index(x0, y0)?;
         Ok(self.depth_by_index(i, j))
     }
 
-    fn get_depth_and_gradient(&self, x0: &f32, y0: &f32) -> Result<(f32, (f32, f32))> {
+    fn depth_and_gradient(&self, x0: &f32, y0: &f32) -> Result<(f32, (f32, f32))> {
         let (i, j) = self.nearest_location_index(x0, y0)?;
         let z0 = self.depth_by_index(i, j);
 
