@@ -2,7 +2,7 @@
 
 use std::path::Path;
 
-use netcdf3::FileReader;
+use netcdf3::{DataType, FileReader};
 
 use super::BathymetryData;
 use crate::{error::Error, interpolator};
@@ -154,22 +154,118 @@ impl CartesianNetCDF3 {
     /// # Note
     /// in the future, be able to check attributes and verify that the file is
     /// correct.
-    pub fn new(path: &Path) -> Self {
+    pub fn open(path: &Path, x_name: &str, y_name: &str, depth_name: &str) -> Self {
         let mut data = FileReader::open(path).unwrap();
 
-        let x_vector = data.read_var_f32("x").unwrap();
-        let y_vector = data.read_var_f32("y").unwrap();
-        let depth_vector = data
-            .read_var_f64("depth")
-            .unwrap()
-            .iter()
-            .map(|x| *x as f32)
-            .collect();
+        let x_data = data.read_var(x_name).unwrap();
+        let x_data = match x_data.data_type() {
+            DataType::I16 => x_data
+                .get_i16_into()
+                .unwrap()
+                .iter()
+                .map(|x| *x as f32)
+                .collect(),
+            DataType::I8 => x_data
+                .get_i8_into()
+                .unwrap()
+                .iter()
+                .map(|x| *x as f32)
+                .collect(),
+            DataType::U8 => x_data
+                .get_u8_into()
+                .unwrap()
+                .iter()
+                .map(|x| *x as f32)
+                .collect(),
+            DataType::I32 => x_data
+                .get_i32_into()
+                .unwrap()
+                .iter()
+                .map(|x| *x as f32)
+                .collect(),
+            DataType::F32 => x_data.get_f32_into().unwrap(),
+            DataType::F64 => x_data
+                .get_f64_into()
+                .unwrap()
+                .iter()
+                .map(|x| *x as f32)
+                .collect(),
+        };
+
+        let y_data = data.read_var(y_name).unwrap();
+        let y_data = match y_data.data_type() {
+            DataType::I16 => y_data
+                .get_i16_into()
+                .unwrap()
+                .iter()
+                .map(|x| *x as f32)
+                .collect(),
+            DataType::I8 => y_data
+                .get_i8_into()
+                .unwrap()
+                .iter()
+                .map(|x| *x as f32)
+                .collect(),
+            DataType::U8 => y_data
+                .get_u8_into()
+                .unwrap()
+                .iter()
+                .map(|x| *x as f32)
+                .collect(),
+            DataType::I32 => y_data
+                .get_i32_into()
+                .unwrap()
+                .iter()
+                .map(|x| *x as f32)
+                .collect(),
+            DataType::F32 => y_data.get_f32_into().unwrap(),
+            DataType::F64 => y_data
+                .get_f64_into()
+                .unwrap()
+                .iter()
+                .map(|x| *x as f32)
+                .collect(),
+        };
+
+        let depth_data = data.read_var(depth_name).unwrap();
+        let depth_data = match depth_data.data_type() {
+            DataType::I16 => depth_data
+                .get_i16_into()
+                .unwrap()
+                .iter()
+                .map(|x| *x as f32)
+                .collect(),
+            DataType::I8 => depth_data
+                .get_i8_into()
+                .unwrap()
+                .iter()
+                .map(|x| *x as f32)
+                .collect(),
+            DataType::U8 => depth_data
+                .get_u8_into()
+                .unwrap()
+                .iter()
+                .map(|x| *x as f32)
+                .collect(),
+            DataType::I32 => depth_data
+                .get_i32_into()
+                .unwrap()
+                .iter()
+                .map(|x| *x as f32)
+                .collect(),
+            DataType::F32 => depth_data.get_f32_into().unwrap(),
+            DataType::F64 => depth_data
+                .get_f64_into()
+                .unwrap()
+                .iter()
+                .map(|x| *x as f32)
+                .collect(),
+        };
 
         CartesianNetCDF3 {
-            x_vector,
-            y_vector,
-            depth_vector,
+            x_vector: x_data,
+            y_vector: y_data,
+            depth_vector: depth_data,
         }
     }
 
@@ -395,7 +491,7 @@ mod test_cartesian_file {
 
         create_netcdf3_bathymetry(lockfile.path(), 101, 51, 500.0, 500.0, four_depth_fn);
 
-        let data = CartesianNetCDF3::new(Path::new(lockfile.path()));
+        let data = CartesianNetCDF3::open(Path::new(lockfile.path()), "x", "y", "depth");
         assert!((data.x_vector[10] - 5000.0).abs() < f32::EPSILON)
     }
 
@@ -408,7 +504,7 @@ mod test_cartesian_file {
 
         create_netcdf3_bathymetry(lockfile.path(), 101, 51, 500.0, 500.0, four_depth_fn);
 
-        let data = CartesianNetCDF3::new(Path::new(lockfile.path()));
+        let data = CartesianNetCDF3::open(Path::new(lockfile.path()), "x", "y", "depth");
         assert!(data.nearest(&5499.0, &data.x_vector) == 11);
     }
 
@@ -421,7 +517,7 @@ mod test_cartesian_file {
 
         create_netcdf3_bathymetry(lockfile.path(), 101, 51, 500.0, 500.0, four_depth_fn);
 
-        let data = CartesianNetCDF3::new(Path::new(lockfile.path()));
+        let data = CartesianNetCDF3::open(Path::new(lockfile.path()), "x", "y", "depth");
         let corners = data.four_corners(&10, &10).unwrap();
         assert!(corners[0].0 == 10 && corners[0].1 == 11);
         assert!(corners[1].0 == 11 && corners[1].1 == 10);
@@ -438,7 +534,7 @@ mod test_cartesian_file {
 
         create_netcdf3_bathymetry(lockfile.path(), 101, 51, 500.0, 500.0, four_depth_fn);
 
-        let data = CartesianNetCDF3::new(Path::new(lockfile.path()));
+        let data = CartesianNetCDF3::open(Path::new(lockfile.path()), "x", "y", "depth");
 
         // check to see if depth is the same as above
         let check_depth = vec![
@@ -469,7 +565,7 @@ mod test_cartesian_file {
 
         create_netcdf3_bathymetry(lockfile.path(), 101, 51, 500.0, 500.0, four_depth_fn);
 
-        let data = CartesianNetCDF3::new(Path::new(lockfile.path()));
+        let data = CartesianNetCDF3::open(Path::new(lockfile.path()), "x", "y", "depth");
         if let Error::IndexOutOfBounds = data.depth(&-500.1, &500.1).unwrap_err() {
             assert!(true);
         } else {
@@ -487,7 +583,7 @@ mod test_cartesian_file {
 
         create_netcdf3_bathymetry(lockfile.path(), 101, 51, 500.0, 500.0, four_depth_fn);
 
-        let data = CartesianNetCDF3::new(Path::new(lockfile.path()));
+        let data = CartesianNetCDF3::open(Path::new(lockfile.path()), "x", "y", "depth");
         if let Error::IndexOutOfBounds = data.depth(&500.1, &-500.1).unwrap_err() {
             assert!(true);
         } else {
@@ -506,7 +602,7 @@ mod test_cartesian_file {
 
         create_netcdf3_bathymetry(lockfile.path(), 101, 51, 500.0, 500.0, four_depth_fn);
 
-        let data = CartesianNetCDF3::new(Path::new(lockfile.path()));
+        let data = CartesianNetCDF3::open(Path::new(lockfile.path()), "x", "y", "depth");
 
         // check to see if depth is the same as above
         let check_depth = vec![
@@ -535,7 +631,7 @@ mod test_cartesian_file {
 
         create_netcdf3_bathymetry(lockfile.path(), 101, 51, 500.0, 500.0, four_depth_fn);
 
-        let data = CartesianNetCDF3::new(Path::new(lockfile.path()));
+        let data = CartesianNetCDF3::open(Path::new(lockfile.path()), "x", "y", "depth");
 
         let nan = f32::NAN;
 
@@ -556,7 +652,7 @@ mod test_cartesian_file {
 
         create_netcdf3_bathymetry(lockfile.path(), 100, 100, 1.0, 1.0, depth_fn);
 
-        let data = CartesianNetCDF3::new(Path::new(lockfile.path()));
+        let data = CartesianNetCDF3::open(Path::new(lockfile.path()), "x", "y", "depth");
 
         // check to see if depth is the same as above
         let check_depth = vec![(10.0, 30.0, 0.5), (30.0, 10.0, 1.5)];
@@ -608,7 +704,7 @@ mod test_cartesian_file {
 
         create_netcdf3_bathymetry(lockfile.path(), 100, 100, 1.0, 1.0, depth_fn);
 
-        let data = CartesianNetCDF3::new(Path::new(lockfile.path()));
+        let data = CartesianNetCDF3::open(Path::new(lockfile.path()), "x", "y", "depth");
 
         // check to see if depth is the same as above
         let check_depth = vec![(10.0, 30.0, 1.5), (30.0, 10.0, 0.5)];
