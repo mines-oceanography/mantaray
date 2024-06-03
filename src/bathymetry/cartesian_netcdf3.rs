@@ -1,4 +1,7 @@
-//! FIXME: document this module
+//! A module that contains the `CartesianNetCDF3` struct, which is used to
+//! access bathymetry data stored in a netcdf3 file. The struct implements the
+//! `BathymetryData` trait, which provides methods to get depth at a given (x,
+//! y) point.
 
 use std::path::Path;
 
@@ -10,51 +13,45 @@ use crate::{error::Error, interpolator};
 /// A struct that stores a netcdf3 dataset with methods to access, find nearest
 /// values, interpolate, and return depth and gradient.
 ///
-/// TODO: examples
-///
 /// # Note
 /// Currently, the methods do not know the difference between an out of bounds
-/// point and a just inside the bounds point. The nearest to each of these will
-/// be on the edge, so it will return None for both. In the future, the methods
-/// should be able to distinguish these two cases.
+/// point and a point within one grid space from the edge. The nearest to each
+/// of these will be on the edge, so it will return None for both. In the
+/// future, the methods should be able to distinguish these two cases.
 ///
-/// In this struct, None is used when the current function will not panic, but
+/// In this struct, None is used when the function will not panic, but
 /// the value is not useful to the other structs. Error is used when the
 /// function would panic, so instead, it returns an error.
 pub struct CartesianNetCDF3 {
-    /// TODO
+    /// a vector containing the x values from the netcdf3 file
     x_vector: Vec<f32>,
-    /// TODO
+    /// a vector containing the y values from the netcdf3 file
     y_vector: Vec<f32>,
-    /// TODO
+    /// a vector containing the depth values from the netcdf3 file. Note this is
+    /// a flattened 2d array and is accessed by the function `depth_from_array`.
     depth_vector: Vec<f32>,
 }
 
 impl BathymetryData for CartesianNetCDF3 {
-    /// Depth at the inputted (x ,y) coordinate.
+    /// Depth at the inputted (x ,y) point.
     ///
     /// # Arguments
     /// `x` : `&f32`
-    /// - x coordinate
+    /// - x location \[m\]
     ///
     /// `y` : `&f32`
-    /// - y coordinate
+    /// - y location \[m\]
     ///
     /// # Returns
     /// `Result<f32, Error>`
-    /// - `Ok(f32)` : depth at the point
+    /// - `Ok(f32)` : depth at the point in meters
     /// - `Err(Error)` : error during execution of `get_depth`.
     ///
     /// # Errors
-    /// - `Error::CornerOutOfBounds` : this error is returned when the
-    ///   `four_corners` method errors.
-    /// - `Error::IndexOutOfBounds` : this error is returned when the `x` or
-    /// `y` input give an out of bounds output during the `interpolate`
-    /// method.
+    /// - `Error::IndexOutOfBounds` : this error is returned when the `x` or `y`
+    /// input give an out of bounds output during the `interpolate` method.
     /// - `Error::InvalidArgument` : this error is returned from
     ///   `interpolator::bilinear` due to incorrect argument passed.
-    /// - `Error::NoNearestPoint` : The target point was either outside the
-    /// domain or closest to the edge of the domain.
     fn depth(&self, x: &f32, y: &f32) -> Result<f32, Error> {
         if x.is_nan() || y.is_nan() {
             return Ok(f32::NAN);
@@ -77,10 +74,10 @@ impl BathymetryData for CartesianNetCDF3 {
     ///
     /// # Arguments
     /// `x` : `&f32`
-    /// - x coordinate
+    /// - x location \[m\]
     ///
     /// `y` : `&f32`
-    /// - y coordinate
+    /// - y location \[m\]
     ///
     /// # Returns
     /// `Result<(f32, (f32, f32)), Error>`
@@ -123,12 +120,12 @@ impl BathymetryData for CartesianNetCDF3 {
         let south_point = &corner_points[2];
         let west_point = &corner_points[3];
 
-        let x_gradient = (self.depth_from_arr(&east_point.0, &east_point.1)?
-            - self.depth_from_arr(&west_point.0, &west_point.1)?)
+        let x_gradient = (self.depth_from_array(&east_point.0, &east_point.1)?
+            - self.depth_from_array(&west_point.0, &west_point.1)?)
             / (2.0 * x_space);
 
-        let y_gradient = (self.depth_from_arr(&north_point.0, &north_point.1)?
-            - self.depth_from_arr(&south_point.0, &south_point.1)?)
+        let y_gradient = (self.depth_from_array(&north_point.0, &north_point.1)?
+            - self.depth_from_array(&south_point.0, &south_point.1)?)
             / (2.0 * y_space);
 
         Ok((depth, (x_gradient, y_gradient)))
@@ -137,14 +134,24 @@ impl BathymetryData for CartesianNetCDF3 {
 
 impl CartesianNetCDF3 {
     #[allow(dead_code)]
-    /// Construct CartesianFile
+    /// Initialize the CartesianNetCDF3 struct with the data from the netcdf3
+    /// file
     ///
     /// # Arguments
     /// `path` : `&Path`
     /// - a path to the location of the netcdf3 file
     ///
+    /// `x_name` : `&str`
+    /// - the name of the x variable in the netcdf3 file
+    /// 
+    /// `y_name` : `&str`
+    /// - the name of the y variable in the netcdf3 file
+    /// 
+    /// `depth_name` : `&str`
+    /// - the name of the depth variable in the netcdf3 file
+    /// 
     /// # Returns
-    /// `Self` : an initialized CartesianFile
+    /// `Self` : an initialized CartesianNetCDF3 struct
     ///
     /// # Panics
     /// `new` will panic if the data type is invalid or if any of the names are
@@ -268,46 +275,49 @@ impl CartesianNetCDF3 {
         }
     }
 
-    /// Find nearest point
+    /// Find the index of the closest value to the target in the array
     ///
     /// # Arguments
     /// `target` : `f32`
     /// - the value to find
     ///
-    /// `arr` : `&Vec<f32>`
+    /// `arr` : `&[f32]`
     /// - the array that will be used when searching for the closest value.
     ///
     /// # Returns
     /// `usize`: index of closest value
-    fn nearest(&self, target: &f32, arr: &[f32]) -> usize {
+    /// 
+    /// # Note
+    /// This function uses binary search, but requires the array to be sorted.
+    fn nearest(&self, target: &f32, array: &[f32]) -> usize {
         let mut left = 0;
-        let mut right = arr.len() - 1;
+        let mut right = array.len() - 1;
         let mut closest_index = 0;
         let mut closest_distance = f32::MAX;
 
         // edge cases
-        if *target <= arr[left] {
+        if *target <= array[left] {
             return left;
         }
-        if *target >= arr[right] {
+        if *target >= array[right] {
             return right;
         }
 
         // binary search
         while left <= right {
             let mid = (left + right) / 2;
-            let distance = (target - arr[mid]).abs();
+            let distance = (target - array[mid]).abs();
 
             if distance < closest_distance {
                 closest_index = mid;
                 closest_distance = distance;
             }
 
-            if arr[mid] == *target {
+            if array[mid] == *target {
                 return mid;
             }
 
-            if arr[mid] > *target {
+            if array[mid] > *target {
                 right = mid - 1;
             } else {
                 left = mid + 1;
@@ -317,26 +327,26 @@ impl CartesianNetCDF3 {
         closest_index
     }
 
-    /// Returns the nearest (x_index, y_index) point to given (x ,y) coordinate
+    /// Returns the nearest (x_index, y_index) point to given (x ,y) point
     ///
     /// # Arguments
     /// `x`: `&f32`
-    /// - x coordinate
+    /// - x location in meters
     ///
     /// `y`: `&f32`
-    /// - y coordinate
+    /// - y location in meters
     ///
     /// # Returns
     /// `Option<(usize, usize)>`
-    /// - `Some((usize, usize))` : the nearest point to the given `x`, `y`
-    ///   input.
-    /// - `None` : based on the calculated nearest point, the given `x` and
-    ///   `y` are assumed to be out of bounds, so a value does not exist.
+    /// - `Some((usize, usize))` : the indices of the nearest point to the given
+    ///   `x`, `y` input.
+    /// - `None` : based on the calculated nearest point, the given `x` and `y`
+    ///   are assumed to be out of bounds, so a value does not exist.
     ///
     /// # Note
-    /// This function will never panic, but if given an out of bounds point,
-    /// it will return the closest edge. To attempt to fix this problem,
-    /// `nearest_point` should return `None` on points that are on the edges.
+    /// This function will return `None` on points that are on the edges. This
+    /// causes a small bug requiring the user to initialize the ray at least
+    /// half a grid space away from the edge.
     fn nearest_point(&self, x: &f32, y: &f32) -> Option<(usize, usize)> {
         let x_index = self.nearest(x, &self.x_vector);
         let y_index = self.nearest(y, &self.y_vector);
@@ -417,22 +427,22 @@ impl CartesianNetCDF3 {
             (
                 self.x_vector[index_points[0].0],
                 self.y_vector[index_points[0].1],
-                self.depth_from_arr(&index_points[0].0, &index_points[0].1)?,
+                self.depth_from_array(&index_points[0].0, &index_points[0].1)?,
             ),
             (
                 self.x_vector[index_points[1].0],
                 self.y_vector[index_points[1].1],
-                self.depth_from_arr(&index_points[1].0, &index_points[1].1)?,
+                self.depth_from_array(&index_points[1].0, &index_points[1].1)?,
             ),
             (
                 self.x_vector[index_points[2].0],
                 self.y_vector[index_points[2].1],
-                self.depth_from_arr(&index_points[2].0, &index_points[2].1)?,
+                self.depth_from_array(&index_points[2].0, &index_points[2].1)?,
             ),
             (
                 self.x_vector[index_points[3].0],
                 self.y_vector[index_points[3].1],
-                self.depth_from_arr(&index_points[3].0, &index_points[3].1)?,
+                self.depth_from_array(&index_points[3].0, &index_points[3].1)?,
             ),
         ];
         interpolator::bilinear(&depth_points, target_point)
@@ -441,10 +451,10 @@ impl CartesianNetCDF3 {
     /// Access values in flattened array as you would a 2d array
     ///
     /// # Arguments
-    /// `x_index` : `usize`
+    /// `x_index` : `&usize`
     /// - index of location in x array (column)
     ///
-    /// `y_index` : `usize`
+    /// `y_index` : `&usize`
     /// - index of location in y array (row)
     ///
     /// # Returns
@@ -456,7 +466,7 @@ impl CartesianNetCDF3 {
     /// # Errors
     /// `Err(Error::IndexOutOfBounds)` : this error is returned when `x_index`
     /// and `y_index` produce a value outside of the depth array.
-    fn depth_from_arr(&self, x_index: &usize, y_index: &usize) -> Result<f32, Error> {
+    fn depth_from_array(&self, x_index: &usize, y_index: &usize) -> Result<f32, Error> {
         let index = self.x_vector.len() * y_index + x_index;
         if index >= self.depth_vector.len() {
             return Err(Error::IndexOutOfBounds);
