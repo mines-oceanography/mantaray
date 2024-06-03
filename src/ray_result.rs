@@ -132,7 +132,11 @@ impl From<SolverResult<Time, State>> for RayResult {
         let mut ky_vector: Vec<f64> = vec![];
 
         for (i, _) in x_out.iter().enumerate() {
-            if y_out[i][0].is_nan() {
+            if y_out[i][0].is_nan()
+                || y_out[i][1].is_nan()
+                || y_out[i][2].is_nan()
+                || y_out[i][3].is_nan()
+            {
                 break;
             }
             t_vector.push(x_out[i]);
@@ -173,6 +177,31 @@ mod test_ray_result {
         assert_eq!(
             json_string,
             "{\"t_vec\":[1.0],\"x_vec\":[2.0],\"y_vec\":[3.0],\"kx_vec\":[4.0],\"ky_vec\":[5.0]}"
+        );
+    }
+
+    #[test]
+    /// test NaN. when converting the `SolverResult` to `RayResult`, if an entry
+    /// in the `SolverResult` has a NaN value, then that value and all after it
+    /// are not included in the converted `RayResult`.
+    fn test_nan_ray_result() {
+        let sr: SolverResult<Time, State> = SolverResult::new(
+            vec![0.0, 1.0, 2.0, 3.0],
+            vec![
+                State::new(1.0, 1.0, 1.0, 1.0),
+                State::new(1.0, f64::NAN, f64::NAN, 1.0),
+                State::new(f64::NAN, f64::NAN, f64::NAN, f64::NAN),
+                State::new(2.0, 2.0, 2.0, 2.0),
+            ],
+        );
+
+        let rr: RayResult = sr.into();
+
+        let json_string = rr.as_json();
+
+        assert_eq!(
+            json_string,
+            "{\"t_vec\":[0.0],\"x_vec\":[1.0],\"y_vec\":[1.0],\"kx_vec\":[1.0],\"ky_vec\":[1.0]}"
         );
     }
 }
