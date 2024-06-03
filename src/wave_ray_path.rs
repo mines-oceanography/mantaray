@@ -215,13 +215,10 @@ impl<'a> WaveRayPath<'a> {
 }
 
 impl<'a> ode_solvers::System<Time, State> for WaveRayPath<'a> {
-    fn system(&self, t: Time, s: &State, ds: &mut State) {
+    fn system(&self, _t: Time, s: &State, ds: &mut State) {
         let (dxdt, dydt, dkxdt, dkydt) = match self.odes(&s[0], &s[1], &s[2], &s[3]) {
-            Err(e) => {
-                println!(
-                    "ERROR at time {}: \"{}\". Setting all further output to NaN.",
-                    t, e
-                );
+            Err(_) => {
+                // Error at time t. Setting all further output to NaN.
                 (f64::NAN, f64::NAN, f64::NAN, f64::NAN)
             }
             Ok(v) => v,
@@ -233,11 +230,11 @@ impl<'a> ode_solvers::System<Time, State> for WaveRayPath<'a> {
         ds[3] = dkydt;
     }
 
-    fn solout(&mut self, x: Time, y: &State, dy: &State) -> bool {
+    fn solout(&mut self, _x: Time, y: &State, dy: &State) -> bool {
         if (dy[0].is_nan() && dy[1].is_nan() && dy[2].is_nan() && dy[3].is_nan())
             || (y[0].is_nan() && y[1].is_nan() && y[2].is_nan() && y[3].is_nan())
         {
-            println!("NaN derivatives in output. Likely reached end of current or bathy domain. Stopping integration at time {}.", x);
+            // NaN in derivatives or output. Likely reached end of current or bathy domain. Stopping integration.
             true
         } else {
             false
