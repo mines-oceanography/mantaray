@@ -245,7 +245,10 @@ mod test_single_wave {
     use tempfile::{tempdir, NamedTempFile};
 
     use crate::{
-        bathymetry::{BathymetryData, CartesianFile, ConstantDepth, ConstantSlope}, current::{CartesianCurrent, ConstantCurrent}, io::utility::{create_netcdf3_bathymetry, create_netcdf3_current}, ray_result::RayResults
+        bathymetry::{BathymetryData, CartesianFile, ConstantDepth, ConstantSlope},
+        current::{CartesianCurrent, ConstantCurrent},
+        io::utility::{create_netcdf3_bathymetry, create_netcdf3_current},
+        ray_result::RayResult,
     };
 
     use super::SingleRay;
@@ -282,7 +285,7 @@ mod test_single_wave {
         let res = wave.trace_individual(0.0, 8.0, 1.0).unwrap();
 
         let filename = temp_filename("constant_depth_shallow_x_out.txt");
-        let _ = RayResults::from(res).save_file(Path::new(&filename));
+        let _ = RayResult::from(res).save_file(Path::new(&filename));
     }
 
     #[test]
@@ -296,7 +299,7 @@ mod test_single_wave {
         let wave = SingleRay::new(bathymetry_data, None, 10.0, 10.0, 0.007, 0.007);
         let res = wave.trace_individual(0.0, 8.0, 1.0).unwrap();
         let filename = temp_filename("constant_depth_shallow_x_out.txt");
-        let _ = RayResults::from(res).save_file(Path::new(&filename));
+        let _ = RayResult::from(res).save_file(Path::new(&filename));
     }
 
     #[test]
@@ -313,7 +316,7 @@ mod test_single_wave {
         let res = wave.trace_individual(0.0, 18.0, 1.0).unwrap();
 
         let filename = temp_filename("constant_depth_deep_x_out.txt");
-        let _ = RayResults::from(res).save_file(Path::new(&filename));
+        let _ = RayResult::from(res).save_file(Path::new(&filename));
     }
 
     #[test]
@@ -327,7 +330,7 @@ mod test_single_wave {
         let res = wave.trace_individual(0.0, 18.0, 1.0).unwrap();
 
         let filename = temp_filename("constant_depth_deep_xy_out.txt");
-        let _ = RayResults::from(res).save_file(Path::new(&filename));
+        let _ = RayResult::from(res).save_file(Path::new(&filename));
     }
 
     #[test]
@@ -346,7 +349,7 @@ mod test_single_wave {
         let res = wave.trace_individual(0.0, 6.0, 1.0).unwrap();
 
         let filename = temp_filename("two_depth_shallow_x_out.txt");
-        let _ = RayResults::from(res).save_file(Path::new(&filename));
+        let _ = RayResult::from(res).save_file(Path::new(&filename));
     }
 
     #[test]
@@ -365,7 +368,7 @@ mod test_single_wave {
         let res = wave.trace_individual(0.0, 7.0, 1.0).unwrap();
 
         let filename = temp_filename("two_depth_shallow_xy_out.txt");
-        let _ = RayResults::from(res).save_file(Path::new(&filename));
+        let _ = RayResult::from(res).save_file(Path::new(&filename));
     }
 
     #[test]
@@ -384,7 +387,7 @@ mod test_single_wave {
         let res = wave.trace_individual(0.0, 30.0, 1.0).unwrap();
 
         let filename = temp_filename("two_depth_deep_x_out.txt");
-        let _ = RayResults::from(res).save_file(Path::new(&filename));
+        let _ = RayResult::from(res).save_file(Path::new(&filename));
     }
 
     #[test]
@@ -401,7 +404,7 @@ mod test_single_wave {
         let res = wave.trace_individual(0.0, 40.0, 1.0).unwrap();
 
         let filename = temp_filename("two_depth_deep_xy_out.txt");
-        let _ = RayResults::from(res).save_file(Path::new(&filename));
+        let _ = RayResult::from(res).save_file(Path::new(&filename));
     }
 
     #[test]
@@ -413,7 +416,7 @@ mod test_single_wave {
         let res = wave.trace_individual(0.0, 100.0, 1.0).unwrap();
 
         let filename = temp_filename("slope_depth_x_out.txt");
-        let _ = RayResults::from(res).save_file(Path::new(&filename));
+        let _ = RayResult::from(res).save_file(Path::new(&filename));
     }
 
     #[test]
