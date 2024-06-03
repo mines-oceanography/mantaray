@@ -61,11 +61,11 @@ impl BathymetryData for CartesianNetCDF3 {
         }
 
         let (nearest_x, nearest_y) = match self.nearest_point(x, y) {
-            Some(p) => p,
+            Some(point) => point,
             None => return Err(Error::IndexOutOfBounds),
         };
         let corner_points = match self.four_corners(&nearest_x, &nearest_y) {
-            Some(p) => p,
+            Some(point) => point,
             None => return Err(Error::IndexOutOfBounds),
         };
         let depth = self.interpolate(&corner_points, &(*x, *y));
@@ -97,13 +97,12 @@ impl BathymetryData for CartesianNetCDF3 {
             return Ok((f32::NAN, (f32::NAN, f32::NAN)));
         }
 
-        // find nearest and surrounding edge points
-        let nearest_pt = match self.nearest_point(x, y) {
-            Some(p) => p,
+        let (nearest_x, nearest_y) = match self.nearest_point(x, y) {
+            Some(point) => point,
             None => return Err(Error::IndexOutOfBounds),
         };
-        let corner_points = match self.four_corners(&nearest_pt.0, &nearest_pt.1) {
-            Some(p) => p,
+        let corner_points = match self.four_corners(&nearest_x, &nearest_y) {
+            Some(point) => point,
             None => return Err(Error::IndexOutOfBounds),
         };
 
@@ -469,12 +468,13 @@ impl CartesianNetCDF3 {
 #[cfg(test)]
 mod test_cartesian_file {
 
+    use tempfile::NamedTempFile;
+
     use crate::{
         bathymetry::{cartesian_netcdf3::CartesianNetCDF3, BathymetryData},
         error::Error,
         io::utility::create_netcdf3_bathymetry,
     };
-    use std::path::Path;
 
     /// create a file with four quadrants each with a different depth
     fn four_depth_fn(x: f32, y: f32) -> f64 {
@@ -494,27 +494,15 @@ mod test_cartesian_file {
     }
 
     #[test]
-    /// This test checks that the file was created.
-    fn test_create_test_bathymetry() {
-        // create temporary file
-        use lockfile::Lockfile;
-        let lockfile = Lockfile::create(Path::new("tmp_bathymetry1.nc")).unwrap();
-
-        create_netcdf3_bathymetry(lockfile.path(), 101, 51, 500.0, 500.0, four_depth_fn);
-
-        assert_eq!(lockfile.path(), Path::new("tmp_bathymetry1.nc"))
-    }
-
-    #[test]
     // test accessing and viewing variables
     fn test_vars() {
         // create temporary file
-        use lockfile::Lockfile;
-        let lockfile = Lockfile::create(Path::new("tmp_bathymetry2.nc")).unwrap();
+        let temp_file = NamedTempFile::new().unwrap();
+        let temp_path = temp_file.into_temp_path();
 
-        create_netcdf3_bathymetry(lockfile.path(), 101, 51, 500.0, 500.0, four_depth_fn);
+        create_netcdf3_bathymetry(&temp_path, 101, 51, 500.0, 500.0, four_depth_fn);
 
-        let data = CartesianNetCDF3::open(Path::new(lockfile.path()), "x", "y", "depth");
+        let data = CartesianNetCDF3::open(&temp_path, "x", "y", "depth");
         assert!((data.x_vector[10] - 5000.0).abs() < f32::EPSILON)
     }
 
@@ -522,12 +510,12 @@ mod test_cartesian_file {
     // test the and view the nearest function
     fn test_get_nearest() {
         // create temporary file
-        use lockfile::Lockfile;
-        let lockfile = Lockfile::create(Path::new("tmp_bathymetry3.nc")).unwrap();
+        let temp_file = NamedTempFile::new().unwrap();
+        let temp_path = temp_file.into_temp_path();
 
-        create_netcdf3_bathymetry(lockfile.path(), 101, 51, 500.0, 500.0, four_depth_fn);
+        create_netcdf3_bathymetry(&temp_path, 101, 51, 500.0, 500.0, four_depth_fn);
 
-        let data = CartesianNetCDF3::open(Path::new(lockfile.path()), "x", "y", "depth");
+        let data = CartesianNetCDF3::open(&temp_path, "x", "y", "depth");
         assert!(data.nearest(&5499.0, &data.x_vector) == 11);
     }
 
@@ -535,12 +523,12 @@ mod test_cartesian_file {
     // check the output from four_corners function
     fn test_get_corners() {
         // create temporary file
-        use lockfile::Lockfile;
-        let lockfile = Lockfile::create(Path::new("tmp_bathymetry4.nc")).unwrap();
+        let temp_file = NamedTempFile::new().unwrap();
+        let temp_path = temp_file.into_temp_path();
 
-        create_netcdf3_bathymetry(lockfile.path(), 101, 51, 500.0, 500.0, four_depth_fn);
+        create_netcdf3_bathymetry(&temp_path, 101, 51, 500.0, 500.0, four_depth_fn);
 
-        let data = CartesianNetCDF3::open(Path::new(lockfile.path()), "x", "y", "depth");
+        let data = CartesianNetCDF3::open(&temp_path, "x", "y", "depth");
         let corners = data.four_corners(&10, &10).unwrap();
         assert!(corners[0].0 == 10 && corners[0].1 == 11);
         assert!(corners[1].0 == 11 && corners[1].1 == 10);
@@ -552,12 +540,12 @@ mod test_cartesian_file {
     // check values inside the four quadrants but not on grid points
     fn test_depth() {
         // create temporary file
-        use lockfile::Lockfile;
-        let lockfile = Lockfile::create(Path::new("tmp_bathymetry5.nc")).unwrap();
+        let temp_file = NamedTempFile::new().unwrap();
+        let temp_path = temp_file.into_temp_path();
 
-        create_netcdf3_bathymetry(lockfile.path(), 101, 51, 500.0, 500.0, four_depth_fn);
+        create_netcdf3_bathymetry(&temp_path, 101, 51, 500.0, 500.0, four_depth_fn);
 
-        let data = CartesianNetCDF3::open(Path::new(lockfile.path()), "x", "y", "depth");
+        let data = CartesianNetCDF3::open(&temp_path, "x", "y", "depth");
 
         // check to see if depth is the same as above
         let check_depth = vec![
@@ -583,12 +571,12 @@ mod test_cartesian_file {
     /// is out of bounds in the x direction
     fn test_x_out_of_bounds() {
         // create temporary file
-        use lockfile::Lockfile;
-        let lockfile = Lockfile::create(Path::new("tmp_bathymetry6.nc")).unwrap();
+        let temp_file = NamedTempFile::new().unwrap();
+        let temp_path = temp_file.into_temp_path();
 
-        create_netcdf3_bathymetry(lockfile.path(), 101, 51, 500.0, 500.0, four_depth_fn);
+        create_netcdf3_bathymetry(&temp_path, 101, 51, 500.0, 500.0, four_depth_fn);
 
-        let data = CartesianNetCDF3::open(Path::new(lockfile.path()), "x", "y", "depth");
+        let data = CartesianNetCDF3::open(&temp_path, "x", "y", "depth");
         if let Error::IndexOutOfBounds = data.depth(&-500.1, &500.1).unwrap_err() {
             assert!(true);
         } else {
@@ -601,12 +589,12 @@ mod test_cartesian_file {
     /// is out of bounds in the y direction
     fn test_y_out_of_bounds() {
         // create temporary file
-        use lockfile::Lockfile;
-        let lockfile = Lockfile::create(Path::new("tmp_bathymetry7.nc")).unwrap();
+        let temp_file = NamedTempFile::new().unwrap();
+        let temp_path = temp_file.into_temp_path();
 
-        create_netcdf3_bathymetry(lockfile.path(), 101, 51, 500.0, 500.0, four_depth_fn);
+        create_netcdf3_bathymetry(&temp_path, 101, 51, 500.0, 500.0, four_depth_fn);
 
-        let data = CartesianNetCDF3::open(Path::new(lockfile.path()), "x", "y", "depth");
+        let data = CartesianNetCDF3::open(&temp_path, "x", "y", "depth");
         if let Error::IndexOutOfBounds = data.depth(&500.1, &-500.1).unwrap_err() {
             assert!(true);
         } else {
@@ -620,12 +608,12 @@ mod test_cartesian_file {
     // the nearest 4 corners.
     fn test_more_depths() {
         // create temporary file
-        use lockfile::Lockfile;
-        let lockfile = Lockfile::create(Path::new("tmp_bathymetry8.nc")).unwrap();
+        let temp_file = NamedTempFile::new().unwrap();
+        let temp_path = temp_file.into_temp_path();
 
-        create_netcdf3_bathymetry(lockfile.path(), 101, 51, 500.0, 500.0, four_depth_fn);
+        create_netcdf3_bathymetry(&temp_path, 101, 51, 500.0, 500.0, four_depth_fn);
 
-        let data = CartesianNetCDF3::open(Path::new(lockfile.path()), "x", "y", "depth");
+        let data = CartesianNetCDF3::open(&temp_path, "x", "y", "depth");
 
         // check to see if depth is the same as above
         let check_depth = vec![
@@ -649,12 +637,12 @@ mod test_cartesian_file {
     #[test]
     fn test_nan() {
         // create temporary file
-        use lockfile::Lockfile;
-        let lockfile = Lockfile::create(Path::new("tmp_bathymetry9.nc")).unwrap();
+        let temp_file = NamedTempFile::new().unwrap();
+        let temp_path = temp_file.into_temp_path();
 
-        create_netcdf3_bathymetry(lockfile.path(), 101, 51, 500.0, 500.0, four_depth_fn);
+        create_netcdf3_bathymetry(&temp_path, 101, 51, 500.0, 500.0, four_depth_fn);
 
-        let data = CartesianNetCDF3::open(Path::new(lockfile.path()), "x", "y", "depth");
+        let data = CartesianNetCDF3::open(&temp_path, "x", "y", "depth");
 
         let nan = f32::NAN;
 
@@ -666,16 +654,16 @@ mod test_cartesian_file {
     #[test]
     fn test_depth_and_gradient_x() {
         // create temporary file
-        use lockfile::Lockfile;
-        let lockfile = Lockfile::create(Path::new("tmp_bathymetry10.nc")).unwrap();
+        let temp_file = NamedTempFile::new().unwrap();
+        let temp_path = temp_file.into_temp_path();
 
         fn depth_fn(x: f32, _y: f32) -> f64 {
             x as f64 * 0.05
         }
 
-        create_netcdf3_bathymetry(lockfile.path(), 100, 100, 1.0, 1.0, depth_fn);
+        create_netcdf3_bathymetry(&temp_path, 100, 100, 1.0, 1.0, depth_fn);
 
-        let data = CartesianNetCDF3::open(Path::new(lockfile.path()), "x", "y", "depth");
+        let data = CartesianNetCDF3::open(&temp_path, "x", "y", "depth");
 
         // check to see if depth is the same as above
         let check_depth = vec![(10.0, 30.0, 0.5), (30.0, 10.0, 1.5)];
@@ -718,16 +706,16 @@ mod test_cartesian_file {
     #[test]
     fn test_depth_and_gradient_y() {
         // create temporary file
-        use lockfile::Lockfile;
-        let lockfile = Lockfile::create(Path::new("tmp_bathymetry11.nc")).unwrap();
+        let temp_file = NamedTempFile::new().unwrap();
+        let temp_path = temp_file.into_temp_path();
 
         fn depth_fn(_x: f32, y: f32) -> f64 {
             y as f64 * 0.05
         }
 
-        create_netcdf3_bathymetry(lockfile.path(), 100, 100, 1.0, 1.0, depth_fn);
+        create_netcdf3_bathymetry(&temp_path, 100, 100, 1.0, 1.0, depth_fn);
 
-        let data = CartesianNetCDF3::open(Path::new(lockfile.path()), "x", "y", "depth");
+        let data = CartesianNetCDF3::open(&temp_path, "x", "y", "depth");
 
         // check to see if depth is the same as above
         let check_depth = vec![(10.0, 30.0, 1.5), (30.0, 10.0, 0.5)];
