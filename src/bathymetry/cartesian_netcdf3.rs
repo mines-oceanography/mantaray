@@ -281,17 +281,40 @@ impl CartesianNetCDF3 {
     /// # Returns
     /// `usize`: index of closest value
     fn nearest(&self, target: &f32, arr: &[f32]) -> usize {
+        let mut left = 0;
+        let mut right = arr.len() - 1;
         let mut closest_index = 0;
-        let mut closest_distance = (target - arr[0]).abs();
+        let mut closest_distance = f32::MAX;
 
-        for (i, value) in arr.iter().enumerate().skip(1) {
-            let distance = (target - value).abs();
+        // edge cases
+        if *target <= arr[left] {
+            return left;
+        }
+        if *target >= arr[right] {
+            return right;
+        }
+
+        // binary search
+        while left <= right {
+            let mid = (left + right) / 2;
+            let distance = (target - arr[mid]).abs();
 
             if distance < closest_distance {
-                closest_index = i;
+                closest_index = mid;
                 closest_distance = distance;
             }
+
+            if arr[mid] == *target {
+                return mid;
+            }
+
+            if arr[mid] > *target {
+                right = mid - 1;
+            } else {
+                left = mid + 1;
+            }
         }
+
         closest_index
     }
 
