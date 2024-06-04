@@ -4,7 +4,7 @@ use ode_solvers::dop_shared::SolverResult;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    ray_result::RayResults,
+    ray_result::RayResult,
     wave_ray_path::{State, Time},
     write_json::WriteJson,
 };
@@ -12,13 +12,13 @@ use crate::{
 #[derive(Serialize, Deserialize, PartialEq, Debug)]
 /// Structure for containing the results of ray tracing a bundle of rays.
 /// Derives `serde` traits for serialization and deserialization.
-/// 
+///
 /// # Note:
 /// There is no constructor for this struct, as it is created from a
 /// `Vec<Option<SolverResult<Time, State>>>` using the `From` trait.
 pub struct BundleResult {
     /// a vector containing a `RayResults` for each ray in the bundle
-    rays: Vec<RayResults>,
+    rays: Vec<RayResult>,
 }
 
 impl WriteJson for BundleResult {}
@@ -28,10 +28,8 @@ impl From<Vec<Option<SolverResult<Time, State>>>> for BundleResult {
     fn from(value: Vec<Option<SolverResult<Time, State>>>) -> Self {
         let mut rays = Vec::new();
 
-        for option in value.iter() {
-            if let Some(solver_result) = option {
-                rays.push(solver_result.clone().into());
-            }
+        for solver_result in value.iter().flatten() {
+            rays.push(solver_result.clone().into());
         }
 
         BundleResult { rays }

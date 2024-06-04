@@ -1,18 +1,12 @@
 //! RayResults struct which holds the results of the ray tracing as vectors.
-//! Contains methods to convert from `SolverResult` and to `RayResults` and
-//! write using serde and serde_json.
-
-use std::fs::File;
-use std::io::BufWriter;
-use std::io::Write;
-use std::path::Path;
+//! Contains methods to convert from `SolverResult` to `RayResults`.
 
 use ode_solvers::dop_shared::SolverResult;
 use serde::Deserialize;
 use serde::Serialize;
 
-use crate::error::Result;
 use crate::wave_ray_path::{State, Time};
+use crate::write_json::WriteJson;
 
 #[derive(Serialize, Deserialize, PartialEq, Debug)]
 /// struct to hold the results of the ray tracing simulation as vectors. Note
@@ -65,60 +59,9 @@ impl RayResult {
             ky_vec,
         }
     }
-
-    /// Convert the `RayResults` struct to a JSON string.
-    ///
-    /// # Returns
-    ///
-    /// JSON string of the `RayResults` struct
-    pub fn as_json(&self) -> String {
-        serde_json::to_string(&self).unwrap()
-    }
-
-    /// Write the `RayResults` struct to a writer.
-    ///
-    /// # Arguments
-    ///
-    /// `writer` : `&mut W`
-    /// - object that implements `Write` to write the `RayResults` struct to
-    ///
-    /// # Returns
-    ///
-    /// `Ok(usize)` : the number of bytes written
-    ///
-    /// `Err(Error)` : an error occurred while writing
-    ///
-    /// # Note
-    ///
-    /// This method writes the `RayResults` struct as a JSON string.
-    pub fn write<W: Write>(&self, writer: &mut W) -> Result<usize> {
-        writer.write_all(self.as_json().as_bytes())?;
-        writer.flush()?;
-        Ok(self.as_json().as_bytes().len())
-    }
-
-    /// Save the `RayResults` struct to a file at the given path.
-    ///
-    /// # Arguments
-    ///
-    /// `path` : `&Path`
-    /// - the path to save the `RayResults` struct to
-    ///
-    /// # Returns
-    ///
-    /// `Ok(usize)` : the number of bytes written
-    ///
-    /// `Err(Error)` : an error occurred while writing
-    ///
-    /// # Note
-    ///
-    /// This method writes the `RayResults` struct as a JSON string at the given file path.
-    pub fn save_file(&self, path: &Path) -> Result<usize> {
-        let file = File::create(path)?;
-        let mut writer = BufWriter::new(file);
-        self.write(&mut writer)
-    }
 }
+
+impl WriteJson for RayResult {}
 
 impl From<SolverResult<Time, State>> for RayResult {
     /// convert the SolverResult to a RayResults struct

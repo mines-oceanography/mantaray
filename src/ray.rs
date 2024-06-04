@@ -1,10 +1,6 @@
 //! This module makes it easier to use the Rk4 ray tracing by encapsulating it
 //! with the SingleRay struct
 
-use std::fs::OpenOptions;
-use std::io::{BufWriter, Write};
-use std::path::Path;
-
 use ode_solvers::dop_shared::SolverResult;
 use rayon::prelude::*;
 
@@ -208,33 +204,6 @@ impl<'a> SingleRay<'a> {
 
         Ok(results.clone())
     }
-}
-
-#[allow(dead_code)]
-fn output_or_append_to_tsv_file(
-    file_path: &Path,
-    result: &SolverResult<Time, State>,
-) -> Result<()> {
-    let (x_out, y_out) = result.get();
-    let file = OpenOptions::new()
-        .create(true)
-        .append(true)
-        .open(file_path)?;
-    let mut writer = BufWriter::new(file);
-    writeln!(&mut writer, "t x y kx ky")?;
-    for (i, x) in x_out.iter().enumerate() {
-        if y_out[i][0].is_nan() {
-            break;
-        }
-        write!(&mut writer, "{} ", x)?;
-        for elem in y_out[i].iter() {
-            write!(&mut writer, "{} ", elem)?;
-        }
-        writeln!(&mut writer, " ")?;
-    }
-    writeln!(&mut writer, "END")?;
-    writer.flush()?;
-    Ok(())
 }
 
 #[cfg(test)]
