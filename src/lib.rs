@@ -24,6 +24,7 @@
 #![deny(missing_docs)]
 
 pub mod bathymetry;
+mod bundle_result;
 mod current;
 mod datatype;
 mod error;
@@ -34,6 +35,7 @@ pub mod ray;
 mod ray_result;
 /// cbindgen:ignore
 mod wave_ray_path;
+mod write_json;
 
 #[allow(unused_imports)]
 use datatype::{Coordinate, Current, Point};
