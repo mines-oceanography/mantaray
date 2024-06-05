@@ -1,0 +1,20 @@
+[project]
+name = "ray_tracing"
+version = "0.1.0"
+description = "Add a short description here"
+authors = ["Gui Castelao <guilherme@castelao.net>"]
+channels = ["conda-forge", "conda", "main"]
+platforms = ["osx-arm64", "linux-64", "win-64"]
+
+[tasks]
+build = "cargo build"
+test = "cargo test"
+fmt = "cargo fmt"
+lint = { cmd = "cargo clippy", depends_on = ["fmt"], env = {} }
+
+[dependencies]
+maturin = ">=1.5.1,<1.6"
+rust = ">=1.77.2,<1.78"
+python = ">=3.10"
+cffi = ">=1.16.0,<1.17"
+pip = ">=24.0,<25"
