@@ -17,6 +17,9 @@ nalgebra = "0.32.3"
 netcdf3 = "0.5.2"
 netcdf = {version = "0.9.1", features = ["static"]}
 ode_solvers = "0.4.0"
+pyo3 = { version = "0.20.0" }
+thiserror = "1.0.57"
+nalgebra = "0.32.3"
 rayon = "1.8.1"
 serde_json = "1.0.115"
 serde = {version="1.0", features=["derive"]}

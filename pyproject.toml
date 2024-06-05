@@ -22,10 +22,10 @@ dependencies = [
 #build = "cp310-*"
 
 [tool.maturin]
-bindings = "cffi"
+#bindings = "cffi"
 #compatibility = "linux"
-#features = ["pyo3/extension-module"]
-python-source = "python"
+features = ["pyo3/extension-module"]
+# python-source = "python"
 #profile = "release"
 #features = ["netcdf"]
 #manifest-path = "Cargo.toml"
@@ -36,4 +36,8 @@ python-source = "python"
 #sdist-generator = "cargo"
 
 #include = [{ path = "path/**/*", format = "sdist" }]
+#include = [
+#  { path = "include/ray_tracing.h", format = ["sdist","wheel"] },
+#  { path = "Cargo.*", format = ["sdist"] },
+#]
 
