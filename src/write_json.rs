@@ -19,7 +19,7 @@ pub trait WriteJson {
     /// # Returns
     ///
     /// json string of `Self`
-    fn as_json(&self) -> String
+    fn to_json_string(&self) -> String
     where
         Self: Serialize,
     {
@@ -42,13 +42,13 @@ pub trait WriteJson {
     /// # Note
     ///
     /// This method writes `Self` as a json string.
-    fn write<W: Write>(&self, writer: &mut W) -> Result<usize, Error>
+    fn write_json<W: Write>(&self, writer: &mut W) -> Result<usize, Error>
     where
         Self: Serialize,
     {
-        writer.write_all(self.as_json().as_bytes())?;
+        writer.write_all(self.to_json_string().as_bytes())?;
         writer.flush()?;
-        Ok(self.as_json().as_bytes().len())
+        Ok(self.to_json_string().as_bytes().len())
     }
 
     /// Save `Self` to a json file at the given path.
@@ -67,12 +67,12 @@ pub trait WriteJson {
     /// # Note
     ///
     /// This method writes `Self` as a json string at the given file path.
-    fn save_file(&self, path: &Path) -> Result<usize, Error>
+    fn save_json_file(&self, path: &Path) -> Result<usize, Error>
     where
         Self: Serialize,
     {
         let file = File::create(path)?;
         let mut writer = BufWriter::new(file);
-        self.write(&mut writer)
+        self.write_json(&mut writer)
     }
 }

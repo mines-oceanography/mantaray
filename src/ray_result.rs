@@ -13,11 +13,16 @@ use crate::write_json::WriteJson;
 /// that the vectors are not indexed by time, but by the number of steps of the
 /// simulation.
 pub struct RayResult {
-    t_vec: Vec<f64>,
-    x_vec: Vec<f64>,
-    y_vec: Vec<f64>,
-    kx_vec: Vec<f64>,
-    ky_vec: Vec<f64>,
+    /// vector of time values
+    t: Vec<f64>,
+    /// vector of x location values
+    x: Vec<f64>,
+    /// vector of y location values
+    y: Vec<f64>,
+    /// vector of kx values
+    kx: Vec<f64>,
+    /// vector of ky values
+    ky: Vec<f64>,
 }
 
 #[allow(dead_code)]
@@ -26,38 +31,26 @@ impl RayResult {
     ///
     /// # Arguments
     ///
-    /// `t_vec` : `Vec<f64>`
+    /// `t` : `Vec<f64>`
     /// - a vector of time values
     ///
-    /// `x_vec` : `Vec<f64>`
+    /// `x` : `Vec<f64>`
     /// - a vector of x values
     ///
-    /// `y_vec` : `Vec<f64>`
+    /// `y` : `Vec<f64>`
     /// - a vector of y values
     ///
-    /// `kx_vec` : `Vec<f64>`
+    /// `kx` : `Vec<f64>`
     /// - a vector of kx values
     ///
-    /// `ky_vec` : `Vec<f64>`
+    /// `ky` : `Vec<f64>`
     /// - a vector of ky values
     ///
     /// # Returns
     ///
     /// constructed `RayResults` struct
-    pub fn new(
-        t_vec: Vec<f64>,
-        x_vec: Vec<f64>,
-        y_vec: Vec<f64>,
-        kx_vec: Vec<f64>,
-        ky_vec: Vec<f64>,
-    ) -> Self {
-        RayResult {
-            t_vec,
-            x_vec,
-            y_vec,
-            kx_vec,
-            ky_vec,
-        }
+    pub fn new(t: Vec<f64>, x: Vec<f64>, y: Vec<f64>, kx: Vec<f64>, ky: Vec<f64>) -> Self {
+        RayResult { t, x, y, kx, ky }
     }
 }
 
@@ -68,11 +61,11 @@ impl From<SolverResult<Time, State>> for RayResult {
     fn from(value: SolverResult<Time, State>) -> Self {
         let (x_out, y_out) = value.get();
 
-        let mut t_vector = vec![];
-        let mut x_vector: Vec<f64> = vec![];
-        let mut y_vector: Vec<f64> = vec![];
-        let mut kx_vector: Vec<f64> = vec![];
-        let mut ky_vector: Vec<f64> = vec![];
+        let mut t: Vec<f64> = vec![];
+        let mut x: Vec<f64> = vec![];
+        let mut y: Vec<f64> = vec![];
+        let mut kx: Vec<f64> = vec![];
+        let mut ky: Vec<f64> = vec![];
 
         for (i, _) in x_out.iter().enumerate() {
             if y_out[i][0].is_nan()
@@ -82,14 +75,14 @@ impl From<SolverResult<Time, State>> for RayResult {
             {
                 break;
             }
-            t_vector.push(x_out[i]);
-            x_vector.push(y_out[i][0]);
-            y_vector.push(y_out[i][1]);
-            kx_vector.push(y_out[i][2]);
-            ky_vector.push(y_out[i][3]);
+            t.push(x_out[i]);
+            x.push(y_out[i][0]);
+            y.push(y_out[i][1]);
+            kx.push(y_out[i][2]);
+            ky.push(y_out[i][3]);
         }
 
-        RayResult::new(t_vector, x_vector, y_vector, kx_vector, ky_vector)
+        RayResult::new(t, x, y, kx, ky)
     }
 }
 
@@ -111,15 +104,15 @@ mod test_ray_result {
     }
 
     #[test]
-    /// test the as_json method
-    fn test_as_json() {
+    /// test the to_json_string method
+    fn test_to_json_string() {
         let ray_results = RayResult::new(vec![1.0], vec![2.0], vec![3.0], vec![4.0], vec![5.0]);
 
-        let json_string = ray_results.as_json();
+        let json_string = ray_results.to_json_string();
 
         assert_eq!(
             json_string,
-            "{\"t_vec\":[1.0],\"x_vec\":[2.0],\"y_vec\":[3.0],\"kx_vec\":[4.0],\"ky_vec\":[5.0]}"
+            "{\"t\":[1.0],\"x\":[2.0],\"y\":[3.0],\"kx\":[4.0],\"ky\":[5.0]}"
         );
     }
 
@@ -140,11 +133,11 @@ mod test_ray_result {
 
         let rr: RayResult = sr.into();
 
-        let json_string = rr.as_json();
+        let json_string = rr.to_json_string();
 
         assert_eq!(
             json_string,
-            "{\"t_vec\":[0.0],\"x_vec\":[1.0],\"y_vec\":[1.0],\"kx_vec\":[1.0],\"ky_vec\":[1.0]}"
+            "{\"t\":[0.0],\"x\":[1.0],\"y\":[1.0],\"kx\":[1.0],\"ky\":[1.0]}"
         );
     }
 }

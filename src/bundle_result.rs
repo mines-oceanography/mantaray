@@ -50,6 +50,6 @@ mod test_ray_bundle {
 
         let bundle_result = BundleResult::from(result);
 
-        assert_eq!(bundle_result.as_json(), "{\"rays\":[{\"t_vec\":[],\"x_vec\":[],\"y_vec\":[],\"kx_vec\":[],\"ky_vec\":[]},{\"t_vec\":[],\"x_vec\":[],\"y_vec\":[],\"kx_vec\":[],\"ky_vec\":[]}]}");
+        assert_eq!(bundle_result.to_json_string(), "{\"rays\":[{\"t\":[],\"x\":[],\"y\":[],\"kx\":[],\"ky\":[]},{\"t\":[],\"x\":[],\"y\":[],\"kx\":[],\"ky\":[]}]}");
     }
 }
