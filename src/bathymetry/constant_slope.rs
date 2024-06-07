@@ -1,3 +1,5 @@
+//! Struct used to create and access bathymetry data with a constant slope.
+
 use super::BathymetryData;
 use crate::error::Error;
 use derive_builder::Builder;

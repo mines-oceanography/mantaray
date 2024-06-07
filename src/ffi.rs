@@ -9,7 +9,7 @@ use std::str;
 use ode_solvers::dop_shared::SolverResult;
 use pyo3::prelude::*;
 
-use crate::bathymetry::CartesianNetCDF3;
+use crate::bathymetry::CartesianNetcdf3;
 use crate::current::CartesianCurrent;
 use crate::ray::SingleRay;
 
@@ -32,7 +32,7 @@ fn single_ray(
     bathymetry_filename: String,
     current_filename: String,
 ) -> PyResult<(Vec<(f64, f64, f64, f64, f64)>)> {
-    let bathymetry = CartesianNetCDF3::open(Path::new(&bathymetry_filename), "x", "y", "depth");
+    let bathymetry = CartesianNetcdf3::open(Path::new(&bathymetry_filename), "x", "y", "depth");
     let current = CartesianCurrent::open(Path::new(&current_filename), "x", "y", "u", "v");
     let wave = SingleRay::new(&bathymetry, Some(&current), x0, y0, kx0, ky0);
     let res = wave.trace_individual(0.0, duration, step_size).unwrap();
