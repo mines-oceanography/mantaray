@@ -215,13 +215,10 @@ impl<'a> WaveRayPath<'a> {
 }
 
 impl<'a> ode_solvers::System<Time, State> for WaveRayPath<'a> {
-    fn system(&self, t: Time, s: &State, ds: &mut State) {
+    fn system(&self, _t: Time, s: &State, ds: &mut State) {
         let (dxdt, dydt, dkxdt, dkydt) = match self.odes(&s[0], &s[1], &s[2], &s[3]) {
-            Err(e) => {
-                println!(
-                    "ERROR at time {}: \"{}\". Setting all further output to NaN.",
-                    t, e
-                );
+            Err(_) => {
+                // Error at time t. Setting all further output to NaN.
                 (f64::NAN, f64::NAN, f64::NAN, f64::NAN)
             }
             Ok(v) => v,
@@ -231,6 +228,17 @@ impl<'a> ode_solvers::System<Time, State> for WaveRayPath<'a> {
         ds[1] = dydt;
         ds[2] = dkxdt;
         ds[3] = dkydt;
+    }
+
+    fn solout(&mut self, _x: Time, y: &State, dy: &State) -> bool {
+        if (dy[0].is_nan() && dy[1].is_nan() && dy[2].is_nan() && dy[3].is_nan())
+            || (y[0].is_nan() && y[1].is_nan() && y[2].is_nan() && y[3].is_nan())
+        {
+            // NaN in derivatives or output. Likely reached end of current or bathy domain. Stopping integration.
+            true
+        } else {
+            false
+        }
     }
 }
 
@@ -558,6 +566,33 @@ mod test_constant_bathymetry {
             "Expected 0, got {}",
             ans.1
         )
+    }
+
+    #[test]
+    // test the solout function stops integration early
+    fn test_solout() {
+        let data: &dyn BathymetryData =
+            &ArrayDepth::new(vec![vec![1000.0, 1000.0], vec![1000.0, 1000.0]]);
+        let system = WaveRayPath::new(data, None);
+        let y0 = State::new(0.0, 0.0, 0.0, 1.0);
+
+        let t0 = 0.0;
+        let tf = 10.0;
+        let step_size = 1.0;
+
+        let mut stepper = Rk4::new(system, t0, y0, tf, step_size);
+        let _ = stepper.integrate();
+
+        // the integration stops much before the final time (10s)
+        assert_eq!(*(&stepper.results().get().0.len()), 3);
+
+        // the last time stamp should de NAN
+        let last_step = stepper.y_out().last().unwrap();
+
+        assert!(last_step.x.is_nan());
+        assert!(last_step.y.is_nan());
+        assert!(last_step.z.is_nan());
+        assert!(last_step.w.is_nan());
     }
 }
 
