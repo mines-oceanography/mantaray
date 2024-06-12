@@ -246,7 +246,6 @@ mod test_single_wave {
 
     use crate::{
         bathymetry::{BathymetryData, CartesianNetcdf3, ConstantDepth, ConstantSlope},
-       
         current::{CartesianCurrent, ConstantCurrent},
         io::utility::{create_netcdf3_bathymetry, create_netcdf3_current},
         ray_result::RayResult,
