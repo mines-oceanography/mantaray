@@ -10,15 +10,26 @@ use crate::{error::Error, interpolator};
 /// A struct that stores a netcdf3 dataset with methods to access, find nearest
 /// values, interpolate, and return depth and gradient.
 ///
+/// # Example
+/// Create a new `CartesianNetcdf3` struct from a netcdf3 file path and names of
+/// the variables. This will be used as an argument for the various ray tracing
+/// functions.
+/// ```
+/// use std::path::Path;
+/// use ray_tracing::bathymetry::CartesianNetcdf3;
+/// let path = Path::new("tests/data/island_slice.nc");
+/// let data = CartesianNetcdf3::open(&path, "x", "y", "depth");
+/// ```
+/// 
 /// # Note
 /// Currently, the methods do not know the difference between an out of bounds
 /// point and a point within one grid space from the edge. The nearest to each
 /// of these will be on the edge, so it will return None for both. In the
 /// future, the methods should be able to distinguish these two cases.
 ///
-/// In this struct, None is used when the function will not panic, but
-/// the value is not useful to the other structs. Error is used when the
-/// function would panic, so instead, it returns an error.
+/// In this struct, None is used when the function will not panic, but the value
+/// is not useful to the other structs. Error is used when the function would
+/// panic, so instead, it returns an error.
 pub struct CartesianNetcdf3 {
     /// a vector containing the x values from the netcdf3 file
     x: Vec<f32>,

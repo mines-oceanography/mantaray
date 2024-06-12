@@ -1,5 +1,17 @@
 //! Trait and structs for accessing depth and gradient from various bathymetry
 //! data.
+//! 
+//! The implementors of the `BathymetryData` trait are different types of
+//! bathymetry:
+//! - `CartesianNetcdf3` - read and access the data stored in a NetCDF3 file.
+//! - `ConstantDepth` - constant depth bathymetry. There are no domain
+//!   constraints on the input since the depth is defined by a constant value.
+//! - `ConstantSlope` - constant slope bathymetry. There are no domain
+//!   constraints on the input since the depth is defined by a function.
+//! 
+//! The following are used primarily for testing purposes:
+//! - `ArrayDepth` - used to create bathymetry data from an array. Useful for
+//!   creating purposefully out of bounds points.
 
 mod array_depth;
 pub mod cartesian_netcdf3;
@@ -10,7 +22,7 @@ use crate::error::Error;
 #[allow(unused_imports)]
 pub(super) use array_depth::ArrayDepth;
 #[allow(unused_imports)]
-pub(super) use cartesian_netcdf3::CartesianNetcdf3;
+pub use cartesian_netcdf3::CartesianNetcdf3;
 #[allow(unused_imports)]
 pub(super) use constant_depth::ConstantDepth;
 #[allow(unused_imports)]
