@@ -12,7 +12,7 @@ use ode_solvers::Rk4;
 
 use crate::current::CurrentData;
 use crate::{
-    bathymetry::BathymetryData, error::Error, wave_ray_path::State, wave_ray_path::Time,
+    bathymetry::BathymetryData, error::Result, wave_ray_path::State, wave_ray_path::Time,
     wave_ray_path::WaveRayPath,
 };
 
@@ -192,7 +192,7 @@ impl<'a> SingleRay<'a> {
         start_time: f64,
         end_time: f64,
         step_size: f64,
-    ) -> Result<SolverResult<Time, State>, Error> {
+    ) -> Result<SolverResult<Time, State>> {
         // do the calculations
         let system = WaveRayPath::new(self.bathymetry_data, self.current_data);
         let s0 = State::new(
@@ -214,7 +214,7 @@ impl<'a> SingleRay<'a> {
 fn output_or_append_to_tsv_file(
     file_path: &Path,
     result: &SolverResult<Time, State>,
-) -> Result<(), Error> {
+) -> Result<()> {
     let (x_out, y_out) = result.get();
     let file = OpenOptions::new()
         .create(true)

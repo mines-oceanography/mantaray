@@ -1,7 +1,7 @@
 //! Struct used to create and access bathymetry data with a constant depth.
 
 use super::BathymetryData;
-use crate::error::Error;
+use crate::error::Result;
 use derive_builder::Builder;
 
 #[derive(Builder, Debug, PartialEq)]
@@ -19,7 +19,7 @@ impl BathymetryData for ConstantDepth {
     /// Returns NaN when any input is NaN. Since it is a constant depth,
     /// there is no concept of boundaries, thus it can't fail as out of
     /// bounds.
-    fn depth(&self, x: &f32, y: &f32) -> Result<f32, Error> {
+    fn depth(&self, x: &f32, y: &f32) -> Result<f32> {
         if x.is_nan() || y.is_nan() {
             Ok(f32::NAN)
         } else {
@@ -32,7 +32,7 @@ impl BathymetryData for ConstantDepth {
     /// Returns NaN when any input is NaN. Since it is a constant depth,
     /// there is no concept of boundaries, thus it can't fail as out of
     /// bounds.
-    fn depth_and_gradient(&self, x: &f32, y: &f32) -> Result<(f32, (f32, f32)), Error> {
+    fn depth_and_gradient(&self, x: &f32, y: &f32) -> Result<(f32, (f32, f32))> {
         if x.is_nan() || y.is_nan() {
             Ok((f32::NAN, (f32::NAN, f32::NAN)))
         } else {

@@ -3,6 +3,7 @@
 //! Contains the bilinear_interpolator function
 
 use crate::error::Error;
+use crate::error::Result;
 
 #[allow(dead_code)]
 /// Bilinear interpolation
@@ -30,7 +31,7 @@ use crate::error::Error;
 /// The points must be in correct order since the function assumes they are. It
 /// will not give any error, but will return a value that is incorrect. In the
 /// future, this function will enforce order of the points.
-pub(crate) fn bilinear(points: &Vec<(f32, f32, f32)>, target: &(f32, f32)) -> Result<f32, Error> {
+pub(crate) fn bilinear(points: &Vec<(f32, f32, f32)>, target: &(f32, f32)) -> Result<f32> {
     // verify quadrilateral input
     if points.len() != 4 {
         return Err(Error::InvalidArgument);

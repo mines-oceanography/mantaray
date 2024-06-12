@@ -6,6 +6,7 @@
 use crate::bathymetry::BathymetryData;
 use crate::current::CurrentData;
 use crate::error::Error;
+use crate::error::Result;
 use derive_builder::Builder;
 use ode_solvers::*;
 
@@ -92,7 +93,7 @@ impl<'a> WaveRayPath<'a> {
     /// - y component of wavenumber vector
     ///
     /// # Returns
-    /// `Result<(f64, f64, f64, f64), Error>`
+    /// `Result<(f64, f64, f64, f64)>`
     /// - `Ok((f64, f64, f64, f64))` : a tuple of floats corresponding to (dxdt, dydt, dkxdt, dkydt).
     /// - `Err(Error)` : an error occured either getting the depth, or calculating the group velocity.
     ///
@@ -103,13 +104,7 @@ impl<'a> WaveRayPath<'a> {
     ///   `interpolator::bilinear` due to incorrect argument passed.
     /// `Error::ArgumentOutOfBounds`
     /// - If k is negative, group velocity will return this error.
-    pub fn odes(
-        &self,
-        x: &f64,
-        y: &f64,
-        kx: &f64,
-        ky: &f64,
-    ) -> Result<(f64, f64, f64, f64), Error> {
+    pub fn odes(&self, x: &f64, y: &f64, kx: &f64, ky: &f64) -> Result<(f64, f64, f64, f64)> {
         let (h, (dhdx, dhdy)) = self
             .bathy_data
             .depth_and_gradient(&(*x as f32), &(*y as f32))?;
@@ -154,7 +149,7 @@ impl<'a> WaveRayPath<'a> {
     ///
     /// # Returns
     ///
-    /// `Result<f64, Error>`
+    /// `Result<f64>`
     ///
     /// - `Ok(f64)` : returns the calculated group velocity as a float. Note: if `d`
     ///   is less then 0, it will return `f64::NAN`. In the future, this will return
@@ -167,7 +162,7 @@ impl<'a> WaveRayPath<'a> {
     /// `Error::ArgumentOutOfBounds`
     /// - If k is negative, group velocity will return this error.
     ///
-    pub(crate) fn group_velocity(&self, k: &f64, h: &f64) -> Result<f64, Error> {
+    pub(crate) fn group_velocity(&self, k: &f64, h: &f64) -> Result<f64> {
         if *h <= 0.0 {
             return Ok(f64::NAN);
         }

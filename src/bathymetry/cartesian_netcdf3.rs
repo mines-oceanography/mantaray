@@ -5,7 +5,10 @@ use std::path::Path;
 use netcdf3::{DataType, FileReader};
 
 use super::BathymetryData;
-use crate::{error::Error, interpolator};
+use crate::{
+    error::{Error, Result},
+    interpolator,
+};
 
 /// A struct that stores a netcdf3 dataset with methods to access, find nearest
 /// values, interpolate, and return depth and gradient.
@@ -20,7 +23,7 @@ use crate::{error::Error, interpolator};
 /// let path = Path::new("tests/data/island_slice.nc");
 /// let data = CartesianNetcdf3::open(&path, "x", "y", "depth");
 /// ```
-/// 
+///
 /// # Note
 /// Currently, the methods do not know the difference between an out of bounds
 /// point and a point within one grid space from the edge. The nearest to each
@@ -60,7 +63,7 @@ impl BathymetryData for CartesianNetcdf3 {
     /// input give an out of bounds output during the `interpolate` method.
     /// - `Error::InvalidArgument` : this error is returned from
     ///   `interpolator::bilinear` due to incorrect argument passed.
-    fn depth(&self, x: &f32, y: &f32) -> Result<f32, Error> {
+    fn depth(&self, x: &f32, y: &f32) -> Result<f32> {
         if x.is_nan() || y.is_nan() {
             return Ok(f32::NAN);
         }
@@ -73,9 +76,7 @@ impl BathymetryData for CartesianNetcdf3 {
             Some(point) => point,
             None => return Err(Error::IndexOutOfBounds),
         };
-        let depth = self.interpolate(&corner_points, &(*x, *y));
-
-        depth
+        self.interpolate(&corner_points, &(*x, *y))
     }
 
     /// Depth and gradient at the given (x ,y) coordinate.
@@ -97,7 +98,7 @@ impl BathymetryData for CartesianNetcdf3 {
     /// `x` or `y` input give an out of bounds output.
     /// - `Error::InvalidArgument` : this error is returned from
     ///   `interpolator::bilinear` due to incorrect argument passed.
-    fn depth_and_gradient(&self, x: &f32, y: &f32) -> Result<(f32, (f32, f32)), Error> {
+    fn depth_and_gradient(&self, x: &f32, y: &f32) -> Result<(f32, (f32, f32))> {
         if x.is_nan() || y.is_nan() {
             return Ok((f32::NAN, (f32::NAN, f32::NAN)));
         }
@@ -179,18 +180,8 @@ impl CartesianNetcdf3 {
                 .iter()
                 .map(|x| *x as f32)
                 .collect(),
-            DataType::I8 => x
-                .get_i8_into()
-                .unwrap()
-                .iter()
-                .map(|x| *x as f32)
-                .collect(),
-            DataType::U8 => x
-                .get_u8_into()
-                .unwrap()
-                .iter()
-                .map(|x| *x as f32)
-                .collect(),
+            DataType::I8 => x.get_i8_into().unwrap().iter().map(|x| *x as f32).collect(),
+            DataType::U8 => x.get_u8_into().unwrap().iter().map(|x| *x as f32).collect(),
             DataType::I32 => x
                 .get_i32_into()
                 .unwrap()
@@ -214,18 +205,8 @@ impl CartesianNetcdf3 {
                 .iter()
                 .map(|x| *x as f32)
                 .collect(),
-            DataType::I8 => y
-                .get_i8_into()
-                .unwrap()
-                .iter()
-                .map(|x| *x as f32)
-                .collect(),
-            DataType::U8 => y
-                .get_u8_into()
-                .unwrap()
-                .iter()
-                .map(|x| *x as f32)
-                .collect(),
+            DataType::I8 => y.get_i8_into().unwrap().iter().map(|x| *x as f32).collect(),
+            DataType::U8 => y.get_u8_into().unwrap().iter().map(|x| *x as f32).collect(),
             DataType::I32 => y
                 .get_i32_into()
                 .unwrap()
@@ -276,11 +257,7 @@ impl CartesianNetcdf3 {
                 .collect(),
         };
 
-        CartesianNetcdf3 {
-            x,
-            y,
-            depth,
-        }
+        CartesianNetcdf3 { x, y, depth }
     }
 
     /// Find the index of the closest value to the target in the array
@@ -378,8 +355,8 @@ impl CartesianNetcdf3 {
     /// # Returns
     /// `Option<Vec<(usize, usize)>>`
     /// - `Some(Vec<(usize, usize)>)` : corner points in surrounding given
-    ///   `x_index` and `y_index` in clockwise order.
-    /// - `None` : `x_index` or `y_index` is out of range and no value exists.
+    ///   `xindex` and `yindex` in clockwise order.
+    /// - `None` : `xindex` or `yindex` is out of range and no value exists.
     fn four_corners(&self, xindex: &usize, yindex: &usize) -> Option<Vec<(usize, usize)>> {
         if *xindex == 0
             || *yindex == 0
@@ -412,7 +389,7 @@ impl CartesianNetcdf3 {
     /// - interpolate the depth at this (x, y) point
     ///
     /// # Returns
-    /// `Result<f32, Error>`
+    /// `Result<f32>`
     /// - `Ok(f32)` : the depth at the target point
     /// - `Err(Error)` : cannot read depths from at coordinates in the `points`
     ///   vector.
@@ -426,7 +403,7 @@ impl CartesianNetcdf3 {
         &self,
         index_points: &[(usize, usize)],
         target_point: &(f32, f32),
-    ) -> Result<f32, Error> {
+    ) -> Result<f32> {
         let depth_points = vec![
             (
                 self.x[index_points[0].0],
@@ -462,7 +439,7 @@ impl CartesianNetcdf3 {
     /// - index of location in y array (row)
     ///
     /// # Returns
-    /// `Result<f32, Error>`
+    /// `Result<f32>`
     /// - `Ok(f32)` : depth
     /// - `Err(Error::IndexOutOfBounds)` : the combined index (x_length *
     ///   y_index + x_index) is out of bounds of the depth array.
@@ -470,7 +447,7 @@ impl CartesianNetcdf3 {
     /// # Errors
     /// `Err(Error::IndexOutOfBounds)` : this error is returned when `x_index`
     /// and `y_index` produce a value outside of the depth array.
-    fn depth_at_indexes(&self, xindex: &usize, yindex: &usize) -> Result<f32, Error> {
+    fn depth_at_indexes(&self, xindex: &usize, yindex: &usize) -> Result<f32> {
         let index = self.x.len() * yindex + xindex;
         if index >= self.depth.len() {
             return Err(Error::IndexOutOfBounds);
