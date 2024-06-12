@@ -12,7 +12,8 @@ fn test_sea_mount() {
         "x",
         "y",
         "depth",
-    );
+    )
+    .unwrap();
 
     // top half
     let initial_waves: Vec<(f64, f64, f64, f64)> = (0..10)

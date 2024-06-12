@@ -343,7 +343,7 @@ mod test_single_wave {
         create_netcdf3_bathymetry(&lockfile.path(), 100, 100, 1.0, 1.0, two_depth_fn);
 
         let bathymetry_data: &dyn BathymetryData =
-            &CartesianNetcdf3::open(&lockfile.path(), "x", "y", "depth");
+            &CartesianNetcdf3::open(&lockfile.path(), "x", "y", "depth").unwrap();
 
         let wave = SingleRay::new(bathymetry_data, None, 10.0, 50.0, 0.01, 0.0);
 
@@ -365,7 +365,7 @@ mod test_single_wave {
         create_netcdf3_bathymetry(&lockfile.path(), 100, 100, 1.0, 1.0, two_depth_fn);
 
         let bathymetry_data: &dyn BathymetryData =
-            &CartesianNetcdf3::open(&lockfile.path(), "x", "y", "depth");
+            &CartesianNetcdf3::open(&lockfile.path(), "x", "y", "depth").unwrap();
 
         let wave = SingleRay::new(bathymetry_data, None, 10.0, 10.0, 0.007, 0.007);
         let res = wave.trace_individual(0.0, 7.0, 1.0).unwrap();
@@ -383,7 +383,7 @@ mod test_single_wave {
         create_netcdf3_bathymetry(&lockfile.path(), 100, 100, 1.0, 1.0, two_depth_fn);
 
         let bathymetry_data: &dyn BathymetryData =
-            &CartesianNetcdf3::open(&lockfile.path(), "x", "y", "depth");
+            &CartesianNetcdf3::open(&lockfile.path(), "x", "y", "depth").unwrap();
 
         let wave = SingleRay::new(bathymetry_data, None, 10.0, 50.0, 1.0, 0.0);
 
@@ -403,7 +403,7 @@ mod test_single_wave {
         create_netcdf3_bathymetry(&lockfile.path(), 100, 100, 1.0, 1.0, two_depth_fn);
 
         let bathymetry_data: &dyn BathymetryData =
-            &CartesianNetcdf3::open(&lockfile.path(), "x", "y", "depth");
+            &CartesianNetcdf3::open(&lockfile.path(), "x", "y", "depth").unwrap();
 
         let wave = SingleRay::new(bathymetry_data, None, 10.0, 10.0, 0.7, 0.7);
         let res = wave.trace_individual(0.0, 40.0, 1.0).unwrap();

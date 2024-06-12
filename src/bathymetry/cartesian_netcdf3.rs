@@ -21,7 +21,7 @@ use crate::{
 /// use std::path::Path;
 /// use ray_tracing::bathymetry::CartesianNetcdf3;
 /// let path = Path::new("tests/data/island_slice.nc");
-/// let data = CartesianNetcdf3::open(&path, "x", "y", "depth");
+/// let data = CartesianNetcdf3::open(&path, "x", "y", "depth").unwrap();
 /// ```
 ///
 /// # Note
@@ -160,7 +160,8 @@ impl CartesianNetcdf3 {
     /// - the name of the depth variable in the netcdf3 file
     ///
     /// # Returns
-    /// `Self` : an initialized CartesianNetCDF3 struct
+    /// `Result<Self>` : an initialized CartesianNetCDF3 struct or a `ReadError`
+    /// from the netcdf3 crate.
     ///
     /// # Panics
     /// `new` will panic if the data type is invalid or if any of the names are
@@ -169,10 +170,10 @@ impl CartesianNetcdf3 {
     /// # Note
     /// in the future, be able to check attributes and verify that the file is
     /// correct.
-    pub fn open(path: &Path, xname: &str, yname: &str, depth_name: &str) -> Self {
-        let mut data = FileReader::open(path).unwrap();
+    pub fn open(path: &Path, xname: &str, yname: &str, depth_name: &str) -> Result<Self> {
+        let mut data = FileReader::open(path)?;
 
-        let x = data.read_var(xname).unwrap();
+        let x = data.read_var(xname)?;
         let x = match x.data_type() {
             DataType::I16 => x
                 .get_i16_into()
@@ -197,7 +198,7 @@ impl CartesianNetcdf3 {
                 .collect(),
         };
 
-        let y = data.read_var(yname).unwrap();
+        let y = data.read_var(yname)?;
         let y = match y.data_type() {
             DataType::I16 => y
                 .get_i16_into()
@@ -222,7 +223,7 @@ impl CartesianNetcdf3 {
                 .collect(),
         };
 
-        let depth = data.read_var(depth_name).unwrap();
+        let depth = data.read_var(depth_name)?;
         let depth = match depth.data_type() {
             DataType::I16 => depth
                 .get_i16_into()
@@ -257,7 +258,7 @@ impl CartesianNetcdf3 {
                 .collect(),
         };
 
-        CartesianNetcdf3 { x, y, depth }
+        Ok(CartesianNetcdf3 { x, y, depth })
     }
 
     /// Find the index of the closest value to the target in the array
@@ -493,7 +494,7 @@ mod test_cartesian_file {
 
         create_netcdf3_bathymetry(&temp_path, 101, 51, 500.0, 500.0, four_depth_fn);
 
-        let data = CartesianNetcdf3::open(&temp_path, "x", "y", "depth");
+        let data = CartesianNetcdf3::open(&temp_path, "x", "y", "depth").unwrap();
         assert!((data.x[10] - 5000.0).abs() < f32::EPSILON)
     }
 
@@ -506,7 +507,7 @@ mod test_cartesian_file {
 
         create_netcdf3_bathymetry(&temp_path, 101, 51, 500.0, 500.0, four_depth_fn);
 
-        let data = CartesianNetcdf3::open(&temp_path, "x", "y", "depth");
+        let data = CartesianNetcdf3::open(&temp_path, "x", "y", "depth").unwrap();
         assert!(data.nearest(&5499.0, &data.x) == 11);
     }
 
@@ -519,7 +520,7 @@ mod test_cartesian_file {
 
         create_netcdf3_bathymetry(&temp_path, 101, 51, 500.0, 500.0, four_depth_fn);
 
-        let data = CartesianNetcdf3::open(&temp_path, "x", "y", "depth");
+        let data = CartesianNetcdf3::open(&temp_path, "x", "y", "depth").unwrap();
         let corners = data.four_corners(&10, &10).unwrap();
         assert!(corners[0].0 == 10 && corners[0].1 == 11);
         assert!(corners[1].0 == 11 && corners[1].1 == 10);
@@ -536,7 +537,7 @@ mod test_cartesian_file {
 
         create_netcdf3_bathymetry(&temp_path, 101, 51, 500.0, 500.0, four_depth_fn);
 
-        let data = CartesianNetcdf3::open(&temp_path, "x", "y", "depth");
+        let data = CartesianNetcdf3::open(&temp_path, "x", "y", "depth").unwrap();
 
         // check to see if depth is the same as above
         let check_depth = vec![
@@ -567,7 +568,7 @@ mod test_cartesian_file {
 
         create_netcdf3_bathymetry(&temp_path, 101, 51, 500.0, 500.0, four_depth_fn);
 
-        let data = CartesianNetcdf3::open(&temp_path, "x", "y", "depth");
+        let data = CartesianNetcdf3::open(&temp_path, "x", "y", "depth").unwrap();
         if let Error::IndexOutOfBounds = data.depth(&-500.1, &500.1).unwrap_err() {
             assert!(true);
         } else {
@@ -585,7 +586,7 @@ mod test_cartesian_file {
 
         create_netcdf3_bathymetry(&temp_path, 101, 51, 500.0, 500.0, four_depth_fn);
 
-        let data = CartesianNetcdf3::open(&temp_path, "x", "y", "depth");
+        let data = CartesianNetcdf3::open(&temp_path, "x", "y", "depth").unwrap();
         if let Error::IndexOutOfBounds = data.depth(&500.1, &-500.1).unwrap_err() {
             assert!(true);
         } else {
@@ -604,7 +605,7 @@ mod test_cartesian_file {
 
         create_netcdf3_bathymetry(&temp_path, 101, 51, 500.0, 500.0, four_depth_fn);
 
-        let data = CartesianNetcdf3::open(&temp_path, "x", "y", "depth");
+        let data = CartesianNetcdf3::open(&temp_path, "x", "y", "depth").unwrap();
 
         // check to see if depth is the same as above
         let check_depth = vec![
@@ -633,7 +634,7 @@ mod test_cartesian_file {
 
         create_netcdf3_bathymetry(&temp_path, 101, 51, 500.0, 500.0, four_depth_fn);
 
-        let data = CartesianNetcdf3::open(&temp_path, "x", "y", "depth");
+        let data = CartesianNetcdf3::open(&temp_path, "x", "y", "depth").unwrap();
 
         let nan = f32::NAN;
 
@@ -654,7 +655,7 @@ mod test_cartesian_file {
 
         create_netcdf3_bathymetry(&temp_path, 100, 100, 1.0, 1.0, depth_fn);
 
-        let data = CartesianNetcdf3::open(&temp_path, "x", "y", "depth");
+        let data = CartesianNetcdf3::open(&temp_path, "x", "y", "depth").unwrap();
 
         // check to see if depth is the same as above
         let check_depth = vec![(10.0, 30.0, 0.5), (30.0, 10.0, 1.5)];
@@ -706,7 +707,7 @@ mod test_cartesian_file {
 
         create_netcdf3_bathymetry(&temp_path, 100, 100, 1.0, 1.0, depth_fn);
 
-        let data = CartesianNetcdf3::open(&temp_path, "x", "y", "depth");
+        let data = CartesianNetcdf3::open(&temp_path, "x", "y", "depth").unwrap();
 
         // check to see if depth is the same as above
         let check_depth = vec![(10.0, 30.0, 1.5), (30.0, 10.0, 0.5)];
