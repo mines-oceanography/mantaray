@@ -1,7 +1,4 @@
-//! WaveRayPath
-
-// enforce documentation
-#![deny(missing_docs)]
+//! WaveRayPath module
 
 use crate::bathymetry::BathymetryData;
 use crate::current::CurrentData;
@@ -26,7 +23,7 @@ pub(crate) type Time = f64;
 pub(crate) struct WaveRayPath<'a> {
     /// A reference to a BathymetryData trait object. The lifetime of
     /// WaveRayPath is restricted to the lifetime of this variable.
-    bathy_data: &'a dyn BathymetryData, // TODO: bathy_data should also be optional
+    bathymetry_data: &'a dyn BathymetryData, // TODO: bathymetry_data should also be optional
     #[builder(default = "None")]
     /// Optional reference to a CurrentData trait object. If this is None, the
     /// current will be assumed to be zero.
@@ -58,7 +55,7 @@ impl<'a> WaveRayPath<'a> {
         current_data: Option<&'a dyn CurrentData>,
     ) -> Self {
         WaveRayPath {
-            bathy_data: depth_data,
+            bathymetry_data: depth_data,
             current_data,
         }
     }
@@ -95,7 +92,7 @@ impl<'a> WaveRayPath<'a> {
     /// # Returns
     /// `Result<(f64, f64, f64, f64)>`
     /// - `Ok((f64, f64, f64, f64))` : a tuple of floats corresponding to (dxdt, dydt, dkxdt, dkydt).
-    /// - `Err(Error)` : an error occured either getting the depth, or calculating the group velocity.
+    /// - `Err(Error)` : an error occurred either getting the depth, or calculating the group velocity.
     ///
     /// # Errors
     /// - `Error::IndexOutOfBounds` : this error is returned when the
@@ -107,7 +104,7 @@ impl<'a> WaveRayPath<'a> {
     pub fn odes(&self, x: &f64, y: &f64, kx: &f64, ky: &f64) -> Result<(f64, f64, f64, f64)> {
         let point = crate::Point::new(*x, *y);
         let (h, (dhdx, dhdy)) = self
-            .bathy_data
+            .bathymetry_data
             .depth_and_gradient(&(*x as f32), &(*y as f32))?;
 
         let (u, v, dudx, dudy, dvdx, dvdy) = if let Some(cd) = self.current_data {
@@ -137,7 +134,7 @@ impl<'a> WaveRayPath<'a> {
         let dydt = cgy;
 
         let (dkxdt_bathy, dkydt_bathy) =
-            self.dk_vector_dt(&k_mag, &h, &(dhdx as f64), &(dhdy as f64));
+            self.dkdt_bathy(&k_mag, &h, &(dhdx as f64), &(dhdy as f64));
 
         let dkxdt = dkxdt_bathy - kx * dudx - ky * dvdx;
         let dkydt = dkydt_bathy - kx * dudy - ky * dvdy;
@@ -200,9 +197,10 @@ impl<'a> WaveRayPath<'a> {
     /// - the partial of depth with respect to y
     ///
     /// # Returns
-    /// `(f64, f64)` : values cooresponding to (dkx/dt, dky/dt)
-    pub(crate) fn dk_vector_dt(&self, k_mag: &f64, h: &f64, dhdx: &f64, dhdy: &f64) -> (f64, f64) {
-        let dkxdt_bathy = (-0.5) * k_mag * 1.0 / (k_mag * h).sinh() * 1.0 / (k_mag * h).cosh()
+    /// `(f64, f64)` : values corresponding to (dkx/dt, dky/dt)
+    pub(crate) fn dkdt_bathy(&self, k_mag: &f64, h: &f64, dhdx: &f64, dhdy: &f64) -> (f64, f64) {
+        let dkxdt_bathy = (-0.5) * k_mag * 1.0 / (k_mag * h).sinh() * 1.0
+            / (k_mag * h).cosh()
             * (G * k_mag * (k_mag * h).tanh()).sqrt()
             * dhdx;
         let dkydt_bathy = (-0.5) * k_mag * 1.0 / (k_mag * h).sinh() * 1.0 / (k_mag * h).cosh()
@@ -494,7 +492,7 @@ mod test_constant_bathymetry {
     }
 
     #[test]
-    /// test when d / wavelenth < 1 / 20
+    /// test when d / wavelength < 1 / 20
     fn test_shallow() {
         let data: &dyn BathymetryData = &ConstantDepth::new(0.1);
         // the approximation is the square root of gravity * h, but are not, they get closer as d approaches 0.
@@ -555,7 +553,7 @@ mod test_constant_bathymetry {
         let depth = ConstantDepth::new(1000.0);
         let wave_ray_path = WaveRayPath::new(&depth, None);
 
-        let ans = wave_ray_path.dk_vector_dt(&k_mag, &h, &dhdx, &dhdy);
+        let ans = wave_ray_path.dkdt_bathy(&k_mag, &h, &dhdx, &dhdy);
 
         assert!(
             (ans.0 - 0.0).abs() < f64::EPSILON,
@@ -611,19 +609,19 @@ mod test_current {
     /// test_constant_current and using the WaveRayPath from the builder. I am
     /// comparing the results using the function `odes` because it uses both the
     /// current and the bathymetry and will make sure both work.
-    fn test_waveraypath_builder() {
+    fn test_wave_ray_path_builder() {
         let bd = ConstantDepth::new(1000.0);
         let cd = ConstantCurrent::new(0.0, 0.0);
 
         // build pattern with supplying current data
         let wave = WaveRayPath::builder()
-            .bathy_data(&bd)
+            .bathymetry_data(&bd) 
             .current_data(Some(&cd))
             .build()
             .unwrap();
 
         // build pattern without supplying current data
-        let wave2 = WaveRayPath::builder().bathy_data(&bd).build().unwrap();
+        let wave2 = WaveRayPath::builder().bathymetry_data(&bd).build().unwrap();
 
         let results = [
             // (kx, ky, dxdt, dydt)
@@ -693,32 +691,32 @@ mod test_current {
         for (i, (kx, ky, ans_dxdt, ans_dydt)) in results.iter().enumerate() {
             let system = match i {
                 0 => WaveRayPath::builder()
-                    .bathy_data(bathy_data)
+                    .bathymetry_data(bathy_data)
                     .current_data(Some(current_data_1))
                     .build()
                     .unwrap(),
                 1 => WaveRayPath::builder()
-                    .bathy_data(bathy_data)
+                    .bathymetry_data(bathy_data)
                     .current_data(Some(current_data_2))
                     .build()
                     .unwrap(),
                 2 => WaveRayPath::builder()
-                    .bathy_data(bathy_data)
+                    .bathymetry_data(bathy_data)
                     .current_data(Some(current_data_3))
                     .build()
                     .unwrap(),
                 3 => WaveRayPath::builder()
-                    .bathy_data(bathy_data)
+                    .bathymetry_data(bathy_data)
                     .current_data(Some(current_data_4))
                     .build()
                     .unwrap(),
                 4 => WaveRayPath::builder()
-                    .bathy_data(bathy_data)
+                    .bathymetry_data(bathy_data)
                     .current_data(Some(current_data_5))
                     .build()
                     .unwrap(),
                 5 => WaveRayPath::builder()
-                    .bathy_data(bathy_data)
+                    .bathymetry_data(bathy_data)
                     .current_data(Some(current_data_6))
                     .build()
                     .unwrap(),
