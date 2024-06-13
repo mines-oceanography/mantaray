@@ -49,7 +49,7 @@ fn constant_depth_deep() {
         })
         .collect();
 
-    let rays = ManyRays::new(&bathymetry_data, current_data, &init_rays);
+    let rays = ManyRays::new(Some(&bathymetry_data), current_data, &init_rays);
 
     let results = rays.trace_many(0.0, 5000.0, 1.0);
 
@@ -121,7 +121,7 @@ fn constant_depth_shallow() {
         })
         .collect();
 
-    let rays = ManyRays::new(&bathymetry_data, current_data, &init_rays);
+    let rays = ManyRays::new(Some(&bathymetry_data), current_data, &init_rays);
 
     let results = rays.trace_many(0.0, 5000.0, 1.0);
 
