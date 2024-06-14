@@ -24,7 +24,7 @@ fn single_ray(
     filename: String,
 ) -> PyResult<(Vec<(f64, f64, f64, f64, f64)>)> {
     let bathymetry = CartesianFile::new(Path::new(&filename));
-    let wave = SingleRay::new(&bathymetry, x0, y0, kx0, ky0);
+    let wave = SingleRay::new(&bathymetry, None, x0, y0, kx0, ky0);
     let res = wave.trace_individual(0.0, duration, step_size).unwrap();
     let (t, s) = res.get();
     let ans: Vec<_> = t
