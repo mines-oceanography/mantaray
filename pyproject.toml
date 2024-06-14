@@ -1,0 +1,51 @@
+[build-system]
+requires = [
+  "maturin>=1.5,<2.0",
+  ]
+build-backend = "maturin"
+
+[project]
+name = "mantaray"
+version = "0.0.1"
+authors = [
+  {email = "bryceirving@mines.edu",  name = "Bryce Irving"},
+  {email = "guilherme@castelao.net",  name = "Guilherme Castelao"},
+  {email = "nicholas.pizzo@uri.edu",  name = "Nicholas Pizzo"},
+  {email = "villasboas@mines.edu",  name = "Bia Villas Boas"}
+]
+description = "Tracing rays"
+requires-python = ">=3.10"
+classifiers = [
+    "Programming Language :: Rust",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: Python :: Implementation :: PyPy",
+]
+dependencies = [
+  "cffi>=1.14.0",
+  "xarray>=2023",
+  ]
+
+#[tool.cibuildwheel]
+#build = "cp310-*"
+
+[tool.maturin]
+#bindings = "cffi"
+#compatibility = "linux"
+features = ["pyo3/extension-module"]
+module-name = "mantaray._mantaray"
+python-source = "python"
+#profile = "release"
+#features = ["netcdf"]
+#manifest-path = "Cargo.toml"
+# Strip the library for minimum file size
+#strip = true
+# Source distribution generator,
+# supports cargo (default) and git.
+#sdist-generator = "cargo"
+
+#include = [{ path = "path/**/*", format = "sdist" }]
+#include = [
+#  { path = "include/ray_tracing.h", format = ["sdist","wheel"] },
+#  { path = "Cargo.*", format = ["sdist"] },
+#]
+
