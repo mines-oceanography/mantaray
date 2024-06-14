@@ -11,6 +11,7 @@ build = "cargo build"
 test = "cargo test"
 fmt = "cargo fmt"
 lint = { cmd = "cargo clippy", depends_on = ["fmt"], env = {} }
+wheel = "maturin build"
 
 [dependencies]
 maturin = ">=1.5.1,<1.6"
