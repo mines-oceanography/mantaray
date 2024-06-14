@@ -7,6 +7,14 @@ build-backend = "maturin"
 
 [project]
 name = "mantaray"
+version = "0.0.1"
+authors = [
+  {email = "bryceirving@mines.edu",  name = "Bryce Irving"},
+  {email = "guilherme@castelao.net",  name = "Guilherme Castelao"},
+  {email = "nicholas.pizzo@uri.edu",  name = "Nicholas Pizzo"},
+  {email = "villasboas@mines.edu",  name = "Bia Villas Boas"}
+]
+description = "Tracing rays"
 requires-python = ">=3.10"
 classifiers = [
     "Programming Language :: Rust",

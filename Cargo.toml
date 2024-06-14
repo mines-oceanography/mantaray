@@ -1,6 +1,12 @@
 [package]
 name = "mantaray"
 version = "0.0.5"
+authors = [
+  "Bryce Irving <bryceirving@mines.edu>",
+  "Guilherme Castelao <guilherme@castelao.net>",
+  "Nicholas Pizzo <nicholas.pizzo@uri.edu>",
+  "Bia Villas Boas <villasboas@mines.edu>",
+]
 edition = "2021"
 rust-version = "1.76.0"
 
