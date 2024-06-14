@@ -149,7 +149,7 @@ impl<'a> SingleRay<'a> {
     ///
     /// # Returns
     /// `Self` : the new `SingleRay` struct
-    fn new(
+    pub(crate) fn new(
         bathymetry_data: &'a dyn BathymetryData,
         current_data: Option<&'a dyn CurrentData>,
         x0: f64,
@@ -187,7 +187,7 @@ impl<'a> SingleRay<'a> {
     /// # Note
     /// This struct still copies the data when it returns, which could be an
     /// inefficiency, but the arguments are now less.
-    fn trace_individual(
+    pub(crate) fn trace_individual(
         &self,
         start_time: f64,
         end_time: f64,
