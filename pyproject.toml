@@ -1,7 +1,6 @@
 [build-system]
 requires = [
   "maturin>=1.5,<2.0",
-  "cffi",
   ]
 build-backend = "maturin"
 
@@ -21,7 +20,6 @@ classifiers = [
     "Programming Language :: Python :: Implementation :: CPython",
     "Programming Language :: Python :: Implementation :: PyPy",
 ]
-dynamic = ["version"]
 dependencies = [
   "cffi>=1.14.0",
   ]
