@@ -37,7 +37,7 @@ fn single_ray(
 
 /// A Python module implemented in Rust.
 #[pymodule]
-fn mantaray(_py: Python, m: &PyModule) -> PyResult<()> {
+fn _mantaray(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(single_ray, m)?)?;
     Ok(())
 }
