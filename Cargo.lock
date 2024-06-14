@@ -393,6 +393,24 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "90ed8c1e510134f979dbc4f070f87d4313098b704861a105fe34231c70a3901c"
 
 [[package]]
+name = "mantaray"
+version = "0.0.5"
+dependencies = [
+ "cbindgen",
+ "derive_builder",
+ "libc",
+ "lockfile",
+ "nalgebra",
+ "netcdf",
+ "netcdf3",
+ "ode_solvers",
+ "pyo3",
+ "rayon",
+ "tempfile",
+ "thiserror",
+]
+
+[[package]]
 name = "matrixmultiply"
 version = "0.3.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
