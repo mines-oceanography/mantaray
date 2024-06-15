@@ -20,3 +20,8 @@ python = ">=3.10"
 cffi = ">=1.16.0,<1.17"
 pip = ">=24.0,<25"
 xarray = ">=2023"
+netcdf4 = ">=1.6.5,<1.7"
+ruff = ">=0.4.9,<0.5"
+
+[target.osx-arm64.build-dependencies]
+m4 = ">=1.4.18,<1.5"
