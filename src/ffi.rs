@@ -10,7 +10,15 @@ use ode_solvers::dop_shared::SolverResult;
 use pyo3::prelude::*;
 
 use crate::bathymetry::CartesianFile;
+use crate::current::CartesianCurrent;
 use crate::ray::SingleRay;
+
+/// A Python module implemented in Rust.
+#[pymodule]
+fn _mantaray(_py: Python, m: &PyModule) -> PyResult<()> {
+    m.add_function(wrap_pyfunction!(single_ray, m)?)?;
+    Ok(())
+}
 
 /// Formats the sum of two numbers as string.
 #[pyfunction]
@@ -21,10 +29,12 @@ fn single_ray(
     ky0: f64,
     duration: f64,
     step_size: f64,
-    filename: String,
+    bathymetry_filename: String,
+    current_filename: String,
 ) -> PyResult<(Vec<(f64, f64, f64, f64, f64)>)> {
-    let bathymetry = CartesianFile::new(Path::new(&filename));
-    let wave = SingleRay::new(&bathymetry, None, x0, y0, kx0, ky0);
+    let bathymetry = CartesianFile::new(Path::new(&bathymetry_filename));
+    let current = CartesianCurrent::open(Path::new(&current_filename), "x", "y", "u", "v");
+    let wave = SingleRay::new(&bathymetry, Some(&current), x0, y0, kx0, ky0);
     let res = wave.trace_individual(0.0, duration, step_size).unwrap();
     let (t, s) = res.get();
     let ans: Vec<_> = t
@@ -33,13 +43,6 @@ fn single_ray(
         .map(|(t, s)| (*t, s[0], s[1], s[2], s[3]))
         .collect();
     Ok(ans)
-}
-
-/// A Python module implemented in Rust.
-#[pymodule]
-fn _mantaray(_py: Python, m: &PyModule) -> PyResult<()> {
-    m.add_function(wrap_pyfunction!(single_ray, m)?)?;
-    Ok(())
 }
 
 /*
