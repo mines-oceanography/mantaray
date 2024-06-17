@@ -11,7 +11,7 @@ use ode_solvers::dop_shared::SolverResult;
 use serde::Deserialize;
 use serde::Serialize;
 
-use crate::error::Error;
+use crate::error::Result;
 use crate::wave_ray_path::{State, Time};
 
 #[derive(Serialize, Deserialize, PartialEq, Debug)]
@@ -91,7 +91,7 @@ impl RayResult {
     /// # Note
     ///
     /// This method writes the `RayResults` struct as a JSON string.
-    pub fn write<W: Write>(&self, writer: &mut W) -> Result<usize, Error> {
+    pub fn write<W: Write>(&self, writer: &mut W) -> Result<usize> {
         writer.write_all(self.as_json().as_bytes())?;
         writer.flush()?;
         Ok(self.as_json().as_bytes().len())
@@ -113,7 +113,7 @@ impl RayResult {
     /// # Note
     ///
     /// This method writes the `RayResults` struct as a JSON string at the given file path.
-    pub fn save_file(&self, path: &Path) -> Result<usize, Error> {
+    pub fn save_file(&self, path: &Path) -> Result<usize> {
         let file = File::create(path)?;
         let mut writer = BufWriter::new(file);
         self.write(&mut writer)

@@ -7,6 +7,7 @@ use netcdf3::{DataType, FileReader};
 
 use super::CurrentData;
 use crate::error::Error;
+use crate::error::Result;
 use crate::interpolator;
 
 #[derive(Debug)]
@@ -53,7 +54,13 @@ impl CartesianCurrent {
     /// # Note
     /// The variables `x`, `y`, `u`, `v` can be of any type that is in
     /// `netcdf3::DataType`.
-    pub(crate) fn open(path: &Path, x_name: &str, y_name: &str, u_name: &str, v_name: &str) -> Self {
+    pub(crate) fn open(
+        path: &Path,
+        x_name: &str,
+        y_name: &str,
+        u_name: &str,
+        v_name: &str,
+    ) -> Self {
         let mut data = FileReader::open(path).unwrap();
 
         let x_data = data.read_var(x_name).unwrap();
@@ -352,7 +359,7 @@ impl CartesianCurrent {
         points: &[(usize, usize)], // 4 points
         target: &(f32, f32),
         value_arr: &[f64],
-    ) -> Result<f32, Error> {
+    ) -> Result<f32> {
         if points.len() != 4 {
             return Err(Error::InvalidArgument);
         }
@@ -403,7 +410,7 @@ impl CartesianCurrent {
     /// # Errors
     /// `Err(Error::IndexOutOfBounds)` : this error is returned when `indx`
     /// and `indy` produce a value outside of the array.
-    fn val_from_arr(&self, indx: &usize, indy: &usize, arr: &[f64]) -> Result<f64, Error> {
+    fn val_from_arr(&self, indx: &usize, indy: &usize, arr: &[f64]) -> Result<f64> {
         let index = self.x_vec.len() * indy + indx;
         if index >= arr.len() {
             return Err(Error::IndexOutOfBounds);
@@ -430,7 +437,7 @@ impl CurrentData for CartesianCurrent {
     ///
     /// `Error::IndexOutOfBounds` : the point (x, y) is out of bounds of the
     /// data
-    fn current(&self, x: &f64, y: &f64) -> Result<(f64, f64), Error> {
+    fn current(&self, x: &f64, y: &f64) -> Result<(f64, f64)> {
         // get the nearest point
         let (indx, indy) = match self.nearest_point(x, y) {
             Some((indx, indy)) => (indx, indy),
@@ -467,11 +474,7 @@ impl CurrentData for CartesianCurrent {
     ///
     /// `Error::IndexOutOfBounds` : the point (x, y) is out of bounds of the
     /// data
-    fn current_and_gradient(
-        &self,
-        x: &f64,
-        y: &f64,
-    ) -> Result<((f64, f64), (f64, f64, f64, f64)), Error> {
+    fn current_and_gradient(&self, x: &f64, y: &f64) -> Result<((f64, f64), (f64, f64, f64, f64))> {
         // get the nearest point
         let (indx, indy) = match self.nearest_point(x, y) {
             Some((indx, indy)) => (indx, indy),

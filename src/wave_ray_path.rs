@@ -6,6 +6,7 @@
 use crate::bathymetry::BathymetryData;
 use crate::current::CurrentData;
 use crate::error::Error;
+use crate::error::Result;
 use derive_builder::Builder;
 use ode_solvers::*;
 
@@ -92,7 +93,7 @@ impl<'a> WaveRayPath<'a> {
     /// - y component of wavenumber vector
     ///
     /// # Returns
-    /// `Result<(f64, f64, f64, f64), Error>`
+    /// `Result<(f64, f64, f64, f64)>`
     /// - `Ok((f64, f64, f64, f64))` : a tuple of floats corresponding to (dxdt, dydt, dkxdt, dkydt).
     /// - `Err(Error)` : an error occured either getting the depth, or calculating the group velocity.
     ///
@@ -103,16 +104,10 @@ impl<'a> WaveRayPath<'a> {
     ///   `interpolator::bilinear` due to incorrect argument passed.
     /// `Error::ArgumentOutOfBounds`
     /// - If k is negative, group velocity will return this error.
-    pub fn odes(
-        &self,
-        x: &f64,
-        y: &f64,
-        kx: &f64,
-        ky: &f64,
-    ) -> Result<(f64, f64, f64, f64), Error> {
+    pub fn odes(&self, x: &f64, y: &f64, kx: &f64, ky: &f64) -> Result<(f64, f64, f64, f64)> {
         let (h, (dhdx, dhdy)) = self
             .bathy_data
-            .get_depth_and_gradient(&(*x as f32), &(*y as f32))?;
+            .depth_and_gradient(&(*x as f32), &(*y as f32))?;
 
         let (u, v, dudx, dudy, dvdx, dvdy) = if let Some(cd) = self.current_data {
             let ((u, v), (dudx, dudy, dvdx, dvdy)) = cd.current_and_gradient(x, y)?;
@@ -154,7 +149,7 @@ impl<'a> WaveRayPath<'a> {
     ///
     /// # Returns
     ///
-    /// `Result<f64, Error>`
+    /// `Result<f64>`
     ///
     /// - `Ok(f64)` : returns the calculated group velocity as a float. Note: if `d`
     ///   is less then 0, it will return `f64::NAN`. In the future, this will return
@@ -167,7 +162,7 @@ impl<'a> WaveRayPath<'a> {
     /// `Error::ArgumentOutOfBounds`
     /// - If k is negative, group velocity will return this error.
     ///
-    pub(crate) fn group_velocity(&self, k: &f64, h: &f64) -> Result<f64, Error> {
+    pub(crate) fn group_velocity(&self, k: &f64, h: &f64) -> Result<f64> {
         if *h <= 0.0 {
             return Ok(f64::NAN);
         }
@@ -199,12 +194,10 @@ impl<'a> WaveRayPath<'a> {
     /// # Returns
     /// `(f64, f64)` : values cooresponding to (dkx/dt, dky/dt)
     pub(crate) fn dk_vector_dt(&self, k_mag: &f64, h: &f64, dhdx: &f64, dhdy: &f64) -> (f64, f64) {
-        let dkxdt_bathy = (-0.5) * k_mag * 1.0 / (k_mag * h).sinh() * 1.0
-            / (k_mag * h).cosh()
+        let dkxdt_bathy = (-0.5) * k_mag * 1.0 / (k_mag * h).sinh() * 1.0 / (k_mag * h).cosh()
             * (G * k_mag * (k_mag * h).tanh()).sqrt()
             * dhdx;
-        let dkydt_bathy = (-0.5) * k_mag * 1.0 / (k_mag * h).sinh() * 1.0
-            / (k_mag * h).cosh()
+        let dkydt_bathy = (-0.5) * k_mag * 1.0 / (k_mag * h).sinh() * 1.0 / (k_mag * h).cosh()
             * (G * k_mag * (k_mag * h).tanh()).sqrt()
             * dhdy;
 
@@ -616,7 +609,7 @@ mod test_current {
 
         // build pattern with supplying current data
         let wave = WaveRayPath::builder()
-            .bathy_data(&bd) 
+            .bathy_data(&bd)
             .current_data(Some(&cd))
             .build()
             .unwrap();
