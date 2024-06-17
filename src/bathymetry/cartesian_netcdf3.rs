@@ -19,7 +19,7 @@ use crate::{
 /// functions.
 /// ```
 /// use std::path::Path;
-/// use ray_tracing::bathymetry::CartesianNetcdf3;
+/// use mantaray::bathymetry::CartesianNetcdf3;
 /// let path = Path::new("tests/data/island_slice.nc");
 /// let data = CartesianNetcdf3::open(&path, "x", "y", "depth").unwrap();
 /// ```
