@@ -1,33 +1,49 @@
-//! WaveRayPath module
+//! Struct and methods for calculating the ray path of a wave.
+//!
+//! The `WaveRayPath` struct contains references to the depth and current (or
+//! none if using defaults), and contains methods to calculate the change in
+//! state using the equations from `notes.md`.
+//!
+//! The `WaveRayPath` struct implements `ode_solvers`'s `system` and `solout`
+//! functions to use RK4 to numerically integrate these equations given the
+//! initial conditions.
+
+use derive_builder::Builder;
+use ode_solvers::*;
 
 use crate::bathymetry::BathymetryData;
 use crate::current::CurrentData;
 use crate::error::Error;
 use crate::error::Result;
-use derive_builder::Builder;
-use ode_solvers::*;
 
 /// constant for gravity
 const G: f64 = 9.8;
 
 /// state of the ray system for `ode_solvers`
 /// the values in the state are x, y, kx, ky
-/// for example: State::new(x, y, kx, ky)
+/// for example: `State::new(x, y, kx, ky)`
 pub type State = Vector4<f64>;
 
 /// time in seconds for `ode_solvers` to use
 pub(crate) type Time = f64;
 
 #[derive(Builder)]
-/// A struct that stores the bathymetry/depth data related to an individual ray.
+/// Stores the bathymetry and current data and calculates the system of odes
+/// that define the ray tracing.
+///
+/// This struct can be created in two ways:
+/// - using the `new` method, for example, `WaveRayPath::new(Some(&depth_data),
+///   Some(&current_data))`
+/// - using the `builder` method, for example,
+///   `WaveRayPath::builder().bathymetry_data(&depth_data).current_data(&current_data).build().unwrap()`
 pub(crate) struct WaveRayPath<'a> {
     #[builder(setter(strip_option), default = "None")]
-    /// A reference to a BathymetryData trait object. The lifetime of
-    /// WaveRayPath is restricted to the lifetime of this variable.
+    /// A reference to a BathymetryData trait object. If this is None, the depth
+    /// will be set to 2000 m.
     bathymetry_data: Option<&'a dyn BathymetryData>,
     #[builder(setter(strip_option), default = "None")]
     /// Optional reference to a CurrentData trait object. If this is None, the
-    /// current will be assumed to be zero.
+    /// current will be set to 0 m/s.
     current_data: Option<&'a dyn CurrentData>,
 }
 
@@ -39,32 +55,30 @@ impl<'a> WaveRayPath<'a> {
     ///
     /// `depth_data`: `Option<&'a dyn BathymetryData>`
     /// - an optional variable that implements the `BathymetryData` trait's
-    ///   `depth` methods. Note that the lifetime requires that the
-    ///   `WaveRayPath` struct will only live as long as the `BathymetryData` is
-    ///   available.
+    ///   `depth` methods. If this is `None`, the depth will be set to 2000
+    ///   m.
     ///
     /// `current_data`: `Option<&'a dyn CurrentData>`
     /// - an optional variable that implements the `CurrentData` trait's
     ///  `current_and_gradient` method. If this is `None`, the current will be
-    /// assumed to be zero.
-    ///
-    /// `step_size`: `f64`
-    /// - the change in time step used during Rk4 integration.
+    ///  set to 0 m/s.
     ///
     /// Returns: `Self` : the newly created `WaveRayPath`
     pub fn new(
-        depth_data: Option<&'a dyn BathymetryData>,
+        bathymetry_data: Option<&'a dyn BathymetryData>,
         current_data: Option<&'a dyn CurrentData>,
     ) -> Self {
         WaveRayPath {
-            bathymetry_data: depth_data,
+            bathymetry_data,
             current_data,
         }
     }
 
-    /// build design method
+    /// create a new `WaveRayPathBuilder` using the builder method
     ///
-    /// Used to create builder object then set each argument individually.
+    /// Used to create builder object then set each argument individually. For
+    /// example,
+    /// `WaveRayPath::builder().bathymetry_data(&depth_data).current_data(&current_data).build().unwrap()`
     ///
     /// # Returns
     /// `WaveRayPathBuilder<'a>` : the default WaveRayPathBuilder
@@ -74,9 +88,7 @@ impl<'a> WaveRayPath<'a> {
 
     /// Calculates system of odes from the given state
     ///
-    /// The state is defined by x, y, kx, and ky. Then, the group velocity, depth,
-    /// and depth gradient are calculated. The derivatives of the inputs are
-    /// calculated using the equations in notes.md.
+    /// See `notes.md` for more information
     ///
     /// # Arguments
     /// `x` : `&f64`
@@ -86,10 +98,10 @@ impl<'a> WaveRayPath<'a> {
     /// - the y coordinate in meters
     ///
     /// `kx` : `&f64`
-    /// - x component of wavenumber vector
+    /// - x component of wavenumber vector \[m^-1\]
     ///
     /// `ky` : `&f64`
-    /// - y component of wavenumber vector
+    /// - y component of wavenumber vector \[m^-1\]
     ///
     /// # Returns
     /// `Result<(f64, f64, f64, f64)>`
@@ -97,8 +109,8 @@ impl<'a> WaveRayPath<'a> {
     /// - `Err(Error)` : an error occurred either getting the depth, or calculating the group velocity.
     ///
     /// # Errors
-    /// - `Error::IndexOutOfBounds` : this error is returned when the
-    /// `x` or `y` input give an out of bounds output.
+    /// - `Error::IndexOutOfBounds` : this error is returned when the `x` or `y`
+    /// input give an out of bounds output.
     /// - `Error::InvalidArgument` : this error is returned from
     ///   `interpolator::bilinear` due to incorrect argument passed.
     /// `Error::ArgumentOutOfBounds`
@@ -111,6 +123,12 @@ impl<'a> WaveRayPath<'a> {
             (2000.0, (0.0, 0.0)) // default depth is 2000 m
         };
 
+        // depth and depth gradient are retrieved as f32, but needs to be used as f64
+        let h = h as f64;
+        let dhdx = dhdx as f64;
+        let dhdy = dhdy as f64;
+
+        // get the current and gradient from the current data or use default.
         let (u, v, dudx, dudy, dvdx, dvdy) = if let Some(cd) = self.current_data {
             let (current, (du, dv)) = cd.current_and_gradient(&point)?;
             (
@@ -125,20 +143,20 @@ impl<'a> WaveRayPath<'a> {
             (0.0, 0.0, 0.0, 0.0, 0.0, 0.0) // default current is 0 m/s
         };
 
-        let h = h as f64;
+        // magnitude and direction of the wavenumber
+        let k = (kx * kx + ky * ky).sqrt();
+        let theta = ky.atan2(*kx);
 
-        let k_mag = (kx * kx + ky * ky).sqrt();
-        let k_dir = ky.atan2(*kx);
-
-        let cg = self.group_velocity(&k_mag, &h)?;
-        let cgx = cg * k_dir.cos() + u;
-        let cgy = cg * k_dir.sin() + v;
+        // calculate the group velocity
+        let cg = self.group_velocity(&k, &h)?;
+        let cgx = cg * theta.cos() + u;
+        let cgy = cg * theta.sin() + v;
 
         let dxdt = cgx;
         let dydt = cgy;
 
-        let (dkxdt_bathy, dkydt_bathy) =
-            self.dkdt_bathy(&k_mag, &h, &(dhdx as f64), &(dhdy as f64));
+        // calculate dk/dt
+        let (dkxdt_bathy, dkydt_bathy) = self.dkdt_bathy(&k, &h, &dhdx, &dhdy);
 
         let dkxdt = dkxdt_bathy - kx * dudx - ky * dvdx;
         let dkydt = dkydt_bathy - kx * dudy - ky * dvdy;
@@ -151,7 +169,7 @@ impl<'a> WaveRayPath<'a> {
     /// # Arguments
     ///
     /// `k` : `&f64`
-    /// - The wavenumber \[m^-1\] should always be positive.
+    /// - The magnitude of the wavenumber \[m^-1\] should always be positive.
     ///
     /// `h` : `&f64`
     /// - The depth \[m\] in this case should be positive.
@@ -160,9 +178,9 @@ impl<'a> WaveRayPath<'a> {
     ///
     /// `Result<f64>`
     ///
-    /// - `Ok(f64)` : returns the calculated group velocity as a float. Note: if `d`
-    ///   is less then 0, it will return `f64::NAN`. In the future, this will return
-    ///   either an error or warning.
+    /// - `Ok(f64)` : returns the calculated group velocity as a float. Note: if
+    ///   `h` is less then 0, it will return `f64::NAN`. This represents the
+    ///   wave have no water to propagate in.
     ///
     /// - `Err(Error::ArgumentOutOfBounds)` : returns this error if k <= 0.
     ///
@@ -181,14 +199,13 @@ impl<'a> WaveRayPath<'a> {
         let cg = (G / 2.0)
             * (((k * h).tanh() + (k * h) / (k * h).cosh().powi(2))
                 / (k * G * (k * h).tanh()).sqrt());
-        // println!("The group velocity is: {}", cg);
         Ok(cg)
     }
 
     /// calculate the derivative of the wavenumber vector with respect to time
     ///
     /// # Arguments
-    /// `k_mag` : `&f64`
+    /// `k` : `&f64`
     /// - the magnitude of the wavenumber
     ///
     /// `h` : &f64`
@@ -202,15 +219,13 @@ impl<'a> WaveRayPath<'a> {
     ///
     /// # Returns
     /// `(f64, f64)` : values corresponding to (dkx/dt, dky/dt)
-    pub(crate) fn dkdt_bathy(&self, k_mag: &f64, h: &f64, dhdx: &f64, dhdy: &f64) -> (f64, f64) {
-        let dkxdt_bathy = (-0.5) * k_mag * 1.0 / (k_mag * h).sinh() * 1.0 / (k_mag * h).cosh()
-            * (G * k_mag * (k_mag * h).tanh()).sqrt()
+    fn dkdt_bathy(&self, k: &f64, h: &f64, dhdx: &f64, dhdy: &f64) -> (f64, f64) {
+        let dkxdt_bathy = (-0.5) * k * 1.0 / (k * h).sinh() * 1.0 / (k * h).cosh()
+            * (G * k * (k * h).tanh()).sqrt()
             * dhdx;
-        let dkydt_bathy = (-0.5) * k_mag * 1.0 / (k_mag * h).sinh() * 1.0 / (k_mag * h).cosh()
-            * (G * k_mag * (k_mag * h).tanh()).sqrt()
+        let dkydt_bathy = (-0.5) * k * 1.0 / (k * h).sinh() * 1.0 / (k * h).cosh()
+            * (G * k * (k * h).tanh()).sqrt()
             * dhdy;
-
-        //println!("The value for dkx/dt is {}", dkxdt);
 
         (dkxdt_bathy, dkydt_bathy)
     }
@@ -218,6 +233,7 @@ impl<'a> WaveRayPath<'a> {
 
 impl<'a> ode_solvers::System<Time, State> for WaveRayPath<'a> {
     fn system(&self, _t: Time, s: &State, ds: &mut State) {
+        // calculate the derivatives using the system of odes
         let (dxdt, dydt, dkxdt, dkydt) = match self.odes(&s[0], &s[1], &s[2], &s[3]) {
             Err(_) => {
                 // Error at time t. Setting all further output to NaN.
@@ -236,7 +252,8 @@ impl<'a> ode_solvers::System<Time, State> for WaveRayPath<'a> {
         if (dy[0].is_nan() && dy[1].is_nan() && dy[2].is_nan() && dy[3].is_nan())
             || (y[0].is_nan() && y[1].is_nan() && y[2].is_nan() && y[3].is_nan())
         {
-            // NaN in derivatives or output. Likely reached end of current or bathy domain. Stopping integration.
+            // NaN in derivatives or output. Likely reached end of current or
+            // bathy domain. Stopping integration.
             true
         } else {
             false
@@ -258,7 +275,7 @@ mod test_constant_bathymetry {
     /// - either ConstantDepth or ArrayDepth
     ///
     /// `check_axis` : `[(f64, f64, f64, f64); 4]`
-    /// - these are an array of kx, ky, x_final, y_final
+    /// - these are an array of kx, ky, final x, and final y
     ///
     /// # Panics
     /// If there is an error during integration of ode_solvers, this function will panic
