@@ -95,7 +95,7 @@ def create_plot(depth_arr, x_arr, y_arr, rays):
     
     # Color bar
     cbar = ax.figure.colorbar(im, ax=ax)
-    cbar.ax.set_ylabel("Depth", rotation=-90, va="bottom")
+    cbar.ax.set_ylabel("Depth [m]", rotation=-90, va="bottom")
     
     # Set number of ticks
     num_ticks = 10
@@ -109,9 +109,9 @@ def create_plot(depth_arr, x_arr, y_arr, rays):
     ax.set_yticklabels(y_ticks)
 
     # Set axes labels and title
-    ax.set_xlabel("x")
-    ax.set_ylabel("y")
-    ax.set_title("Graph of x(t), y(t)")
+    ax.set_xlabel("x [m]")
+    ax.set_ylabel("y [m]")
+    ax.set_title("ray paths")
     
     # Plot each ray
     for ray in rays:

@@ -1,2 +1,4 @@
+//! TODO: doc
+
 mod netcdf;
-pub(crate) mod utility;
+pub mod utility;

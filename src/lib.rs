@@ -29,7 +29,7 @@ mod datatype;
 mod error;
 mod ffi;
 mod interpolator;
-mod io;
+pub mod io;
 pub mod ray;
 mod ray_result;
 /// cbindgen:ignore

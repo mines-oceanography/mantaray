@@ -211,7 +211,8 @@ impl<'a> SingleRay<'a> {
 }
 
 #[allow(dead_code)]
-fn output_or_append_to_tsv_file(
+/// todo
+pub fn output_or_append_to_tsv_file(
     file_path: &Path,
     result: &SolverResult<Time, State>,
 ) -> Result<()> {

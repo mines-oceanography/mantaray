@@ -1,3 +1,5 @@
+//! TODO: doc
+
 use std::path::Path;
 
 #[allow(dead_code)]
@@ -16,7 +18,7 @@ use std::path::Path;
 ///
 /// `depth_fn` : `fn(f32,f32) -> f64` a function that maps each (x,y) input to
 /// the depth, h, at that point.
-pub(crate) fn create_netcdf3_bathymetry(
+pub fn create_netcdf3_bathymetry(
     path: &Path,
     x_num: usize,
     y_num: usize,
