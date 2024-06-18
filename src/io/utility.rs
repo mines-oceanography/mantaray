@@ -1,4 +1,7 @@
-//! TODO: doc
+//! Functions for creating Netcdf3 bathymetry and current files.
+//!
+//! Note that for the 2d array for depth or velocity, we use `y` variable to
+//! represent the row and `x` variable to represent the column.
 
 use std::path::Path;
 
@@ -18,6 +21,16 @@ use std::path::Path;
 ///
 /// `depth_fn` : `fn(f32,f32) -> f64` a function that maps each (x,y) input to
 /// the depth, h, at that point.
+/// 
+/// # Example
+/// Create a bathymetry file with a constant depth of 100 m
+/// ```
+/// use std::path::Path;
+/// use mantaray::io::utility::create_netcdf3_bathymetry;
+/// 
+/// let path = Path::new("constant_depth.nc");
+/// create_netcdf3_bathymetry(path, 10, 10, 100.0, 100.0, |_, _| 100.0)
+/// ```
 pub fn create_netcdf3_bathymetry(
     path: &Path,
     x_num: usize,

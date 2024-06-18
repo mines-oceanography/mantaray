@@ -36,7 +36,7 @@ fn horizontal_constant_depth_deep() {
     let tmp_file = NamedTempFile::new().unwrap();
     let tmp_path = tmp_file.into_temp_path();
 
-    // xlength = 100km, ylength = 50 km, and dx = dy = 0.5 km
+    // x length = 100km, y length = 50 km, and dx = dy = 0.5 km
     create_netcdf3_bathymetry(&tmp_path, 200, 100, 500.0, 500.0, depth_fn);
 
     // load the data

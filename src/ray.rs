@@ -211,7 +211,8 @@ impl<'a> SingleRay<'a> {
 }
 
 #[allow(dead_code)]
-/// todo
+/// Appends the result to the given file path or creates new file if it does not
+/// exist.
 pub fn output_or_append_to_tsv_file(
     file_path: &Path,
     result: &SolverResult<Time, State>,
