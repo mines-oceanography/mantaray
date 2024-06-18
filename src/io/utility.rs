@@ -25,11 +25,11 @@ use std::path::Path;
 /// # Example
 /// Create a bathymetry file with a constant depth of 100 m
 /// ```
-/// use std::path::Path;
+/// use tempfile::NamedTempFile;
 /// use mantaray::io::utility::create_netcdf3_bathymetry;
 /// 
-/// let path = Path::new("constant_depth.nc");
-/// create_netcdf3_bathymetry(path, 10, 10, 100.0, 100.0, |_, _| 100.0)
+/// let path = NamedTempFile::new().unwrap().into_temp_path();
+/// create_netcdf3_bathymetry(&path, 10, 10, 100.0, 100.0, |_, _| 100.0)
 /// ```
 pub fn create_netcdf3_bathymetry(
     path: &Path,

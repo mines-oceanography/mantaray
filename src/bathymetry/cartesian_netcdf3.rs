@@ -18,9 +18,15 @@ use crate::{
 /// the variables. This will be used as an argument for the various ray tracing
 /// functions.
 /// ```
-/// use std::path::Path;
+/// use tempfile::NamedTempFile;
 /// use mantaray::bathymetry::CartesianNetcdf3;
-/// let path = Path::new("tests/data/island_slice.nc");
+/// use mantaray::io::utility::create_netcdf3_bathymetry;
+///
+/// // create a path to the file (in this example we need to create a temporary file)
+/// let path = NamedTempFile::new().unwrap().into_temp_path();
+/// create_netcdf3_bathymetry(&path, 10, 10, 100.0, 100.0, |_,_| 2000.0);
+///
+/// // open the file
 /// let data = CartesianNetcdf3::open(&path, "x", "y", "depth").unwrap();
 /// ```
 ///
