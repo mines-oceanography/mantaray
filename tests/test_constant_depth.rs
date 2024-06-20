@@ -6,6 +6,12 @@ use mantaray::bathymetry::CartesianNetcdf3;
 use mantaray::bathymetry::ConstantDepth;
 use mantaray::io::utility::create_netcdf3_bathymetry;
 use mantaray::ray::ManyRays;
+use mantaray::State;
+
+const XINDEX: usize = 0;
+const YINDEX: usize = 1;
+const KX_INDEX: usize = 2;
+const KY_INDEX: usize = 3;
 
 #[cfg(test)]
 #[test]
@@ -38,24 +44,17 @@ fn constant_depth_deep() {
     let bathymetry_data = ConstantDepth::new(2000.0);
     let current_data = None; // default (u, v) = (0, 0)
 
-    let k = 0.05;
-    let xstart = 50_000.0;
-    let ystart = 25_000.0;
-
     // create 12 rays starting at the same point and in a circle with angle pi/6 between them
     let init_rays: Vec<(f64, f64, f64, f64)> = (0..12)
         .map(|i| {
             (
-                xstart,
-                ystart,
-                k * (PI * i as f64 / 6.0).cos(),
-                k * (PI * i as f64 / 6.0).sin(),
+                50_000.0,
+                25_000.0,
+                0.05 * (PI * i as f64 / 6.0).cos(),
+                0.05 * (PI * i as f64 / 6.0).sin(),
             )
         })
         .collect();
-
-    let kx_start: Vec<f64> = init_rays.clone().iter().map(|(_, _, kx, _)| *kx).collect();
-    let ky_start: Vec<f64> = init_rays.clone().iter().map(|(_, _, _, ky)| *ky).collect();
 
     let rays = ManyRays::new(&bathymetry_data, current_data, &init_rays);
 
@@ -63,61 +62,53 @@ fn constant_depth_deep() {
 
     for (i, ray) in results.iter().flatten().enumerate() {
         let (_, data) = &ray.get();
+        let (_, _, kx, ky) = init_rays.get(i).unwrap().to_owned();
 
-        // check whether x or y is increasing or decreasing by the sign on kx or ky
-        let kx = kx_start[i];
-        let ky = ky_start[i];
-
+        // x
         if (kx - 0.0).abs() < f64::EPSILON {
-            // x should stay the same
-            data.iter()
-                .filter(|v| !v[0].is_nan())
-                .for_each(|r| assert_eq!(r[0], xstart)); // x
+            assert_same(data, XINDEX);
         } else if kx.is_sign_positive() {
-            // x should increase
-            let mut last_x = data[0][0];
-            for r in data.iter().skip(1) {
-                assert!(r[0] > last_x);
-                last_x = r[0];
-            }
+            assert_increase(data, XINDEX);
         } else {
-            // x should decrease
-            let mut last_x = data[0][0];
-            for r in data.iter().skip(1) {
-                assert!(r[0] < last_x);
-                last_x = r[0];
-            }
+            assert_decrease(data, XINDEX);
         }
 
+        // y
         if (ky - 0.0).abs() < f64::EPSILON {
-            // y should stay the same
-            data.iter()
-                .filter(|v| !v[0].is_nan())
-                .for_each(|r| assert_eq!(r[1], ystart)); // y
+            assert_same(data, YINDEX);
         } else if ky.is_sign_positive() {
-            // y should increase
-            let mut last_y = data[0][1];
-            for r in data.iter().skip(1) {
-                assert!(r[1] > last_y);
-                last_y = r[1];
-            }
+            assert_increase(data, YINDEX);
         } else {
-            // y should decrease
-            let mut last_y = data[0][1];
-            for r in data.iter().skip(1) {
-                assert!(r[1] < last_y);
-                last_y = r[1];
-            }
+            assert_decrease(data, YINDEX);
         }
 
-        // kx and ky values stay the same (filtering out NaNs)
-        data.iter()
-            .filter(|v| !v[0].is_nan())
-            .for_each(|r| assert_eq!(r[2], kx)); // kx
-        data.iter()
-            .filter(|v| !v[0].is_nan())
-            .for_each(|r| assert_eq!(r[3], ky)); // ky
+        // kx and ky will be the same
+        assert_same(data, KX_INDEX);
+        assert_same(data, KY_INDEX);
     }
+}
+
+fn assert_increase(data: &Vec<State>, index: usize) {
+    let mut last = data[0][index];
+    for r in data.iter().skip(1) {
+        assert!(r[index] > last);
+        last = r[index];
+    }
+}
+
+fn assert_decrease(data: &Vec<State>, index: usize) {
+    let mut last = data[0][index];
+    for r in data.iter().skip(1) {
+        assert!(r[index] < last);
+        last = r[index];
+    }
+}
+
+fn assert_same(data: &Vec<State>, index: usize) {
+    let start_value = data[0][index];
+    data.iter()
+        .filter(|v| !v[0].is_nan())
+        .for_each(|r| assert_eq!(r[index], start_value));
 }
 
 #[cfg(test)]

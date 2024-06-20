@@ -37,3 +37,5 @@ mod wave_ray_path;
 
 #[allow(unused_imports)]
 use datatype::{Coordinate, Current, Point};
+#[allow(unused_imports)]
+pub use wave_ray_path::State;
