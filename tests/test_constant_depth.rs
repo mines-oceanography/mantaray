@@ -1,6 +1,7 @@
 use std::f64::consts::PI;
 
 use mantaray::bathymetry::ConstantDepth;
+use mantaray::current::ConstantCurrent;
 use mantaray::ray::ManyRays;
 
 // import the helper functions and types for integration testing
@@ -35,7 +36,7 @@ use helper::*;
 fn constant_depth_deep() {
     // load the data
     let bathymetry_data = ConstantDepth::new(2000.0);
-    let current_data = None; // default (u, v) = (0, 0)
+    let current_data = ConstantCurrent::new(0.0, 0.0); // default (u, v) = (0, 0)
 
     // create 12 rays starting at the same point and in a circle with angle pi/6 between them
     let init_rays: Vec<(f64, f64, f64, f64)> = (0..12)
@@ -49,7 +50,7 @@ fn constant_depth_deep() {
         })
         .collect();
 
-    let rays = ManyRays::new(Some(&bathymetry_data), current_data, &init_rays);
+    let rays = ManyRays::new(&bathymetry_data, &current_data, &init_rays);
 
     let results = rays.trace_many(0.0, 5000.0, 1.0);
 
@@ -107,7 +108,7 @@ fn constant_depth_deep() {
 /// equal to the initial condition at all points.
 fn constant_depth_shallow() {
     let bathymetry_data = ConstantDepth::new(10.0);
-    let current_data = None; // default (u, v) = (0, 0)
+    let current_data = ConstantCurrent::new(0.0, 0.0); // default (u, v) = (0, 0)
 
     // create 12 rays starting at the same point and in a circle with angle pi/6 between them
     let init_rays: Vec<(f64, f64, f64, f64)> = (0..12)
@@ -121,7 +122,7 @@ fn constant_depth_shallow() {
         })
         .collect();
 
-    let rays = ManyRays::new(Some(&bathymetry_data), current_data, &init_rays);
+    let rays = ManyRays::new(&bathymetry_data, &current_data, &init_rays);
 
     let results = rays.trace_many(0.0, 5000.0, 1.0);
 

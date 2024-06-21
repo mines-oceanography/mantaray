@@ -35,7 +35,7 @@ fn single_ray(
     let bathymetry = CartesianNetcdf3::open(Path::new(&bathymetry_filename), "x", "y", "depth")
         .expect("could not open bathymetry file");
     let current = CartesianCurrent::open(Path::new(&current_filename), "x", "y", "u", "v");
-    let wave = SingleRay::new(Some(&bathymetry), Some(&current), x0, y0, kx0, ky0);
+    let wave = SingleRay::new(&bathymetry, &current, x0, y0, kx0, ky0);
     let res = wave.trace_individual(0.0, duration, step_size).unwrap();
     let (t, s) = res.get();
     let ans: Vec<_> = t
@@ -66,7 +66,7 @@ fn ray_tracing(
         .zip(kx0.iter().zip(ky0.iter()))
         .map(|((x, y), (kx, ky))| (*x, *y, *kx, *ky))
         .collect::<Vec<_>>();
-    let waves = ManyRays::new(Some(&bathymetry), Some(&current), &init_cond);
+    let waves = ManyRays::new(&bathymetry, &current, &init_cond);
     let res = waves.trace_many(0.0, duration, step_size);
     let rays: Vec<Vec<(f64, f64, f64, f64, f64)>> = res
         .iter()
