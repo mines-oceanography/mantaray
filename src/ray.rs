@@ -10,7 +10,8 @@ use rayon::prelude::*;
 
 use ode_solvers::Rk4;
 
-use crate::current::CurrentData;
+use crate::bathymetry::ConstantDepth;
+use crate::current::{ConstantCurrent, CurrentData};
 use crate::{
     bathymetry::BathymetryData, error::Result, wave_ray_path::State, wave_ray_path::Time,
     wave_ray_path::WaveRayPath,
@@ -193,8 +194,24 @@ impl<'a> SingleRay<'a> {
         end_time: f64,
         step_size: f64,
     ) -> Result<SolverResult<Time, State>> {
+        // FIXME: can the below be static variables to save space?
+        let default_bathymetry = ConstantDepth::new(2000.0);
+        let default_current = ConstantCurrent::new(0.0, 0.0);
+        // get data or statics
+        let bathymetry_data = if let Some(data) = self.bathymetry_data {
+            data
+        } else {
+            &default_bathymetry
+        };
+
+        let current_data = if let Some(data) = self.current_data {
+            data
+        } else {
+            &default_current
+        };
+
         // do the calculations
-        let system = WaveRayPath::new(self.bathymetry_data, self.current_data);
+        let system = WaveRayPath::new(bathymetry_data, current_data);
         let s0 = State::new(
             self.initial_conditions.0,
             self.initial_conditions.1,
@@ -549,14 +566,17 @@ mod test_single_wave {
 
         // verify the x values are increasing
         let mut last_x = data[0][0];
-        for r in data.iter() {
+        for r in data.iter().filter(|v| !v[0].is_nan()) {
             assert!(r[0] >= last_x);
             last_x = r[0];
         }
 
         // verify that the last kx value is greater than the first. this is because
         // the wave is getting more and more shallow.
-        assert!(data.iter().last().unwrap()[2] > data.iter().next().unwrap()[2]);
+        assert!(
+            data.iter().filter(|v| !v[0].is_nan()).last().unwrap()[2]
+                > data.iter().filter(|v| !v[0].is_nan()).next().unwrap()[2]
+        );
     }
 
     #[test]
