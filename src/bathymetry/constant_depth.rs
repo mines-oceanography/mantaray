@@ -4,6 +4,10 @@ use super::BathymetryData;
 use crate::error::Result;
 use derive_builder::Builder;
 
+#[allow(dead_code)]
+/// The default depth is 2000 m
+pub(crate) const DEFAULT_BATHYMETRY: ConstantDepth = ConstantDepth { h: 2000.0 };
+
 #[derive(Builder, Debug, PartialEq)]
 /// A bathymetry database with constant depth
 ///

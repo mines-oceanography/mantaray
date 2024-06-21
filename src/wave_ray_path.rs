@@ -12,7 +12,9 @@ use derive_builder::Builder;
 use ode_solvers::*;
 
 use crate::bathymetry::BathymetryData;
+use crate::bathymetry::DEFAULT_BATHYMETRY;
 use crate::current::CurrentData;
+use crate::current::DEFAULT_CURRENT;
 use crate::error::Error;
 use crate::error::Result;
 
@@ -37,9 +39,11 @@ pub(crate) type Time = f64;
 /// - using the `builder` method, for example,
 ///   `WaveRayPath::builder().bathymetry_data(&depth_data).current_data(&current_data).build().unwrap()`
 pub(crate) struct WaveRayPath<'a> {
+    #[builder(default = "&DEFAULT_BATHYMETRY")]
     /// A reference to a BathymetryData trait object. If this is None, the depth
     /// will be set to 2000 m.
     bathymetry_data: &'a dyn BathymetryData,
+    #[builder(default = "&DEFAULT_CURRENT")]
     /// Optional reference to a CurrentData trait object. If this is None, the
     /// current will be set to 0 m/s.
     current_data: &'a dyn CurrentData,
@@ -647,6 +651,9 @@ mod test_current {
             .build()
             .unwrap();
 
+        // build pattern without supplying current data
+        let wave2 = WaveRayPath::builder().bathymetry_data(&bd).build().unwrap();
+
         let results = [
             // (kx, ky, dxdt, dydt)
             (1.0, 0.0, 1.565247584249853, 0.0),
@@ -659,6 +666,21 @@ mod test_current {
         // check the first wave
         for (kx, ky, ans_dxdt, ans_dydt) in results {
             let (dxdt, dydt, _, _) = wave.odes(&0.0, &0.0, &kx, &ky).unwrap();
+            assert!(
+                (ans_dxdt - dxdt).abs() < 1.0e-4 && (ans_dydt - dydt).abs() < 1.0e-4,
+                "ans_dxdt: {}, ans_dydt: {}, dxdt: {}, dydt: {}, kx: {}, ky: {}",
+                ans_dxdt,
+                ans_dydt,
+                dxdt,
+                dydt,
+                kx,
+                ky
+            );
+        }
+
+        // check the second wave
+        for (kx, ky, ans_dxdt, ans_dydt) in results {
+            let (dxdt, dydt, _, _) = wave2.odes(&0.0, &0.0, &kx, &ky).unwrap();
             assert!(
                 (ans_dxdt - dxdt).abs() < 1.0e-4 && (ans_dydt - dydt).abs() < 1.0e-4,
                 "ans_dxdt: {}, ans_dydt: {}, dxdt: {}, dydt: {}, kx: {}, ky: {}",

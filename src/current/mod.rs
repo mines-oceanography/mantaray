@@ -14,6 +14,8 @@ mod constant_current;
 pub(super) use cartesian_current::CartesianCurrent;
 #[allow(unused_imports)]
 pub(super) use constant_current::ConstantCurrent;
+#[allow(unused_imports)]
+pub(super) use constant_current::DEFAULT_CURRENT;
 
 pub trait CurrentData: Sync {
     /// Current (u, v) at the given (x, y)

@@ -10,8 +10,8 @@ use rayon::prelude::*;
 
 use ode_solvers::Rk4;
 
-use crate::bathymetry::ConstantDepth;
-use crate::current::{ConstantCurrent, CurrentData};
+use crate::bathymetry::DEFAULT_BATHYMETRY;
+use crate::current::{CurrentData, DEFAULT_CURRENT};
 use crate::{
     bathymetry::BathymetryData, error::Result, wave_ray_path::State, wave_ray_path::Time,
     wave_ray_path::WaveRayPath,
@@ -194,20 +194,17 @@ impl<'a> SingleRay<'a> {
         end_time: f64,
         step_size: f64,
     ) -> Result<SolverResult<Time, State>> {
-        // FIXME: can the below be static variables to save space?
-        let default_bathymetry = ConstantDepth::new(2000.0);
-        let default_current = ConstantCurrent::new(0.0, 0.0);
-        // get data or statics
+        // get data or defaults
         let bathymetry_data = if let Some(data) = self.bathymetry_data {
             data
         } else {
-            &default_bathymetry
+            &DEFAULT_BATHYMETRY
         };
 
         let current_data = if let Some(data) = self.current_data {
             data
         } else {
-            &default_current
+            &DEFAULT_CURRENT
         };
 
         // do the calculations

@@ -26,6 +26,8 @@ pub use cartesian_netcdf3::CartesianNetcdf3;
 #[allow(unused_imports)]
 pub use constant_depth::ConstantDepth;
 #[allow(unused_imports)]
+pub(super) use constant_depth::DEFAULT_BATHYMETRY;
+#[allow(unused_imports)]
 pub(super) use constant_slope::ConstantSlope;
 
 /// A trait defining ability to return depth and gradient
