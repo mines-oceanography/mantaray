@@ -24,7 +24,7 @@
 #![deny(missing_docs)]
 
 pub mod bathymetry;
-mod current;
+pub mod current;
 mod datatype;
 mod error;
 mod ffi;

@@ -1,3 +1,5 @@
+//! todo
+
 use crate::datatype::{Current, Gradient, Point};
 use crate::error::Result;
 
@@ -10,7 +12,7 @@ use super::CurrentData;
 /// * `u`: `f64` value representing x component of the current.
 ///
 /// * `v`: `f64` value representing y component of the current.
-pub(crate) struct ConstantCurrent {
+pub struct ConstantCurrent {
     /// x component of the current
     u: f64,
     /// y component of the current
@@ -23,7 +25,7 @@ impl ConstantCurrent {
     ///
     /// # Returns
     /// returns the constructed ConstantCurrent
-    pub(crate) fn new(u: f64, v: f64) -> Self {
+    pub fn new(u: f64, v: f64) -> Self {
         ConstantCurrent { u, v }
     }
 }
