@@ -69,17 +69,12 @@ fn test_deep_linear_beach_right() {
     same(data, KY_INDEX);
 
     // kx same until beach, where it will be >= to start
-    let mut last_kx = data[0][KX_INDEX];
-    for state in data.iter().filter(|v| !v[0].is_nan()).skip(1) {
-        let x = state[XINDEX];
-        let kx = state[KX_INDEX];
-        if x < 50_000.0 {
-            assert_eq!(last_kx, kx);
-            last_kx = kx;
-        } else {
-            assert!(kx >= last_kx);
-        }
-    }
+    assert_can_increase_after(data, KX_INDEX, |state| state[0] >= 50_000.0);
+    // verify last kx should be greater than first
+    assert!(
+        data.iter().filter(|v| !v[0].is_nan()).last().unwrap()[KX_INDEX]
+            > data.iter().filter(|v| !v[0].is_nan()).next().unwrap()[KX_INDEX]
+    );
 
     // verify the down ray
     let (_, data) = down_result.get();
@@ -88,17 +83,12 @@ fn test_deep_linear_beach_right() {
     same(data, KY_INDEX);
 
     // kx same until beach, where it will be >= to start
-    let mut last_kx = data[0][KX_INDEX];
-    for state in data.iter().filter(|v| !v[0].is_nan()).skip(1) {
-        let x = state[XINDEX];
-        let kx = state[KX_INDEX];
-        if x < 50_000.0 {
-            assert_eq!(last_kx, kx);
-            last_kx = kx;
-        } else {
-            assert!(kx >= last_kx);
-        }
-    }
+    assert_can_increase_after(data, KX_INDEX, |state| state[0] >= 50_000.0);
+    // verify last kx should be greater than first
+    assert!(
+        data.iter().filter(|v| !v[0].is_nan()).last().unwrap()[KX_INDEX]
+            > data.iter().filter(|v| !v[0].is_nan()).next().unwrap()[KX_INDEX]
+    );
 
     // verify the straight ray
     let (_, data) = straight_result.get();
@@ -107,15 +97,10 @@ fn test_deep_linear_beach_right() {
     same(data, KY_INDEX);
 
     // kx same until beach, where it will be >= to start
-    let mut last_kx = data[0][KX_INDEX];
-    for state in data.iter().filter(|v| !v[0].is_nan()).skip(1) {
-        let x = state[XINDEX];
-        let kx = state[KX_INDEX];
-        if x < 50_000.0 {
-            assert_eq!(last_kx, kx);
-            last_kx = kx;
-        } else {
-            assert!(kx >= last_kx);
-        }
-    }
+    assert_can_increase_after(data, KX_INDEX, |state| state[0] >= 50_000.0);
+    // verify last kx should be greater than first
+    assert!(
+        data.iter().filter(|v| !v[0].is_nan()).last().unwrap()[KX_INDEX]
+            > data.iter().filter(|v| !v[0].is_nan()).next().unwrap()[KX_INDEX]
+    );
 }
