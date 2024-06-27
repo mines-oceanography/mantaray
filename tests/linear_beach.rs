@@ -104,3 +104,97 @@ fn test_deep_linear_beach_right() {
             > data.iter().filter(|v| !v[0].is_nan()).next().unwrap()[KX_INDEX]
     );
 }
+
+#[test]
+fn test_deep_linear_beach_left() {
+    // create file for the bathymetry data
+    let temp_path = NamedTempFile::new().unwrap().into_temp_path();
+
+    // beach on right
+    create_netcdf3_bathymetry(&temp_path, 200, 100, 500.0, 500.0, |x, _y| {
+        if x > 50_000.0 {
+            2000.0
+        } else if x < 10_000.0 {
+            0.0
+        } else {
+            0.05 * (x - 10_000.0) as f64
+        }
+    });
+
+    let bathymetry_data = CartesianNetcdf3::open(&temp_path, "x", "y", "depth").unwrap();
+    let current_data = ConstantCurrent::new(0.0, 0.0);
+
+    let k = 0.05;
+
+    let up_ray = (
+        90_000.0,
+        1_000.0,
+        k * (5.0 * PI / 6.0).cos(),
+        k * (5.0 * PI / 6.0).sin(),
+    );
+
+    let down_ray = (
+        90_000.0,
+        49_000.0,
+        k * (-5.0 * PI / 6.0).cos(),
+        k * (-5.0 * PI / 6.0).sin(),
+    );
+
+    let straight_ray = (90_000.0, 25_000.0, -k, 0.0);
+
+    let initial_rays = vec![up_ray, down_ray, straight_ray];
+
+    let waves = ManyRays::new(&bathymetry_data, Some(&current_data), &initial_rays);
+
+    let results = waves.trace_many(0.0, 100_000.0, 1.0);
+
+    let mut results_iter = results.iter().flatten();
+
+    // order is up, down, straight
+    let up_result = results_iter.next().unwrap();
+    let down_result = results_iter.next().unwrap();
+    let straight_result = results_iter.next().unwrap();
+    assert!(results_iter.next().is_none());
+
+    // verify up ray
+    let (_, data) = up_result.get();
+    assert_decrease(data, XINDEX);
+    assert_increase(data, YINDEX);
+    assert_same(data, KY_INDEX);
+
+    // kx same until beach, where it will be <= to start
+    assert_can_decrease_after(data, KX_INDEX, |state| state[0] <= 50_000.0);
+    // verify last kx should be less than first (started negative)
+    assert!(
+        data.iter().filter(|v| !v[0].is_nan()).last().unwrap()[KX_INDEX]
+            < data.iter().filter(|v| !v[0].is_nan()).next().unwrap()[KX_INDEX]
+    );
+
+    // verify the down ray
+    let (_, data) = down_result.get();
+    assert_decrease(data, XINDEX);
+    assert_decrease(data, YINDEX);
+    assert_same(data, KY_INDEX);
+
+    // kx same until beach, where it will be <= to start
+    assert_can_decrease_after(data, KX_INDEX, |state| state[0] <= 50_000.0);
+    // verify last kx should be less than first (started negative)
+    assert!(
+        data.iter().filter(|v| !v[0].is_nan()).last().unwrap()[KX_INDEX]
+            < data.iter().filter(|v| !v[0].is_nan()).next().unwrap()[KX_INDEX]
+    );
+
+    // verify the straight ray
+    let (_, data) = straight_result.get();
+    assert_decrease(data, XINDEX);
+    assert_same(data, YINDEX);
+    assert_same(data, KY_INDEX);
+
+    // kx same until beach, where it will be <= to start
+    assert_can_decrease_after(data, KX_INDEX, |state| state[0] <= 50_000.0);
+    // verify last kx should be less than first (started negative)
+    assert!(
+        data.iter().filter(|v| !v[0].is_nan()).last().unwrap()[KX_INDEX]
+            < data.iter().filter(|v| !v[0].is_nan()).next().unwrap()[KX_INDEX]
+    );
+}

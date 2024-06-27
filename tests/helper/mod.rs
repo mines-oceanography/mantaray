@@ -52,9 +52,25 @@ pub fn assert_can_increase_after(data: &Vec<State>, index: usize, condition: fn(
         let value = state[KX_INDEX];
         if !condition(state) {
             assert_eq!(last_value, value);
-            last_value = value;
         } else {
             assert!(value >= last_value);
         }
+        last_value = value;
+    }
+}
+
+/// assert that the value at the given index stays the same until the condition.
+/// After that point, the value can be less than or equal to the previous
+/// value.
+pub fn assert_can_decrease_after(data: &Vec<State>, index: usize, condition: fn(&State) -> bool) {
+    let mut last_value = data[0][index];
+    for state in data.iter().filter(|v| !v[0].is_nan()).skip(1) {
+        let value = state[KX_INDEX];
+        if !condition(state) {
+            assert_eq!(last_value, value);
+        } else {
+            assert!(value <= last_value);
+        }
+        last_value = value;
     }
 }
