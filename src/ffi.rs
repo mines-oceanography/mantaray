@@ -11,16 +11,16 @@ use pyo3::prelude::*;
 
 use crate::bathymetry::CartesianNetcdf3;
 use crate::current::CartesianCurrent;
-use crate::ray::SingleRay;
+use crate::ray::{ManyRays, SingleRay};
 
 /// A Python module implemented in Rust.
 #[pymodule]
-fn _mantaray(_py: Python, m: &PyModule) -> PyResult<()> {
+fn _mantaray(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(single_ray, m)?)?;
+    m.add_function(wrap_pyfunction!(ray_tracing, m)?)?;
     Ok(())
 }
 
-/// Formats the sum of two numbers as string.
 #[pyfunction]
 fn single_ray(
     x0: f64,
@@ -44,6 +44,42 @@ fn single_ray(
         .map(|(t, s)| (*t, s[0], s[1], s[2], s[3]))
         .collect();
     Ok(ans)
+}
+
+#[pyfunction]
+fn ray_tracing(
+    x0: Vec<f64>,
+    y0: Vec<f64>,
+    kx0: Vec<f64>,
+    ky0: Vec<f64>,
+    duration: f64,
+    step_size: f64,
+    bathymetry_filename: String,
+    current_filename: String,
+) -> PyResult<(Vec<Vec<(f64, f64, f64, f64, f64)>>)> {
+    let bathymetry = CartesianNetcdf3::open(Path::new(&bathymetry_filename), "x", "y", "depth")
+        .expect("could not open bathymetry file");
+    let current = CartesianCurrent::open(Path::new(&current_filename), "x", "y", "u", "v");
+    let init_cond = x0
+        .iter()
+        .zip(y0.iter())
+        .zip(kx0.iter().zip(ky0.iter()))
+        .map(|((x, y), (kx, ky))| (*x, *y, *kx, *ky))
+        .collect::<Vec<_>>();
+    let waves = ManyRays::new(&bathymetry, Some(&current), &init_cond);
+    let res = waves.trace_many(0.0, duration, step_size);
+    let rays: Vec<Vec<(f64, f64, f64, f64, f64)>> = res
+        .iter()
+        .filter_map(|r| r.as_ref())
+        .map(|r| {
+            let (t, s) = r.get();
+            t.iter()
+                .zip(s.iter())
+                .map(|(t, s)| (*t, s[0], s[1], s[2], s[3]))
+                .collect::<Vec<_>>()
+        })
+        .collect();
+    Ok(rays)
 }
 
 /*
