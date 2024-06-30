@@ -83,12 +83,43 @@ impl<T> Current<T> {
     }
 }
 
+#[allow(dead_code)]
 #[derive(Clone, Debug)]
 /// A wave number in 2D cartesian space
-struct WaveNumber<T> {
+pub(crate) struct WaveNumber<T> {
     kx: T,
     ky: T,
 }
+
+#[allow(dead_code)]
+impl<T> WaveNumber<T> {
+    fn new(kx: T, ky: T) -> Self {
+        WaveNumber { kx, ky }
+    }
+
+    fn kx(&self) -> &T {
+        &self.kx
+    }
+
+    fn ky(&self) -> &T {
+        &self.ky
+    }
+}
+
+#[allow(dead_code)]
+#[derive(Clone, Debug)]
+struct RayState<T> {
+    // Position in 2D cartesian space.
+    point: Point<T>,
+    // Wave number in 2D cartesian space.
+    wave_number: WaveNumber<T>,
+}
+
+// Possible names:
+// - RayPath
+// - RayTrajectory
+// - Beam
+//
 
 #[derive(Clone, Debug)]
 /// A single wave ray in 2D cartesian space
@@ -100,10 +131,7 @@ struct WaveNumber<T> {
 pub(crate) struct Ray<T> {
     // Relative time in seconds. Initial condition is t=0.
     time: Vec<f32>,
-    // Position in 2D cartesian space.
-    point: Vec<Point<T>>,
-    // Wave number in 2D cartesian space.
-    wave_number: Vec<WaveNumber<T>>,
+    state: Vec<RayState<T>>,
     // Depth in meters.
     depth: Vec<f32>,
     // Current in 2D cartesian space.
@@ -112,27 +140,20 @@ pub(crate) struct Ray<T> {
 
 #[allow(dead_code)]
 impl<T> Ray<T> {
+    /// Create a new `Ray`
     fn new() -> Self {
         Ray {
             time: Vec::new(),
-            point: Vec::new(),
-            wave_number: Vec::new(),
+            state: Vec::new(),
             depth: Vec::new(),
             current: Vec::new(),
         }
     }
 
-    fn push(
-        &mut self,
-        time: f32,
-        point: Point<T>,
-        wave_number: WaveNumber<T>,
-        depth: f32,
-        current: Current<T>,
-    ) {
+    /// Push a new state and environment information to the `Ray`
+    fn push(&mut self, time: f32, state: RayState<T>, depth: f32, current: Current<T>) {
         self.time.push(time);
-        self.point.push(point);
-        self.wave_number.push(wave_number);
+        self.state.push(state);
         self.depth.push(depth);
         self.current.push(current);
     }
@@ -146,8 +167,7 @@ mod test_ray {
     fn test_new() {
         let ray: Ray<f32> = Ray::new();
         assert_eq!(ray.time.len(), 0);
-        assert_eq!(ray.point.len(), 0);
-        assert_eq!(ray.wave_number.len(), 0);
+        assert_eq!(ray.state.len(), 0);
         assert_eq!(ray.depth.len(), 0);
         assert_eq!(ray.current.len(), 0);
     }
@@ -158,22 +178,21 @@ mod test_ray {
         let point = Point::new(1.0, 2.0);
         let wave_number = WaveNumber { kx: 3.0, ky: 4.0 };
         let current = Current::new(5.0, 6.0);
-        ray.push(0.0, point, wave_number, 7.0, current);
+        ray.push(0.0, RayState { point, wave_number }, 100.0, current);
         assert_eq!(ray.time.len(), 1);
-        assert_eq!(ray.point.len(), 1);
-        assert_eq!(ray.wave_number.len(), 1);
+        assert_eq!(ray.state.len(), 1);
         assert_eq!(ray.depth.len(), 1);
         assert_eq!(ray.current.len(), 1);
     }
 }
 
-pub(crate) struct RayBundle<T> {
+pub(crate) struct Bundle<T> {
     rays: Vec<Ray<T>>,
 }
 
-impl<T> RayBundle<T> {
+impl<T> Bundle<T> {
     fn new() -> Self {
-        RayBundle { rays: Vec::new() }
+        Bundle { rays: Vec::new() }
     }
 
     fn push(&mut self, ray: Ray<T>) {
