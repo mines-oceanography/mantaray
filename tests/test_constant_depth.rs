@@ -59,25 +59,25 @@ fn constant_depth_deep() {
 
         // x
         if (kx - 0.0).abs() < f64::EPSILON {
-            assert_same(data, XINDEX);
+            assert!(same(data, XINDEX));
         } else if kx.is_sign_positive() {
-            assert_increase(data, XINDEX);
+            assert!(increase(data, XINDEX));
         } else {
-            assert_decrease(data, XINDEX);
+            assert!(decrease(data, XINDEX));
         }
 
         // y
         if (ky - 0.0).abs() < f64::EPSILON {
-            assert_same(data, YINDEX);
+            assert!(same(data, YINDEX));
         } else if ky.is_sign_positive() {
-            assert_increase(data, YINDEX);
+            assert!(increase(data, YINDEX));
         } else {
-            assert_decrease(data, YINDEX);
+            assert!(decrease(data, YINDEX));
         }
 
         // kx and ky will be the same
-        assert_same(data, KX_INDEX);
-        assert_same(data, KY_INDEX);
+        assert!(same(data, KX_INDEX));
+        assert!(same(data, KY_INDEX));
     }
 }
 
@@ -131,24 +131,24 @@ fn constant_depth_shallow() {
 
         // x
         if (kx - 0.0).abs() < f64::EPSILON {
-            assert_same(data, XINDEX);
+            assert!(same(data, XINDEX));
         } else if kx.is_sign_positive() {
-            assert_increase(data, XINDEX);
+            assert!(increase(data, XINDEX));
         } else {
-            assert_decrease(data, XINDEX);
+            assert!(decrease(data, XINDEX));
         }
 
         // y
         if (ky - 0.0).abs() < f64::EPSILON {
-            assert_same(data, YINDEX);
+            assert!(same(data, YINDEX));
         } else if ky.is_sign_positive() {
-            assert_increase(data, YINDEX);
+            assert!(increase(data, YINDEX));
         } else {
-            assert_decrease(data, YINDEX);
+            assert!(decrease(data, YINDEX));
         }
 
         // kx and ky will be the same
-        assert_same(data, KX_INDEX);
-        assert_same(data, KY_INDEX);
+        assert!(same(data, KX_INDEX));
+        assert!(same(data, KY_INDEX));
     }
 }
