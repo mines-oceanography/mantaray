@@ -10,6 +10,51 @@ mod helper;
 use helper::*;
 
 #[test]
+/// test a linear beach on the right side of domain starting in deep water
+///
+/// ## Bathymetry file
+/// `Lx = 100 km`
+///
+/// `Ly = 50 km`
+///  
+/// `dx = dy = 500 m`
+///
+/// `h0 =  2000 m`
+///
+/// `h = h0 if x < 50km else h0 - 0.05 * (x - 50km)`
+///
+/// *minimum depth in the file is 0 m*
+///
+/// ## Initial conditions
+/// 3 rays with different angles and starting locations `k = 0.05;`
+///
+/// ### ray 1 (slanted up)
+/// - `x = 10km`
+/// - `y = 1km`
+/// - `kx = k * cos(PI/6)`
+/// - `ky = k * sin(PI/6)`
+///
+/// ### ray 2 (slanted down)
+/// - `x = 10km`
+/// - `y = 49 km`
+/// - `kx = k * cos(-PI/6)`
+/// - `ky = k * sin(-PI/6)`
+///
+/// ### ray 3 (horizontal)
+/// - `x = 10km`
+/// - `y = 25km`
+/// - `kx = k`
+/// - `ky = 0`
+///
+/// ## Description
+/// The 3 rays propagate from left to right first in deep water. Then the rays
+/// will reach a beach and start to curve towards the beach, so the kx values of
+/// each ray will increase.
+///
+/// ## Expected behavior
+/// The rays will go straight in the deep water, but they will begin the curve
+/// towards the beach when the interaction with the bathymetry is larger than
+/// the difference between fp values.
 fn test_deep_linear_beach_right() {
     // create file for the bathymetry data
     let temp_path = NamedTempFile::new().unwrap().into_temp_path();
@@ -106,6 +151,51 @@ fn test_deep_linear_beach_right() {
 }
 
 #[test]
+/// test a linear beach on the left side of domain starting in deep water
+///
+/// ## Bathymetry file
+/// `Lx = 100 km`
+///
+/// `Ly = 50 km`
+///  
+/// `dx = dy = 500 m`
+///
+/// `h0 =  2000 m`
+///
+/// `h = h0 if x > 50km else 0.05 * (x - 10km)`
+///
+/// *minimum depth in the file is 0 m*
+///
+/// ## Initial conditions
+/// 3 rays with different angles and starting locations `k = 0.05;`
+///
+/// ### ray 1 (slanted up)
+/// - `x = 90km`
+/// - `y = 1km`
+/// - `kx = k * cos(5PI/6)`
+/// - `ky = k * sin(5PI/6)`
+///
+/// ### ray 2 (slanted down)
+/// - `x = 90km`
+/// - `y = 49 km`
+/// - `kx = k * cos(-5PI/6)`
+/// - `ky = k * sin(-5PI/6)`
+///
+/// ### ray 3 (horizontal)
+/// - `x = 90km`
+/// - `y = 25km`
+/// - `kx = -k`
+/// - `ky = 0`
+///
+/// ## Description
+/// The 3 rays propagate from right to left first in deep water. Then the rays
+/// will reach a beach and start to curve towards the beach, so the kx values of
+/// each ray will increase.
+///
+/// ## Expected behavior
+/// The rays will go straight in the deep water, but they will begin the curve
+/// towards the beach when the interaction with the bathymetry is larger than
+/// the difference between fp values.
 fn test_deep_linear_beach_left() {
     // create file for the bathymetry data
     let temp_path = NamedTempFile::new().unwrap().into_temp_path();
@@ -186,9 +276,9 @@ fn test_deep_linear_beach_left() {
 
     // verify the straight ray
     let (_, data) = straight_result.get();
-    decrease(data, XINDEX);
-    same(data, YINDEX);
-    same(data, KY_INDEX);
+    assert!(decrease(data, XINDEX));
+    assert!(same(data, YINDEX));
+    assert!(same(data, KY_INDEX));
 
     // kx same until beach, where it will be <= to start
     assert!(can_decrease_after(data, KX_INDEX, |state| state[0] <= 50_000.0));

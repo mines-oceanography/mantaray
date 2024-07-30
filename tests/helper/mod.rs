@@ -51,7 +51,7 @@ pub fn can_increase_after(data: &Vec<State>, index: usize, condition: fn(&State)
     for state in data.iter().filter(|v| !v[0].is_nan()).skip(1) {
         let value = state[KX_INDEX];
         if !condition(state) {
-            if (last_value != value) {
+            if last_value != value {
                 return false;
             }
         } else {
@@ -71,7 +71,7 @@ pub fn can_decrease_after(data: &Vec<State>, index: usize, condition: fn(&State)
     for state in data.iter().filter(|v| !v[0].is_nan()).skip(1) {
         let value = state[KX_INDEX];
         if !condition(state) {
-            if (last_value != value) {
+            if last_value != value {
                 return false;
             }
         } else {
