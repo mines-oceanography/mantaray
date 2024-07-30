@@ -43,34 +43,43 @@ pub fn same(data: &Vec<State>, index: usize) -> bool {
     return true;
 }
 
-/// assert that the value at the given index stays the same until the condition.
+/// true if the value at the given index stays the same until the condition.
 /// After that point, the value can be greater than or equal to the previous
 /// value.
-pub fn assert_can_increase_after(data: &Vec<State>, index: usize, condition: fn(&State) -> bool) {
+pub fn can_increase_after(data: &Vec<State>, index: usize, condition: fn(&State) -> bool) -> bool {
     let mut last_value = data[0][index];
     for state in data.iter().filter(|v| !v[0].is_nan()).skip(1) {
         let value = state[KX_INDEX];
         if !condition(state) {
-            assert_eq!(last_value, value);
+            if (last_value != value) {
+                return false;
+            }
         } else {
-            assert!(value >= last_value);
+            if !(value >= last_value) {
+                return false;
+            }
         }
         last_value = value;
     }
+    return true;
 }
-
-/// assert that the value at the given index stays the same until the condition.
+/// true if the value at the given index stays the same until the condition.
 /// After that point, the value can be less than or equal to the previous
 /// value.
-pub fn assert_can_decrease_after(data: &Vec<State>, index: usize, condition: fn(&State) -> bool) {
+pub fn can_decrease_after(data: &Vec<State>, index: usize, condition: fn(&State) -> bool) -> bool {
     let mut last_value = data[0][index];
     for state in data.iter().filter(|v| !v[0].is_nan()).skip(1) {
         let value = state[KX_INDEX];
         if !condition(state) {
-            assert_eq!(last_value, value);
+            if (last_value != value) {
+                return false;
+            }
         } else {
-            assert!(value <= last_value);
+            if !(value <= last_value) {
+                return false;
+            }
         }
         last_value = value;
     }
+    true
 }

@@ -64,12 +64,12 @@ fn test_deep_linear_beach_right() {
 
     // verify up ray
     let (_, data) = up_result.get();
-    increase(data, XINDEX);
-    increase(data, YINDEX);
-    same(data, KY_INDEX);
+    assert!(increase(data, XINDEX));
+    assert!(increase(data, YINDEX));
+    assert!(same(data, KY_INDEX));
 
     // kx same until beach, where it will be >= to start
-    assert_can_increase_after(data, KX_INDEX, |state| state[0] >= 50_000.0);
+    assert!(can_increase_after(data, KX_INDEX, |state| state[0] >= 50_000.0));
     // verify last kx should be greater than first
     assert!(
         data.iter().filter(|v| !v[0].is_nan()).last().unwrap()[KX_INDEX]
@@ -78,12 +78,12 @@ fn test_deep_linear_beach_right() {
 
     // verify the down ray
     let (_, data) = down_result.get();
-    increase(data, XINDEX);
-    decrease(data, YINDEX);
-    same(data, KY_INDEX);
+    assert!(increase(data, XINDEX));
+    assert!(decrease(data, YINDEX));
+    assert!(same(data, KY_INDEX));
 
     // kx same until beach, where it will be >= to start
-    assert_can_increase_after(data, KX_INDEX, |state| state[0] >= 50_000.0);
+    assert!(can_increase_after(data, KX_INDEX, |state| state[0] >= 50_000.0));
     // verify last kx should be greater than first
     assert!(
         data.iter().filter(|v| !v[0].is_nan()).last().unwrap()[KX_INDEX]
@@ -92,12 +92,12 @@ fn test_deep_linear_beach_right() {
 
     // verify the straight ray
     let (_, data) = straight_result.get();
-    increase(data, XINDEX);
-    same(data, YINDEX);
-    same(data, KY_INDEX);
+    assert!(increase(data, XINDEX));
+    assert!(same(data, YINDEX));
+    assert!(same(data, KY_INDEX));
 
     // kx same until beach, where it will be >= to start
-    assert_can_increase_after(data, KX_INDEX, |state| state[0] >= 50_000.0);
+    assert!(can_increase_after(data, KX_INDEX, |state| state[0] >= 50_000.0));
     // verify last kx should be greater than first
     assert!(
         data.iter().filter(|v| !v[0].is_nan()).last().unwrap()[KX_INDEX]
@@ -158,12 +158,12 @@ fn test_deep_linear_beach_left() {
 
     // verify up ray
     let (_, data) = up_result.get();
-    assert_decrease(data, XINDEX);
-    assert_increase(data, YINDEX);
-    assert_same(data, KY_INDEX);
+    assert!(decrease(data, XINDEX));
+    assert!(increase(data, YINDEX));
+    assert!(same(data, KY_INDEX));
 
     // kx same until beach, where it will be <= to start
-    assert_can_decrease_after(data, KX_INDEX, |state| state[0] <= 50_000.0);
+    assert!(can_decrease_after(data, KX_INDEX, |state| state[0] <= 50_000.0));
     // verify last kx should be less than first (started negative)
     assert!(
         data.iter().filter(|v| !v[0].is_nan()).last().unwrap()[KX_INDEX]
@@ -172,12 +172,12 @@ fn test_deep_linear_beach_left() {
 
     // verify the down ray
     let (_, data) = down_result.get();
-    assert_decrease(data, XINDEX);
-    assert_decrease(data, YINDEX);
-    assert_same(data, KY_INDEX);
+    assert!(decrease(data, XINDEX));
+    assert!(decrease(data, YINDEX));
+    assert!(same(data, KY_INDEX));
 
     // kx same until beach, where it will be <= to start
-    assert_can_decrease_after(data, KX_INDEX, |state| state[0] <= 50_000.0);
+    assert!(can_decrease_after(data, KX_INDEX, |state| state[0] <= 50_000.0));
     // verify last kx should be less than first (started negative)
     assert!(
         data.iter().filter(|v| !v[0].is_nan()).last().unwrap()[KX_INDEX]
@@ -186,12 +186,12 @@ fn test_deep_linear_beach_left() {
 
     // verify the straight ray
     let (_, data) = straight_result.get();
-    assert_decrease(data, XINDEX);
-    assert_same(data, YINDEX);
-    assert_same(data, KY_INDEX);
+    decrease(data, XINDEX);
+    same(data, YINDEX);
+    same(data, KY_INDEX);
 
     // kx same until beach, where it will be <= to start
-    assert_can_decrease_after(data, KX_INDEX, |state| state[0] <= 50_000.0);
+    assert!(can_decrease_after(data, KX_INDEX, |state| state[0] <= 50_000.0));
     // verify last kx should be less than first (started negative)
     assert!(
         data.iter().filter(|v| !v[0].is_nan()).last().unwrap()[KX_INDEX]
