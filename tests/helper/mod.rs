@@ -49,13 +49,15 @@ pub fn same(data: &Vec<State>, index: usize) -> bool {
 pub fn can_increase_after(data: &Vec<State>, index: usize, condition: fn(&State) -> bool) -> bool {
     let mut last_value = data[0][index];
     for state in data.iter().filter(|v| !v[0].is_nan()).skip(1) {
-        let value = state[KX_INDEX];
+        let value = state[index];
         if !condition(state) {
             if last_value != value {
+                println!("value: {}, last value: {}", value, last_value);
                 return false;
             }
         } else {
-            if !(value >= last_value) {
+            if value < last_value {
+                println!("value: {}, last value: {}", value, last_value);
                 return false;
             }
         }
@@ -69,13 +71,13 @@ pub fn can_increase_after(data: &Vec<State>, index: usize, condition: fn(&State)
 pub fn can_decrease_after(data: &Vec<State>, index: usize, condition: fn(&State) -> bool) -> bool {
     let mut last_value = data[0][index];
     for state in data.iter().filter(|v| !v[0].is_nan()).skip(1) {
-        let value = state[KX_INDEX];
+        let value = state[index];
         if !condition(state) {
             if last_value != value {
                 return false;
             }
         } else {
-            if !(value <= last_value) {
+            if value > last_value {
                 return false;
             }
         }
