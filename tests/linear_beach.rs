@@ -442,3 +442,154 @@ fn test_deep_linear_beach_top() {
                 .unwrap()[KY_INDEX]
     );
 }
+
+#[test]
+/// test a linear beach on the left side of domain starting in deep water
+///
+/// ## Bathymetry file
+/// `Lx = 50 km`
+///
+/// `Ly = 100 km`
+///  
+/// `dx = dy = 500 m`
+///
+/// `h0 =  2000 m`
+///
+/// `h = h0 if y > 50km else h0 - 0.05 * (y - 10_000.0)`
+///
+/// *minimum depth in the file is 0 m*
+///
+/// ## Initial conditions
+/// 3 rays with different angles and starting locations `k = 0.05;`
+///
+/// ### ray 1 (slanted left)
+/// - `x = 49 km`
+/// - `y = 90 km`
+/// - `kx = k * cos(-4PI/6)`
+/// - `ky = k * sin(-4PI/6)`
+///
+/// ### ray 2 (slanted right)
+/// - `x = 1 km`
+/// - `y = 90 km`
+/// - `kx = k * cos(-2PI/6)`
+/// - `ky = k * sin(-2PI/6)`
+///
+/// ### ray 3 (vertical)
+/// - `x = 25 km`
+/// - `y = 90 km`
+/// - `kx = 0`
+/// - `ky = -k`
+///
+/// ## Description
+/// The 3 rays propagate from top to bottom and start in deep water. Then the
+/// rays will reach a beach and start to curve towards the beach, so the ky
+/// values of each ray will decrease. (since ky started negative)
+///
+/// ## Expected behavior
+/// The rays will go straight in the deep water, but they will begin the curve
+/// towards the beach when the interaction with the bathymetry is larger than
+/// the difference between fp values.
+fn test_deep_linear_beach_bottom() {
+    // create file for the bathymetry data
+    let temp_path = NamedTempFile::new().unwrap().into_temp_path();
+
+    // beach on top
+    create_netcdf3_bathymetry(&temp_path, 100, 200, 500.0, 500.0, |_x, y| {
+        if y > 50_000.0 {
+            2000.0
+        } else if y > 10_000.0 {
+            0.05 * (y - 10_000.0) as f64
+        } else {
+            0.0
+        }
+    });
+
+    let bathymetry_data = CartesianNetcdf3::open(&temp_path, "x", "y", "depth").unwrap();
+    let current_data = ConstantCurrent::new(0.0, 0.0);
+
+    let k = 0.05;
+
+    let left_ray = (
+        49_000.,
+        90_000.,
+        k * (-4.0 * PI / 6.0).cos(),
+        k * (-4.0 * PI / 6.0).sin(),
+    );
+    let vertical_ray = (25_000., 90_000., 0., -k);
+    let right_ray = (
+        1_000.,
+        90_000.,
+        k * (-2.0 * PI / 6.0).cos(),
+        k * (-2.0 * PI / 6.0).sin(),
+    );
+
+    let initial_rays = vec![left_ray, right_ray, vertical_ray];
+
+    let waves = ManyRays::new(&bathymetry_data, Some(&current_data), &initial_rays);
+
+    let results = waves.trace_many(0.0, 100_000.0, 1.0);
+
+    let mut results_iter = results.iter().flatten();
+
+    // order is left, right, vertical
+    let left_result = results_iter.next().unwrap();
+    let right_result = results_iter.next().unwrap();
+    let vertical_result = results_iter.next().unwrap();
+    assert!(results_iter.next().is_none());
+
+    // verify the left ray
+    let (_, data) = left_result.get();
+    assert!(decrease(data, XINDEX));
+    assert!(decrease(data, YINDEX));
+    assert!(same(data, KX_INDEX));
+    // ky same until beach, where it decreases (but k magnitude increases)
+    assert!(can_decrease_after(data, KY_INDEX, |state| state[YINDEX] < 50_000.0));
+    // verify last ky should be less than first
+    assert!(
+        data.iter()
+            .filter(|v| !v[KY_INDEX].is_nan())
+            .last()
+            .unwrap()[KY_INDEX]
+            < data
+                .iter()
+                .filter(|v| !v[KY_INDEX].is_nan())
+                .next()
+                .unwrap()[KY_INDEX]
+    );
+
+    // verify the right ray
+    let (_, data) = right_result.get();
+    assert!(increase(data, XINDEX));
+    assert!(decrease(data, YINDEX));
+    assert!(same(data, KX_INDEX));
+    assert!(can_decrease_after(data, KY_INDEX, |state| state[YINDEX] < 50_000.0));
+    assert!(
+        data.iter()
+            .filter(|v| !v[KY_INDEX].is_nan())
+            .last()
+            .unwrap()[KY_INDEX]
+            < data
+                .iter()
+                .filter(|v| !v[KY_INDEX].is_nan())
+                .next()
+                .unwrap()[KY_INDEX]
+    );
+
+    // verify the vertical ray
+    let (_, data) = vertical_result.get();
+    assert!(same(data, XINDEX));
+    assert!(decrease(data, YINDEX));
+    assert!(same(data, KX_INDEX));
+    assert!(can_decrease_after(data, KY_INDEX, |state| state[YINDEX] < 50_000.0));
+    assert!(
+        data.iter()
+            .filter(|v| !v[KY_INDEX].is_nan())
+            .last()
+            .unwrap()[KY_INDEX]
+            < data
+                .iter()
+                .filter(|v| !v[KY_INDEX].is_nan())
+                .next()
+                .unwrap()[KY_INDEX]
+    );
+}
