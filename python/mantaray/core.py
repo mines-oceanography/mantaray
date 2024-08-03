@@ -1,3 +1,9 @@
+
+import datetime
+
+import numpy as np
+import xarray as xr
+
 from . import _mantaray
 
 
@@ -23,9 +29,19 @@ def single_ray(
     --------
     >>> mantaray.single_ray(-1000, 0, 0.01, 0, 10, 2, "island.nc")
     """
-    output = _mantaray.single_ray(
+    tmp = _mantaray.single_ray(
         x0, y0, kx0, ky0, duration, step_size, bathymetry, current
     )
+
+    tmp = np.array(tmp)
+    varnames = ["time", "x", "y", "kx", "ky"]
+    output = xr.Dataset(
+        data_vars = {v:(["time"],t) for (v,t) in zip(varnames, tmp.T)},
+        attrs = {
+            "date_created": str(datetime.datetime.now()),
+        }
+    )
+
     return output
 
 def ray_tracing(
@@ -62,4 +78,15 @@ def ray_tracing(
     tmp = _mantaray.ray_tracing(
         x0, y0, kx0, ky0, duration, step_size, bathymetry, current
     )
+
+    tmp = np.array(tmp)
+
+    varnames = ["time", "x", "y", "kx", "ky"]
+    output = xr.Dataset(
+        data_vars = {v:(["time", "trajectory"],t) for (v,t) in zip(varnames, tmp.T)},
+        attrs = {
+            "date_created": str(datetime.datetime.now()),
+        }
+    ).transpose("trajectory", "time")
+
     return output
