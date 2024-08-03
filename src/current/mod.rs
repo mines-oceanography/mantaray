@@ -5,7 +5,7 @@
 //! - `ConstantCurrent`
 
 use crate::error::Result;
-use crate::Point;
+use crate::{Current, Point};
 
 mod cartesian_current;
 mod constant_current;

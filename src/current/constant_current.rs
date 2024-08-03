@@ -1,5 +1,5 @@
 use crate::error::Result;
-use crate::Point;
+use crate::{Current, Point};
 
 use super::CurrentData;
 
@@ -42,8 +42,8 @@ impl CurrentData for ConstantCurrent {
     /// # Error
     /// The trait definition includes the chance for error. However, the
     /// `ConstantCurrent::current` should never return an error.
-    fn current(&self, _point: &Point<f64>) -> Result<(f64, f64)> {
-        Ok((self.u, self.v))
+    fn current(&self, _point: &Point<f64>) -> Result<Current<f64>> {
+        Ok(Current::new(self.u, self.v))
     }
 
     /// get the current and gradient at point (x, y)

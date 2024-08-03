@@ -58,7 +58,7 @@ impl<T> Coordinate<T> {
 }
 
 #[allow(dead_code)]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 /// The current in a 2D cartesian point
 ///
 /// A `Current` is composed by `u` and `v`, expected to be in meters per
@@ -70,7 +70,7 @@ pub(crate) struct Current<T> {
 
 #[allow(dead_code)]
 impl<T> Current<T> {
-    fn new(u: T, v: T) -> Self {
+    pub(crate) fn new(u: T, v: T) -> Self {
         Current { u, v }
     }
 

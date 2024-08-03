@@ -9,7 +9,7 @@ use super::CurrentData;
 use crate::error::Error;
 use crate::error::Result;
 use crate::interpolator;
-use crate::Point;
+use crate::{Current, Point};
 
 #[derive(Debug)]
 #[allow(dead_code)]
@@ -438,7 +438,7 @@ impl CurrentData for CartesianCurrent {
     ///
     /// `Error::IndexOutOfBounds` : the point (x, y) is out of bounds of the
     /// data
-    fn current(&self, point: &Point<f64>) -> Result<(f64, f64)> {
+    fn current(&self, point: &Point<f64>) -> Result<Current<f64>> {
         // get the nearest point
         let (indx, indy) = match self.nearest_point(point.x(), point.y()) {
             Some((indx, indy)) => (indx, indy),
@@ -463,7 +463,7 @@ impl CurrentData for CartesianCurrent {
             &self.v_vec,
         )?;
 
-        Ok((u as f64, v as f64))
+        Ok(Current::new(u as f64, v as f64))
     }
 
     /// return the current and the gradient at the point (x, y)
@@ -547,7 +547,7 @@ mod test_cartesian_file_current {
     use crate::{
         current::{cartesian_current::CartesianCurrent, CurrentData},
         io::utility::create_netcdf3_current,
-        Point,
+        Current, Point,
     };
     use std::path::Path;
 
@@ -769,7 +769,7 @@ mod test_cartesian_file_current {
 
         let data = CartesianCurrent::open(Path::new(&path), "x", "y", "u", "v");
         let current = data.current(&Point::new(5499.0, 499.0));
-        assert!(current.unwrap() == (5.0, 0.0));
+        assert!(current.unwrap() == Current::new(5.0, 0.0));
 
         // test out of bounds
         let current = data.current(&Point::new(50_001.0, 1000.0));
