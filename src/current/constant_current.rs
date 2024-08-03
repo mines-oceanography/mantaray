@@ -63,7 +63,7 @@ impl CurrentData for ConstantCurrent {
     fn current_and_gradient(
         &self,
         _point: &Point<f64>,
-    ) -> Result<((f64, f64), (f64, f64, f64, f64))> {
-        Ok(((self.u, self.v), (0.0, 0.0, 0.0, 0.0)))
+    ) -> Result<(Current<f64>, (f64, f64, f64, f64))> {
+        Ok((Current::new(self.u, self.v), (0.0, 0.0, 0.0, 0.0)))
     }
 }

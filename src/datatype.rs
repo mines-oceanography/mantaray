@@ -74,11 +74,11 @@ impl<T> Current<T> {
         Current { u, v }
     }
 
-    fn u(&self) -> &T {
+    pub(crate) fn u(&self) -> &T {
         &self.u
     }
 
-    fn v(&self) -> &T {
+    pub(crate) fn v(&self) -> &T {
         &self.v
     }
 }

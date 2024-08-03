@@ -16,11 +16,12 @@ pub(super) use cartesian_current::CartesianCurrent;
 pub(super) use constant_current::ConstantCurrent;
 
 pub trait CurrentData: Sync {
-    /// Return the current (u, v) at the given (x, y)
-    fn current(&self, point: &Point<f64>) -> Result<(f64, f64)>;
-    /// Return the current (u, v) and the gradient (du/dx, du/dy, dv/dx, dv/dy)
+    /// Current (u, v) at the given (x, y)
+    fn current(&self, point: &Point<f64>) -> Result<Current<f64>>;
+
+    /// Current (u, v) and the gradient (du/dx, du/dy, dv/dx, dv/dy)
     fn current_and_gradient(
         &self,
         point: &Point<f64>,
-    ) -> Result<((f64, f64), (f64, f64, f64, f64))>;
+    ) -> Result<(Current<f64>, (f64, f64, f64, f64))>;
 }

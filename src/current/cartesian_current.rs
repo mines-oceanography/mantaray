@@ -486,7 +486,7 @@ impl CurrentData for CartesianCurrent {
     fn current_and_gradient(
         &self,
         point: &Point<f64>,
-    ) -> Result<((f64, f64), (f64, f64, f64, f64))> {
+    ) -> Result<(Current<f64>, (f64, f64, f64, f64))> {
         // get the nearest point
         let (indx, indy) = match self.nearest_point(point.x(), point.y()) {
             Some((indx, indy)) => (indx, indy),
@@ -536,7 +536,7 @@ impl CurrentData for CartesianCurrent {
             - self.val_from_arr(&corners[2].0, &corners[2].1, &self.v_vec)?)
             / (2.0 * y_space);
 
-        Ok(((u as f64, v as f64), (dudx, dudy, dvdx, dvdy)))
+        Ok((Current::new(u as f64, v as f64), (dudx, dudy, dvdx, dvdy)))
     }
 }
 
@@ -790,7 +790,7 @@ mod test_cartesian_file_current {
 
         let data = CartesianCurrent::open(Path::new(&path), "x", "y", "u", "v");
         let current = data.current_and_gradient(&Point::new(5499.0, 499.0));
-        assert!(current.unwrap() == ((5.0, 0.0), (0.0, 0.0, 0.0, 0.0)));
+        assert!(current.unwrap() == (Current::new(5.0, 0.0), (0.0, 0.0, 0.0, 0.0)));
 
         // test out of bounds
         let current = data.current_and_gradient(&Point::new(50_001.0, 1000.0));
@@ -811,7 +811,10 @@ mod test_cartesian_file_current {
 
         let data = CartesianCurrent::open(Path::new(&path), "x", "y", "u", "v");
         let current = data.current_and_gradient(&Point::new(45.0, 45.0));
-        assert_eq!(current.unwrap(), ((45.0, 45.0), (1.0, 0.0, 1.0, 0.0)));
+        assert_eq!(
+            current.unwrap(),
+            (Current::new(45.0, 45.0), (1.0, 0.0, 1.0, 0.0))
+        );
     }
 
     #[test]
@@ -825,6 +828,9 @@ mod test_cartesian_file_current {
 
         let data = CartesianCurrent::open(Path::new(&path), "x", "y", "u", "v");
         let current = data.current_and_gradient(&Point::new(45.0, 45.0));
-        assert_eq!(current.unwrap(), ((45.0, 45.0), (0.0, 1.0, 0.0, 1.0)));
+        assert_eq!(
+            current.unwrap(),
+            (Current::new(45.0, 45.0), (0.0, 1.0, 0.0, 1.0))
+        );
     }
 }
