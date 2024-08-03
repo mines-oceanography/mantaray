@@ -1,6 +1,6 @@
 [package]
 name = "mantaray"
-version = "0.0.6"
+version = "0.0.7"
 authors = [
   "Bryce Irving <bryceirving@mines.edu>",
   "Guilherme Castelao <guilherme@castelao.net>",
