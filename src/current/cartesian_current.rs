@@ -483,9 +483,12 @@ impl CurrentData for CartesianCurrent {
     ///
     /// `Error::IndexOutOfBounds` : the point (x, y) is out of bounds of the
     /// data
-    fn current_and_gradient(&self, x: &f64, y: &f64) -> Result<((f64, f64), (f64, f64, f64, f64))> {
+    fn current_and_gradient(
+        &self,
+        point: &Point<f64>,
+    ) -> Result<((f64, f64), (f64, f64, f64, f64))> {
         // get the nearest point
-        let (indx, indy) = match self.nearest_point(x, y) {
+        let (indx, indy) = match self.nearest_point(point.x(), point.y()) {
             Some((indx, indy)) => (indx, indy),
             None => return Err(Error::IndexOutOfBounds),
         };
@@ -497,8 +500,16 @@ impl CurrentData for CartesianCurrent {
         };
 
         // interpolate the u and v values
-        let u = self.interpolate(&corners, &(*x as f32, *y as f32), &self.u_vec)?;
-        let v = self.interpolate(&corners, &(*x as f32, *y as f32), &self.v_vec)?;
+        let u = self.interpolate(
+            &corners,
+            &(*point.x() as f32, *point.y() as f32),
+            &self.u_vec,
+        )?;
+        let v = self.interpolate(
+            &corners,
+            &(*point.x() as f32, *point.y() as f32),
+            &self.v_vec,
+        )?;
 
         // calculate the gradients
 
@@ -778,14 +789,14 @@ mod test_cartesian_file_current {
         create_netcdf3_current(&path, 101, 51, 500.0, 500.0, simple_current);
 
         let data = CartesianCurrent::open(Path::new(&path), "x", "y", "u", "v");
-        let current = data.current_and_gradient(&5499.0, &499.0);
+        let current = data.current_and_gradient(&Point::new(5499.0, 499.0));
         assert!(current.unwrap() == ((5.0, 0.0), (0.0, 0.0, 0.0, 0.0)));
 
         // test out of bounds
-        let current = data.current_and_gradient(&50_001.0, &1000.0);
+        let current = data.current_and_gradient(&Point::new(50_001.0, 1000.0));
         assert!(current.is_err());
 
-        let current = data.current_and_gradient(&-50_001.0, &-1000.0);
+        let current = data.current_and_gradient(&Point::new(-50_001.0, -1000.0));
         assert!(current.is_err());
     }
 
@@ -799,7 +810,7 @@ mod test_cartesian_file_current {
         create_netcdf3_current(&path, 100, 100, 1.0, 1.0, simple_x_gradient);
 
         let data = CartesianCurrent::open(Path::new(&path), "x", "y", "u", "v");
-        let current = data.current_and_gradient(&45.0, &45.0);
+        let current = data.current_and_gradient(&Point::new(45.0, 45.0));
         assert_eq!(current.unwrap(), ((45.0, 45.0), (1.0, 0.0, 1.0, 0.0)));
     }
 
@@ -813,7 +824,7 @@ mod test_cartesian_file_current {
         create_netcdf3_current(&path, 100, 100, 1.0, 1.0, simple_y_gradient);
 
         let data = CartesianCurrent::open(Path::new(&path), "x", "y", "u", "v");
-        let current = data.current_and_gradient(&45.0, &45.0);
+        let current = data.current_and_gradient(&Point::new(45.0, 45.0));
         assert_eq!(current.unwrap(), ((45.0, 45.0), (0.0, 1.0, 0.0, 1.0)));
     }
 }

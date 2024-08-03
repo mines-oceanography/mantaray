@@ -62,8 +62,7 @@ impl CurrentData for ConstantCurrent {
     /// `ConstantCurrent::current_and_gradient` should never return an error.
     fn current_and_gradient(
         &self,
-        _x: &f64,
-        _y: &f64,
+        _point: &Point<f64>,
     ) -> Result<((f64, f64), (f64, f64, f64, f64))> {
         Ok(((self.u, self.v), (0.0, 0.0, 0.0, 0.0)))
     }

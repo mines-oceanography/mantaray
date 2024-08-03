@@ -105,12 +105,13 @@ impl<'a> WaveRayPath<'a> {
     /// `Error::ArgumentOutOfBounds`
     /// - If k is negative, group velocity will return this error.
     pub fn odes(&self, x: &f64, y: &f64, kx: &f64, ky: &f64) -> Result<(f64, f64, f64, f64)> {
+        let point = crate::Point::new(*x, *y);
         let (h, (dhdx, dhdy)) = self
             .bathy_data
             .depth_and_gradient(&(*x as f32), &(*y as f32))?;
 
         let (u, v, dudx, dudy, dvdx, dvdy) = if let Some(cd) = self.current_data {
-            let ((u, v), (dudx, dudy, dvdx, dvdy)) = cd.current_and_gradient(x, y)?;
+            let ((u, v), (dudx, dudy, dvdx, dvdy)) = cd.current_and_gradient(&point)?;
             (u, v, dudx, dudy, dvdx, dvdy)
         } else {
             (0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
