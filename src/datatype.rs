@@ -13,19 +13,19 @@ pub(crate) struct Point<T> {
 impl<T> Point<T> {
     /// Create a new `Point` with the given `x` and `y` coordinates.
     ///
-    fn new(x: T, y: T) -> Self {
+    pub(crate) fn new(x: T, y: T) -> Self {
         Point { x, y }
     }
 
     /// Get the `x` coordinate of the `Point`.
     ///
-    fn x(&self) -> &T {
+    pub(crate) fn x(&self) -> &T {
         &self.x
     }
 
     /// Get the `y` coordinate of the `Point`.
     ///
-    fn y(&self) -> &T {
+    pub(crate) fn y(&self) -> &T {
         &self.y
     }
 }

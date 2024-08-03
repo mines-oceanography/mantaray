@@ -1,4 +1,5 @@
 use crate::error::Result;
+use crate::Point;
 
 use super::CurrentData;
 
@@ -41,7 +42,7 @@ impl CurrentData for ConstantCurrent {
     /// # Error
     /// The trait definition includes the chance for error. However, the
     /// `ConstantCurrent::current` should never return an error.
-    fn current(&self, _x: &f64, _y: &f64) -> Result<(f64, f64)> {
+    fn current(&self, _point: &Point<f64>) -> Result<(f64, f64)> {
         Ok((self.u, self.v))
     }
 
