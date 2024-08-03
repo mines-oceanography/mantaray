@@ -111,8 +111,15 @@ impl<'a> WaveRayPath<'a> {
             .depth_and_gradient(&(*x as f32), &(*y as f32))?;
 
         let (u, v, dudx, dudy, dvdx, dvdy) = if let Some(cd) = self.current_data {
-            let (current, (dudx, dudy, dvdx, dvdy)) = cd.current_and_gradient(&point)?;
-            (*current.u(), *current.v(), dudx, dudy, dvdx, dvdy)
+            let (current, (du, dv)) = cd.current_and_gradient(&point)?;
+            (
+                *current.u(),
+                *current.v(),
+                *du.dx(),
+                *du.dy(),
+                *dv.dx(),
+                *dv.dy(),
+            )
         } else {
             (0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
         };

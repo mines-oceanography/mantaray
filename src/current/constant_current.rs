@@ -1,5 +1,5 @@
+use crate::datatype::{Current, Gradient, Point};
 use crate::error::Result;
-use crate::{Current, Point};
 
 use super::CurrentData;
 
@@ -63,7 +63,10 @@ impl CurrentData for ConstantCurrent {
     fn current_and_gradient(
         &self,
         _point: &Point<f64>,
-    ) -> Result<(Current<f64>, (f64, f64, f64, f64))> {
-        Ok((Current::new(self.u, self.v), (0.0, 0.0, 0.0, 0.0)))
+    ) -> Result<(Current<f64>, (Gradient<f64>, Gradient<f64>))> {
+        Ok((
+            Current::new(self.u, self.v),
+            (Gradient::new(0.0, 0.0), Gradient::new(0.0, 0.0)),
+        ))
     }
 }

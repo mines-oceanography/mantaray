@@ -4,8 +4,8 @@
 //! trait:
 //! - `ConstantCurrent`
 
+use crate::datatype::{Current, Gradient, Point};
 use crate::error::Result;
-use crate::{Current, Point};
 
 mod cartesian_current;
 mod constant_current;
@@ -23,5 +23,5 @@ pub trait CurrentData: Sync {
     fn current_and_gradient(
         &self,
         point: &Point<f64>,
-    ) -> Result<(Current<f64>, (f64, f64, f64, f64))>;
+    ) -> Result<(Current<f64>, (Gradient<f64>, Gradient<f64>))>;
 }

@@ -200,3 +200,24 @@ impl<T> Bundle<T> {
         self.rays.push(ray);
     }
 }
+
+#[derive(Debug, PartialEq)]
+/// A gradient in 2D space
+pub(crate) struct Gradient<T> {
+    dx: T,
+    dy: T,
+}
+
+impl<T> Gradient<T> {
+    pub(crate) fn new(dx: T, dy: T) -> Self {
+        Gradient { dx, dy }
+    }
+
+    pub(crate) fn dx(&self) -> &T {
+        &self.dx
+    }
+
+    pub(crate) fn dy(&self) -> &T {
+        &self.dy
+    }
+}
