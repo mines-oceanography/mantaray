@@ -29,6 +29,15 @@ def single_ray(
     return output
 
 def ray_tracing(
+    x0,
+    y0,
+    kx0,
+    ky0,
+    duration: float,
+    step_size: float,
+    bathymetry: str,
+    current: str,
+):
     """Ray tracing for multiple initial conditions
 
     For a given set of initial conditions, progapage those multiple rays in
@@ -50,16 +59,7 @@ def ray_tracing(
     List[List[tuple[float, float, float, float, float]]]:
         List of multiple rays, one for each initial condition.
     """
-    x0,
-    y0,
-    kx0,
-    ky0,
-    duration: float,
-    step_size: float,
-    bathymetry: str,
-    current: str,
-):
-    output = _mantaray.ray_tracing(
+    tmp = _mantaray.ray_tracing(
         x0, y0, kx0, ky0, duration, step_size, bathymetry, current
     )
     return output
