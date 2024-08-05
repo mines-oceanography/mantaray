@@ -16,7 +16,7 @@
 mod array_depth;
 pub mod cartesian_netcdf3;
 mod constant_depth;
-mod constant_slope;
+pub mod constant_slope;
 
 use crate::error::Result;
 #[allow(unused_imports)]
@@ -26,7 +26,7 @@ pub use cartesian_netcdf3::CartesianNetcdf3;
 #[allow(unused_imports)]
 pub use constant_depth::ConstantDepth;
 #[allow(unused_imports)]
-pub(super) use constant_slope::ConstantSlope;
+pub use constant_slope::ConstantSlope;
 
 /// A trait defining ability to return depth and gradient
 pub trait BathymetryData: Sync {

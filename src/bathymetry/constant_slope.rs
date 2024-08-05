@@ -25,15 +25,20 @@ use derive_builder::Builder;
 /// let h100 = ConstantSlope::builder().h0(100).build().unwrap();
 ///
 /// This might be only useful for development and tests.
-pub(crate) struct ConstantSlope {
+pub struct ConstantSlope {
+    /// initial depth
     #[builder(default = "50.0")]
     h0: f32,
+    ///initial x
     #[builder(default = "0.0")]
     x0: f32,
+    ///initial y
     #[builder(default = "0.0")]
     y0: f32,
+    ///rate of change in depth with respect to x
     #[builder(default = "-5e-2")]
     dhdx: f32,
+    ///rate of change in depth with respect to y
     #[builder(default = "0.0")]
     dhdy: f32,
 }
@@ -69,7 +74,13 @@ impl BathymetryData for ConstantSlope {
 
 impl ConstantSlope {
     #[allow(dead_code)]
-    pub(crate) fn builder() -> ConstantSlopeBuilder {
+    /// create the default `ConstantSlopeBuilder` object
+    /// 
+    /// For example,
+    /// `ConstantSlope::builder().h0(100.0).dhdx(-0.05).build().unwrap()` builds
+    /// the default ConstantSlope, but sets the initial height to 100 m and the
+    /// rate of change of depth in the x direction to -0.05.
+    pub fn builder() -> ConstantSlopeBuilder {
         ConstantSlopeBuilder::default()
     }
 }

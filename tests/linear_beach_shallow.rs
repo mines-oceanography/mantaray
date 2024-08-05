@@ -4,7 +4,7 @@ use std::{f64::consts::PI, path::Path};
 
 use mantaray::{
     self,
-    bathymetry::CartesianNetcdf3,
+    bathymetry::{CartesianNetcdf3, ConstantSlope},
     current::ConstantCurrent,
     io::utility::create_netcdf3_bathymetry,
     ray::{output_or_append_to_tsv_file, ManyRays},
@@ -17,75 +17,61 @@ use helper::*;
 #[test]
 /// test a linear beach on the right side of domain starting in deep water
 ///
-/// ## Bathymetry file
-/// `Lx = 4 km`
-///
-/// `Ly = 2 km`
-///  
-/// `dx = dy = 40 m`
-///
-/// `h0 =  100 m`
-///
-/// `h = h0 if x < 1km else h0 - 0.05 * (x - 1km)`
-///
-/// *minimum depth in the file is 0 m*
+/// ## Bathymetry
+/// `ConstantSlope` object with initial conditions:
+/// - `x0 = 0 m`
+/// - `y0 = 0 m`
+/// - `h0 = 100 m`
+/// - `dhdx =  -0.05`
+/// - `dhdy = 0`
 ///
 /// ## Initial conditions
 /// 3 rays with different angles and starting locations `k = 0.05;`
 ///
 /// ### ray 1 (slanted up)
-/// - `x = 100 m`
-/// - `y = 100 m`
+/// - `x = 0 m`
+/// - `y = 0 m`
 /// - `kx = k * cos(PI/6)`
 /// - `ky = k * sin(PI/6)`
 ///
 /// ### ray 2 (slanted down)
-/// - `x = 100 m`
-/// - `y = 1900 m`
+/// - `x = 0 m`
+/// - `y = 0 m`
 /// - `kx = k * cos(-PI/6)`
 /// - `ky = k * sin(-PI/6)`
 ///
 /// ### ray 3 (horizontal)
-/// - `x = 100 m`
-/// - `y = 1000 m`
+/// - `x = 0 m`
+/// - `y = 0 m`
 /// - `kx = k`
 /// - `ky = 0`
 ///
 /// ## Description
-/// The 3 rays propagate from left to right starting in shallow water. Then the rays
-/// will reach a beach and immediately start to curve towards the beach, so the kx values of
-/// each ray will increase.
+/// The 3 rays propagate from left to right starting in shallow water. Then the
+/// rays will start on a beach and immediately start to curve towards the beach,
+/// so the kx values of each ray will increase.
 ///
 /// ## Expected behavior
-/// The rays will go straight in the deep water, but they will begin the curve
-/// towards the beach when the interaction with the bathymetry is larger than
-/// the difference between fp values. Since the rays start in shallow water, the
-/// change in wave number due to the beach will instantly be noticeable.
+/// The rays will curve towards the beach
 fn test_shallow_linear_beach_right() {
-    // create file for the bathymetry data
-    let temp_path = NamedTempFile::new().unwrap().into_temp_path();
+    let bathymetry_data = ConstantSlope::builder()
+        .x0(0.0)
+        .y0(0.0)
+        .h0(100.0)
+        .dhdx(-0.05)
+        .dhdy(0.0)
+        .build()
+        .unwrap();
 
-    // beach on right
-    create_netcdf3_bathymetry(&temp_path, 80, 40, 50.0, 50.0, |x, _y| {
-        if x < 1_000.0 {
-            100.0
-        } else if x < 3_000.0 {
-            100.0 - 0.05 * (x - 1_000.0) as f64
-        } else {
-            0.0
-        }
-    });
-
-    let bathymetry_data = CartesianNetcdf3::open(&temp_path, "x", "y", "depth").unwrap();
     let current_data = ConstantCurrent::new(0.0, 0.0);
 
     let k = 0.05;
 
-    let up_ray = (100.0, 100.0, k * (PI / 6.0).cos(), k * (PI / 6.0).sin());
+    let up_ray = (0.0, 0.0, k * (PI / 6.0).cos(), k * (PI / 6.0).sin());
 
-    let down_ray = (100.0, 1_900.0, k * (-PI / 6.0).cos(), k * (-PI / 6.0).sin());
+    let down_ray = (0.0, 0.0, k * (-PI / 6.0).cos(), k * (-PI / 6.0).sin());
 
-    let straight_ray = (100.0, 1_000.0, k, 0.0);
+    let straight_ray = (0.0, 0.0, k, 0.0);
 
     let initial_rays = vec![up_ray, down_ray, straight_ray];
 
@@ -106,78 +92,21 @@ fn test_shallow_linear_beach_right() {
     assert!(increase(data, XINDEX));
     assert!(increase(data, YINDEX));
     assert!(same(data, KY_INDEX));
-
-    // kx same until beach, where it will be >= to start
-    assert!(can_increase_after(data, KX_INDEX, |state| state[0] > 975.0));
-    // verify last kx should be greater than first
-    assert!(
-        data.iter().filter(|v| !v[0].is_nan()).last().unwrap()[KX_INDEX]
-            > data.iter().filter(|v| !v[0].is_nan()).next().unwrap()[KX_INDEX]
-    );
-
-    // determine the x value where the kx is increasing
-    let mut last_kx = data[0][2];
-    for state in data.iter().skip(1) {
-        let x = state[0];
-        let kx = state[2];
-        if kx != last_kx {
-            println!("The kx value changes at x = {}", x);
-            break;
-        }
-        last_kx = kx;
-    }
+    assert!(increase(data, KX_INDEX));
 
     // verify the down ray
     let (_, data) = down_result.get();
     assert!(increase(data, XINDEX));
     assert!(decrease(data, YINDEX));
     assert!(same(data, KY_INDEX));
-
-    // kx same until beach, where it will be >= to start
-    assert!(can_increase_after(data, KX_INDEX, |state| state[0] > 975.0));
-    // verify last kx should be greater than first
-    assert!(
-        data.iter().filter(|v| !v[0].is_nan()).last().unwrap()[KX_INDEX]
-            > data.iter().filter(|v| !v[0].is_nan()).next().unwrap()[KX_INDEX]
-    );
-
-    // determine the x value where the kx is increasing
-    let mut last_kx = data[0][2];
-    for state in data.iter().skip(1) {
-        let x = state[0];
-        let kx = state[2];
-        if kx != last_kx {
-            println!("The kx value changes at x = {}", x);
-            break;
-        }
-        last_kx = kx;
-    }
+    assert!(increase(data, KX_INDEX));
 
     // verify the straight ray
     let (_, data) = straight_result.get();
     assert!(increase(data, XINDEX));
     assert!(same(data, YINDEX));
     assert!(same(data, KY_INDEX));
-
-    // kx same until beach, where it will be >= to start
-    assert!(can_increase_after(data, KX_INDEX, |state| state[0] > 975.0));
-    // verify last kx should be greater than first
-    assert!(
-        data.iter().filter(|v| !v[0].is_nan()).last().unwrap()[KX_INDEX]
-            > data.iter().filter(|v| !v[0].is_nan()).next().unwrap()[KX_INDEX]
-    );
-
-    // determine the x value where the kx is increasing
-    let mut last_kx = data[0][2];
-    for state in data.iter().skip(1) {
-        let x = state[0];
-        let kx = state[2];
-        if kx != last_kx {
-            println!("The kx value changes at x = {}", x);
-            break;
-        }
-        last_kx = kx;
-    }
+    assert!(increase(data, KX_INDEX));
 }
 
 #[test]
