@@ -123,7 +123,7 @@ impl<'a> ManyRays<'a> {
                 |r| match r.trace_individual(start_time, end_time, step_size) {
                     Ok(v) => Some(v),
                     Err(e) => {
-                        println!("ERROR {} during intergration", e);
+                        println!("ERROR {} during integration", e);
                         None
                     }
                 },
@@ -488,7 +488,7 @@ mod test_single_wave {
 
     #[test]
     /// ray tracing on a two-depth deep wave propagating in the x direction.
-    /// This correcly shows no change in kx or ky.
+    /// This correctly shows no change in kx or ky.
     fn test_two_depth_wave_deep_x() {
         let tmp_file = NamedTempFile::new().unwrap();
         let tmp_path = tmp_file.into_temp_path();
@@ -520,7 +520,7 @@ mod test_single_wave {
 
     #[test]
     /// ray tracing on a two-depth deep wave propagating at an angle in the x=y
-    /// direction. This correcly shows no change in kx or ky.
+    /// direction. This correctly shows no change in kx or ky.
     fn test_two_depth_wave_deep_xy() {
         let tmp_file = NamedTempFile::new().unwrap();
         let tmp_path = tmp_file.into_temp_path();
@@ -556,7 +556,7 @@ mod test_single_wave {
     }
 
     #[test]
-    /// shallow water wave propogating through a constant slope from deeper to
+    /// shallow water wave propagating through a constant slope from deeper to
     /// shallower water.
     fn test_slope_depth_wave_x() {
         let bathymetry_data = &ConstantSlope::builder().build().unwrap();
@@ -565,7 +565,7 @@ mod test_single_wave {
         let wave = SingleRay::new(bathymetry_data, current_data, 10.0, 1000.0, 0.01, 0.0);
         let res = wave.trace_individual(0.0, 100.0, 1.0).unwrap();
 
-        // this wave will propogate from deep to shallow water.
+        // this wave will propagate from deep to shallow water.
         assert_eq!(bathymetry_data.depth(&10.0, &1000.0).unwrap(), 49.5);
         assert_eq!(bathymetry_data.depth(&300.0, &1000.0).unwrap(), 35.0);
 
@@ -868,11 +868,11 @@ mod test_single_wave {
     #[test]
     /// test a wave with a nonzero dudx where u = x/100.0 and v = 0.0 this
     /// test first creates the gradient file and then tests the wave
-    /// propogation. It verifies two cases:
-    /// 1) a wave starting at (1,1,0.1,0.0) will propogate in the x direction
+    /// propagation. It verifies two cases:
+    /// 1) a wave starting at (1,1,0.1,0.0) will propagate in the x direction
     ///    and the kx value will decrease, but y and ky values will stay the
     ///    same
-    /// 2) a wave starting at (1,1,0.0,0.1) will propogate in the y direction
+    /// 2) a wave starting at (1,1,0.0,0.1) will propagate in the y direction
     ///    with slight positive x direction, but both kx and ky will remain the
     ///    same.
     fn test_simple_dudx_gradient() {
@@ -957,10 +957,10 @@ mod test_single_wave {
     #[test]
     /// This test will create a current file with a nonzero du/dy. The tests
     /// will verify two cases:
-    /// 1) a wave starting at (1,1,0.1,0.0) will propogate in the x direction,
+    /// 1) a wave starting at (1,1,0.1,0.0) will propagate in the x direction,
     ///    the kx values will stay the same, x will increase, and y and ky will
     ///    decrease
-    /// 2) a wave starting at (1,1,0.0,0.1) will propogate in the y direction,
+    /// 2) a wave starting at (1,1,0.0,0.1) will propagate in the y direction,
     ///    the kx and ky values stay the same, and the x and y values increase
     fn test_simple_dudy_gradient() {
         // function that takes in x and y as f32 and returns u and v as f64.
@@ -1049,10 +1049,10 @@ mod test_single_wave {
     /// This test will create a current file with a gradient in the v direction
     /// where v = (x / 100.0) and u = 0.0. This will create a gradient of dv/dy
     /// The tests will verify two cases:
-    /// 1) a wave starting at (1,1,0.1,0.0) will propogate in the x direction,
+    /// 1) a wave starting at (1,1,0.1,0.0) will propagate in the x direction,
     ///    all the kx and ky values will stay the same, but x and y values are
     ///    increasing
-    /// 2) a wave starting at (1,1,0.0,0.1) will propogate in the y direction
+    /// 2) a wave starting at (1,1,0.0,0.1) will propagate in the y direction
     ///    and the x and kx values will stay the same, but the y values will be
     ///    increasing and the ky values decreasing
     fn test_simple_dvdy_gradient() {
@@ -1147,10 +1147,10 @@ mod test_single_wave {
     /// This test will create a current file with a gradient in the v direction
     /// where v = (x / 100.0) and u = 0.0. This will create a gradient of dv/dx
     /// The test will verify that:
-    /// 1) a wave starting at (1,1,0.1,0.0) will propogate in the x direction
+    /// 1) a wave starting at (1,1,0.1,0.0) will propagate in the x direction
     /// and the kx and ky values will stay the same, but x and y values are
     /// increasing
-    /// 2) a wave starting at (1,1,0.0,0.1) will propogate in the y direction
+    /// 2) a wave starting at (1,1,0.0,0.1) will propagate in the y direction
     ///    and only the ky values will stay the same. The y values will increase
     ///    and the x and kx values will decrease.
     fn test_simple_dvdx_gradient() {
@@ -1308,7 +1308,10 @@ mod test_single_wave {
 #[cfg(test)]
 mod test_many_waves {
 
-    use crate::{bathymetry::{BathymetryData, ConstantSlope}, current::ConstantCurrent};
+    use crate::{
+        bathymetry::{BathymetryData, ConstantSlope},
+        current::ConstantCurrent,
+    };
 
     use super::ManyRays;
 
