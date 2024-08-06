@@ -36,6 +36,7 @@ pub fn same(data: &Vec<State>, index: usize) -> bool {
     let mut last = data[0][index];
     for r in data.iter().filter(|v| !v[0].is_nan()).skip(1) {
         if !(r[index] == last) {
+            println!("Expected {last} but got {}", r[index]);
             return false;
         }
         last = r[index];
