@@ -75,7 +75,7 @@ impl BathymetryData for ConstantSlope {
 impl ConstantSlope {
     #[allow(dead_code)]
     /// create the default `ConstantSlopeBuilder` object
-    /// 
+    ///
     /// For example,
     /// `ConstantSlope::builder().h0(100.0).dhdx(-0.05).build().unwrap()` builds
     /// the default ConstantSlope, but sets the initial height to 100 m and the
