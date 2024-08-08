@@ -45,7 +45,7 @@ use helper::*;
 ///
 /// ## Expected behavior
 /// The rays will curve towards the beach
-fn test_shallow_linear_beach_right() {
+fn test_linear_beach_right() {
     let bathymetry_data = ConstantSlope::builder()
         .x0(0.0)
         .y0(0.0)
@@ -129,7 +129,7 @@ fn test_shallow_linear_beach_right() {
 ///
 /// ### ray 3 (horizontal)
 /// - `x = 2000 m`
-/// - `y = 0 m`
+/// - `y = 100 m`
 /// - `kx = k`
 /// - `ky = 0`
 ///
@@ -140,11 +140,11 @@ fn test_shallow_linear_beach_right() {
 ///
 /// ## Expected behavior
 /// The rays will curve towards the beach
-fn test_shallow_linear_beach_left() {
+fn test_linear_beach_left() {
     let bathymetry_data = ConstantSlope::builder()
         .x0(0.0)
         .y0(0.0)
-        .h0(100.0)
+        .h0(0.0)
         .dhdx(0.05)
         .dhdy(0.0)
         .build()
@@ -158,7 +158,7 @@ fn test_shallow_linear_beach_left() {
 
     let down_ray = (2_000.0, 0.0, -k * (-PI / 6.0).cos(), k * (-PI / 6.0).sin());
 
-    let straight_ray = (2_000.0, 0.0, -k, 0.0);
+    let straight_ray = (2_000.0, 100.0, -k, 0.0); // The y value is 100 to avoid a floating point error
 
     let initial_rays = vec![up_ray, down_ray, straight_ray];
 
@@ -191,7 +191,6 @@ fn test_shallow_linear_beach_left() {
     // verify the straight ray
     let (_, data) = straight_result.get();
     assert!(decrease(data, XINDEX));
-    // FIXME: below test fails when y starts at 0
     assert!(same(data, YINDEX));
     assert!(same(data, KY_INDEX));
     assert!(decrease(data, KX_INDEX));
@@ -224,7 +223,7 @@ fn test_shallow_linear_beach_left() {
 /// - `ky = k * sin(2PI/6)`
 ///
 /// ### ray 3 (vertical)
-/// - `x = 0 m`
+/// - `x = 100 m`
 /// - `y = 0 m`
 /// - `kx = 0`
 /// - `ky = k`
@@ -236,7 +235,7 @@ fn test_shallow_linear_beach_left() {
 ///
 /// ## Expected behavior
 /// The rays will curve towards the beach
-fn test_shallow_linear_beach_top() {
+fn test_linear_beach_top() {
     let bathymetry_data = ConstantSlope::builder()
         .x0(0.0)
         .y0(0.0)
@@ -264,7 +263,7 @@ fn test_shallow_linear_beach_top() {
         k * (2.0 * PI / 6.0).sin(),
     );
 
-    let vertical_ray = (0.0, 0.0, 0.0, k);
+    let vertical_ray = (100.0, 0.0, 0.0, k); // the x value is 100 to avoid a floating point error
 
     let initial_rays = vec![left_ray, right_ray, vertical_ray];
 
@@ -296,7 +295,6 @@ fn test_shallow_linear_beach_top() {
 
     // verify the straight ray
     let (_, data) = vertical_result.get();
-    // FIXME: below fails when x starts at 0
     assert!(same(data, XINDEX));
     assert!(increase(data, YINDEX));
     assert!(same(data, KX_INDEX));
@@ -330,7 +328,7 @@ fn test_shallow_linear_beach_top() {
 /// - `ky = -k * sin(2PI/6)`
 ///
 /// ### ray 3 (vertical)
-/// - `x = 0 m`
+/// - `x = 100 m`
 /// - `y = 2000 m`
 /// - `kx = 0`
 /// - `ky = -k`
@@ -342,7 +340,7 @@ fn test_shallow_linear_beach_top() {
 ///
 /// ## Expected behavior
 /// The rays will curve towards the beach
-fn test_shallow_linear_beach_bottom() {
+fn test_linear_beach_bottom() {
     let bathymetry_data = ConstantSlope::builder()
         .x0(0.0)
         .y0(0.0)
@@ -370,7 +368,7 @@ fn test_shallow_linear_beach_bottom() {
         -k * (2.0 * PI / 6.0).sin(),
     );
 
-    let vertical_ray = (0.0, 2_000.0, 0.0, -k);
+    let vertical_ray = (100.0, 2_000.0, 0.0, -k); // the x value is 100 to prevent floating point error
 
     let initial_rays = vec![left_ray, right_ray, vertical_ray];
 
@@ -402,7 +400,6 @@ fn test_shallow_linear_beach_bottom() {
 
     // verify the straight ray
     let (_, data) = vertical_result.get();
-    // FIXME: below fails when x starts at 0
     assert!(same(data, XINDEX));
     assert!(decrease(data, YINDEX));
     assert!(same(data, KX_INDEX));
