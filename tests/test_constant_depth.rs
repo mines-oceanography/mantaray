@@ -1,6 +1,7 @@
 use std::f64::consts::PI;
 
 use mantaray::bathymetry::ConstantDepth;
+use mantaray::datatype::{Point, RayState, WaveNumber};
 use mantaray::current::ConstantCurrent;
 use mantaray::ray::ManyRays;
 
@@ -39,13 +40,14 @@ fn constant_depth_deep() {
     let current_data = ConstantCurrent::new(0.0, 0.0); // default (u, v) = (0, 0)
 
     // create 12 rays starting at the same point and in a circle with angle pi/6 between them
-    let init_rays: Vec<(f64, f64, f64, f64)> = (0..12)
+    let init_rays: Vec<RayState<f64>> = (0..12)
         .map(|i| {
-            (
-                50_000.0,
-                25_000.0,
-                0.05 * (PI * i as f64 / 6.0).cos(),
-                0.05 * (PI * i as f64 / 6.0).sin(),
+            RayState::new(
+                Point::new(50_000.0, 25_000.0),
+                WaveNumber::new(
+                    0.05 * (PI * i as f64 / 6.0).cos(),
+                    0.05 * (PI * i as f64 / 6.0).sin(),
+                ),
             )
         })
         .collect();
@@ -56,7 +58,9 @@ fn constant_depth_deep() {
 
     for (i, ray) in results.iter().flatten().enumerate() {
         let (_, data) = &ray.get();
-        let (_, _, kx, ky) = init_rays.get(i).unwrap().to_owned();
+        let target_ray = init_rays.get(i).unwrap().to_owned();
+        let kx = target_ray.wave_number().kx();
+        let ky = target_ray.wave_number().ky();
 
         // x
         if (kx - 0.0).abs() < f64::EPSILON {
@@ -111,13 +115,14 @@ fn constant_depth_shallow() {
     let current_data = ConstantCurrent::new(0.0, 0.0); // default (u, v) = (0, 0)
 
     // create 12 rays starting at the same point and in a circle with angle pi/6 between them
-    let init_rays: Vec<(f64, f64, f64, f64)> = (0..12)
+    let init_rays: Vec<RayState<f64>> = (0..12)
         .map(|i| {
-            (
-                50_000.0,
-                25_000.0,
-                0.05 * (PI * i as f64 / 6.0).cos(),
-                0.05 * (PI * i as f64 / 6.0).sin(),
+            RayState::new(
+                Point::new(50_000.0, 25_000.0),
+                WaveNumber::new(
+                    0.05 * (PI * i as f64 / 6.0).cos(),
+                    0.05 * (PI * i as f64 / 6.0).sin(),
+                ),
             )
         })
         .collect();
@@ -128,8 +133,9 @@ fn constant_depth_shallow() {
 
     for (i, ray) in results.iter().flatten().enumerate() {
         let (_, data) = &ray.get();
-        let (_, _, kx, ky) = init_rays.get(i).unwrap().to_owned();
-
+        let target_ray = init_rays.get(i).unwrap().to_owned();
+        let kx = target_ray.wave_number().kx();
+        let ky = target_ray.wave_number().ky();
         // x
         if (kx - 0.0).abs() < f64::EPSILON {
             assert!(same(data, XINDEX));

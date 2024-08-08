@@ -11,6 +11,7 @@ use pyo3::prelude::*;
 
 use crate::bathymetry::CartesianNetcdf3;
 use crate::current::CartesianCurrent;
+use crate::datatype::{Point, Ray, RayState, WaveNumber};
 use crate::ray::{ManyRays, SingleRay};
 
 /// A Python module implemented in Rust.
@@ -35,7 +36,8 @@ fn single_ray(
     let bathymetry = CartesianNetcdf3::open(Path::new(&bathymetry_filename), "x", "y", "depth")
         .expect("could not open bathymetry file");
     let current = CartesianCurrent::open(Path::new(&current_filename), "x", "y", "u", "v");
-    let wave = SingleRay::new(&bathymetry, &current, x0, y0, kx0, ky0);
+    let initial_state = RayState::new(Point::new(x0, y0), WaveNumber::new(kx0, ky0));
+    let wave = SingleRay::new(&bathymetry, &current, &initial_state);
     let res = wave.trace_individual(0.0, duration, step_size).unwrap();
     let (t, s) = res.get();
     let ans: Vec<_> = t
@@ -64,8 +66,8 @@ fn ray_tracing(
         .iter()
         .zip(y0.iter())
         .zip(kx0.iter().zip(ky0.iter()))
-        .map(|((x, y), (kx, ky))| (*x, *y, *kx, *ky))
-        .collect::<Vec<_>>();
+        .map(|((x, y), (kx, ky))| RayState::new(Point::new(*x, *y), WaveNumber::new(*kx, *ky)))
+        .collect::<Vec<RayState<f64>>>();
     let waves = ManyRays::new(&bathymetry, &current, &init_cond);
     let res = waves.trace_many(0.0, duration, step_size);
     let rays: Vec<Vec<(f64, f64, f64, f64, f64)>> = res
