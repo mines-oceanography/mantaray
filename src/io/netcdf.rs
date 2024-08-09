@@ -1,4 +1,5 @@
 use crate::bathymetry::BathymetryData;
+use crate::datatype::Point;
 use crate::error::Result;
 
 pub(crate) struct BathymetryFromNetCDF {
@@ -75,8 +76,8 @@ impl BathymetryFromNetCDF {
 }
 
 impl BathymetryData for BathymetryFromNetCDF {
-    fn depth(&self, x0: &f32, y0: &f32) -> Result<f32> {
-        let (i, j) = self.nearest_location_index(x0, y0)?;
+    fn depth(&self, point: &Point<f32>) -> Result<f32> {
+        let (i, j) = self.nearest_location_index(point.x(), point.y())?;
         Ok(self.depth_by_index(i, j))
     }
 

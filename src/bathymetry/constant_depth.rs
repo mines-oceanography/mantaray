@@ -1,7 +1,7 @@
 //! Struct used to create and access bathymetry data with a constant depth.
 
 use super::BathymetryData;
-use crate::error::Result;
+use crate::{datatype::Point, error::Result};
 use derive_builder::Builder;
 
 #[allow(dead_code)]
@@ -23,8 +23,8 @@ impl BathymetryData for ConstantDepth {
     /// Returns NaN when any input is NaN. Since it is a constant depth,
     /// there is no concept of boundaries, thus it can't fail as out of
     /// bounds.
-    fn depth(&self, x: &f32, y: &f32) -> Result<f32> {
-        if x.is_nan() || y.is_nan() {
+    fn depth(&self, point: &Point<f32>) -> Result<f32> {
+        if point.x().is_nan() || point.y().is_nan() {
             Ok(f32::NAN)
         } else {
             Ok(self.h)
@@ -63,6 +63,8 @@ impl ConstantDepth {
 
 #[cfg(test)]
 mod test_constant_depth {
+    use crate::datatype::Point;
+
     use super::{BathymetryData, ConstantDepth};
 
     #[test]
@@ -73,9 +75,9 @@ mod test_constant_depth {
     fn nan_input() {
         let c = ConstantDepth { h: 100.0 };
 
-        assert!(c.depth(&f32::NAN, &0.0).unwrap().is_nan());
-        assert!(c.depth(&0.0, &f32::NAN).unwrap().is_nan());
-        assert!(c.depth(&f32::NAN, &f32::NAN).unwrap().is_nan());
+        assert!(c.depth(&Point::new(f32::NAN, 0.0)).unwrap().is_nan());
+        assert!(c.depth(&Point::new(0.0, f32::NAN)).unwrap().is_nan());
+        assert!(c.depth(&Point::new(f32::NAN, f32::NAN)).unwrap().is_nan());
     }
 }
 

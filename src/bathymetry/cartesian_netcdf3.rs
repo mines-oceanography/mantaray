@@ -9,6 +9,7 @@ use netcdf3::{DataType, FileReader};
 
 use super::BathymetryData;
 use crate::{
+    datatype::Point,
     error::{Error, Result},
     interpolator,
 };
@@ -72,7 +73,9 @@ impl BathymetryData for CartesianNetcdf3 {
     /// input give an out of bounds output during the `interpolate` method.
     /// - `Error::InvalidArgument` : this error is returned from
     ///   `interpolator::bilinear` due to incorrect argument passed.
-    fn depth(&self, x: &f32, y: &f32) -> Result<f32> {
+    fn depth(&self, point: &Point<f32>) -> Result<f32> {
+        let x = point.x();
+        let y = point.y();
         if x.is_nan() || y.is_nan() {
             return Ok(f32::NAN);
         }
@@ -484,6 +487,7 @@ mod test_cartesian_file {
 
     use crate::{
         bathymetry::{cartesian_netcdf3::CartesianNetcdf3, BathymetryData},
+        datatype::Point,
         error::Error,
         io::utility::create_netcdf3_bathymetry,
     };
@@ -704,7 +708,7 @@ mod test_cartesian_file {
         create_netcdf3_bathymetry(&temp_path, 101, 51, 500.0, 500.0, four_depth_fn);
 
         let data = CartesianNetcdf3::open(&temp_path, "x", "y", "depth").unwrap();
-        if let Error::IndexOutOfBounds = data.depth(&-500.1, &500.1).unwrap_err() {
+        if let Error::IndexOutOfBounds = data.depth(&Point::new(-500.1, 500.1)).unwrap_err() {
             assert!(true);
         } else {
             assert!(false);
@@ -722,7 +726,7 @@ mod test_cartesian_file {
         create_netcdf3_bathymetry(&temp_path, 101, 51, 500.0, 500.0, four_depth_fn);
 
         let data = CartesianNetcdf3::open(&temp_path, "x", "y", "depth").unwrap();
-        if let Error::IndexOutOfBounds = data.depth(&500.1, &-500.1).unwrap_err() {
+        if let Error::IndexOutOfBounds = data.depth(&Point::new(500.1, -500.1)).unwrap_err() {
             assert!(true);
         } else {
             assert!(false);
@@ -741,9 +745,9 @@ mod test_cartesian_file {
 
         let nan = f32::NAN;
 
-        assert!(data.depth(&nan, &nan).unwrap().is_nan());
-        assert!(data.depth(&10000.0, &nan).unwrap().is_nan());
-        assert!(data.depth(&nan, &10000.0).unwrap().is_nan());
+        assert!(data.depth(&Point::new(nan, nan)).unwrap().is_nan());
+        assert!(data.depth(&Point::new(10000.0, nan)).unwrap().is_nan());
+        assert!(data.depth(&Point::new(nan, 10000.0)).unwrap().is_nan());
     }
 
     #[test]

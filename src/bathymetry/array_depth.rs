@@ -4,7 +4,7 @@
 //! of bounds.
 
 use super::BathymetryData;
-use crate::error::Result;
+use crate::{datatype::Point, error::Result};
 
 pub(crate) struct ArrayDepth {
     array: Vec<Vec<f32>>,
@@ -15,11 +15,13 @@ pub(crate) struct ArrayDepth {
 // directions and map those to cell indexes in the array. Then implement an
 // interpolation, and return a valid gradient.
 impl BathymetryData for ArrayDepth {
-    fn depth(&self, x: &f32, y: &f32) -> Result<f32> {
-        if *x as usize >= self.array.len() || *y as usize >= self.array.len() {
+    fn depth(&self, point: &Point<f32>) -> Result<f32> {
+        let x = *point.x() as usize;
+        let y = *point.y() as usize;
+        if x >= self.array.len() || y >= self.array.len() {
             return Ok(f32::NAN);
         }
-        Ok(self.array[*x as usize][*y as usize])
+        Ok(self.array[x][y])
     }
 
     fn depth_and_gradient(&self, x: &f32, y: &f32) -> Result<(f32, (f32, f32))> {

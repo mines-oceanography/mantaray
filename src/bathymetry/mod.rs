@@ -18,6 +18,7 @@ pub mod cartesian_netcdf3;
 mod constant_depth;
 pub mod constant_slope;
 
+use crate::datatype::Point;
 use crate::error::Result;
 #[allow(unused_imports)]
 pub(super) use array_depth::ArrayDepth;
@@ -32,8 +33,8 @@ pub use constant_slope::ConstantSlope;
 
 /// A trait defining ability to return depth and gradient
 pub trait BathymetryData: Sync {
-    /// Returns the nearest depth for the given (x, y) coordinate.
-    fn depth(&self, x: &f32, y: &f32) -> Result<f32>;
+    /// Returns the nearest depth for the given (x, y) point.
+    fn depth(&self, point: &Point<f32>) -> Result<f32>;
     /// Returns the nearest depth and depth gradient for the given (x, y) coordinates
     fn depth_and_gradient(&self, x: &f32, y: &f32) -> Result<(f32, (f32, f32))>;
 }
