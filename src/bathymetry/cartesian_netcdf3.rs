@@ -106,7 +106,9 @@ impl BathymetryData for CartesianNetcdf3 {
     /// `x` or `y` input give an out of bounds output.
     /// - `Error::InvalidArgument` : this error is returned from
     ///   `interpolator::bilinear` due to incorrect argument passed.
-    fn depth_and_gradient(&self, x: &f32, y: &f32) -> Result<(f32, (f32, f32))> {
+    fn depth_and_gradient(&self, point: &Point<f32>) -> Result<(f32, (f32, f32))> {
+        let x = point.x();
+        let y = point.y();
         if x.is_nan() || y.is_nan() {
             return Ok((f32::NAN, (f32::NAN, f32::NAN)));
         }
@@ -687,7 +689,7 @@ mod test_cartesian_file {
         ];
 
         for (x, y, h) in &check_depth {
-            let depth = data.depth_and_gradient(x, y).unwrap().0;
+            let depth = data.depth_and_gradient(&Point::new(*x, *y)).unwrap().0;
             assert!(
                 (depth - h).abs() < f32::EPSILON,
                 "Expected {}, but got {}",
@@ -771,9 +773,9 @@ mod test_cartesian_file {
         let dhdy = 0.0;
         for x in 0..100 {
             for y in 0..100 {
-                let x = &(x as f32);
-                let y = &(y as f32);
-                let (depth, gradient) = data.depth_and_gradient(x, y).unwrap();
+                let x = x as f32;
+                let y = y as f32;
+                let (depth, gradient) = data.depth_and_gradient(&Point::new(x, y)).unwrap();
                 let (x_gradient, y_gradient) = gradient;
                 assert!(
                     (x_gradient - dhdx).abs() < f32::EPSILON,
@@ -788,9 +790,9 @@ mod test_cartesian_file {
                     y_gradient
                 );
                 assert!(
-                    (depth - depth_fn(*x, *y) as f32).abs() < f32::EPSILON,
+                    (depth - depth_fn(x, y) as f32).abs() < f32::EPSILON,
                     "Expected {}, but got {}",
-                    depth_fn(*x, *y),
+                    depth_fn(x, y),
                     depth
                 );
             }
@@ -818,9 +820,9 @@ mod test_cartesian_file {
         let dhdy = 0.05;
         for x in 0..100 {
             for y in 0..100 {
-                let x = &(x as f32);
-                let y = &(y as f32);
-                let (depth, gradient) = data.depth_and_gradient(x, y).unwrap();
+                let x = x as f32;
+                let y = y as f32;
+                let (depth, gradient) = data.depth_and_gradient(&Point::new(x, y)).unwrap();
                 let (x_gradient, y_gradient) = gradient;
                 assert!(
                     (x_gradient - dhdx).abs() < f32::EPSILON,
@@ -835,9 +837,9 @@ mod test_cartesian_file {
                     y_gradient
                 );
                 assert!(
-                    (depth - depth_fn(*x, *y) as f32).abs() < f32::EPSILON,
+                    (depth - depth_fn(x, y) as f32).abs() < f32::EPSILON,
                     "Expected {}, but got {}",
-                    depth_fn(*x, *y),
+                    depth_fn(x, y),
                     depth
                 );
             }

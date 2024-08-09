@@ -64,7 +64,9 @@ impl BathymetryData for ConstantSlope {
     /// Returns NaN when any input is NaN. Since it is a constant slope,
     /// there is no concept of boundaries, thus it can't fail as out of
     /// bounds.
-    fn depth_and_gradient(&self, x: &f32, y: &f32) -> Result<(f32, (f32, f32))> {
+    fn depth_and_gradient(&self, point: &Point<f32>) -> Result<(f32, (f32, f32))> {
+        let x = point.x();
+        let y = point.y();
         if x.is_nan() || y.is_nan() {
             Ok((f32::NAN, (f32::NAN, f32::NAN)))
         } else {

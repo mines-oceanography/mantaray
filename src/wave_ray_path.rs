@@ -15,6 +15,7 @@ use crate::bathymetry::BathymetryData;
 use crate::bathymetry::DEFAULT_BATHYMETRY;
 use crate::current::CurrentData;
 use crate::current::DEFAULT_CURRENT;
+use crate::datatype::Point;
 use crate::error::Error;
 use crate::error::Result;
 
@@ -118,7 +119,7 @@ impl<'a> WaveRayPath<'a> {
         let point = crate::Point::new(*x, *y);
         let (h, (dhdx, dhdy)) = self
             .bathymetry_data
-            .depth_and_gradient(&(*x as f32), &(*y as f32))?;
+            .depth_and_gradient(&Point::new(*x as f32, *y as f32))?;
 
         // depth and depth gradient are retrieved as f32, but needs to be used as f64
         let h = h as f64;
