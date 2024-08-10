@@ -15,7 +15,7 @@ def single_ray(
     step_size: float,
     bathymetry: str,
     current: str,
-) -> xr.DataSet:
+) -> xr.Dataset:
     """Propagate a single ray without considering the effect of currents
 
     Parameters
@@ -74,7 +74,7 @@ def ray_tracing(
     step_size: float,
     bathymetry: str,
     current: str,
-) -> xr.DataSet:
+) -> xr.Dataset:
     """Ray tracing for multiple initial conditions
 
     For a given set of initial conditions, progapage those multiple rays in
