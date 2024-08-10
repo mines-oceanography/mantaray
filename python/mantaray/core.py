@@ -1,4 +1,3 @@
-
 import datetime
 
 import numpy as np
@@ -57,13 +56,14 @@ def single_ray(
     tmp = np.array(tmp)
     varnames = ["time", "x", "y", "kx", "ky"]
     output = xr.Dataset(
-        data_vars = {v:(["time_step"],t) for (v,t) in zip(varnames, tmp.T)},
-        attrs = {
+        data_vars={v: (["time_step"], t) for (v, t) in zip(varnames, tmp.T)},
+        attrs={
             "date_created": str(datetime.datetime.now()),
-        }
+        },
     )
 
     return output
+
 
 def ray_tracing(
     x0,
@@ -115,10 +115,10 @@ def ray_tracing(
 
     varnames = ["time", "x", "y", "kx", "ky"]
     output = xr.Dataset(
-        data_vars = {v:(["time_step", "ray"],t) for (v,t) in zip(varnames, tmp.T)},
-        attrs = {
+        data_vars={v: (["time_step", "ray"], t) for (v, t) in zip(varnames, tmp.T)},
+        attrs={
             "date_created": str(datetime.datetime.now()),
-        }
+        },
     ).transpose("ray", "time_step")
 
     return output
