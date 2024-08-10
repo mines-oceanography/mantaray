@@ -16,7 +16,7 @@ def single_ray(
     step_size: float,
     bathymetry: str,
     current: str,
-):
+) -> xr.DataSet:
     """Propagate a single ray without considering the effect of currents
 
     Parameters
@@ -24,6 +24,8 @@ def single_ray(
 
     Return
     ------
+    xr.Dataset :
+        A dataset containing the time evolution of the ray
 
     Examples
     --------
@@ -53,7 +55,7 @@ def ray_tracing(
     step_size: float,
     bathymetry: str,
     current: str,
-):
+) -> xr.DataSet:
     """Ray tracing for multiple initial conditions
 
     For a given set of initial conditions, progapage those multiple rays in
@@ -72,8 +74,8 @@ def ray_tracing(
 
     Returns
     -------
-    List[List[tuple[float, float, float, float, float]]]:
-        List of multiple rays, one for each initial condition.
+    xr.Dataset :
+        A dataset containing the time evolution of multiple rays.
     """
     tmp = _mantaray.ray_tracing(
         x0, y0, kx0, ky0, duration, step_size, bathymetry, current
