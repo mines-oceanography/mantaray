@@ -38,7 +38,7 @@ def single_ray(
     tmp = np.array(tmp)
     varnames = ["time", "x", "y", "kx", "ky"]
     output = xr.Dataset(
-        data_vars = {v:(["time"],t) for (v,t) in zip(varnames, tmp.T)},
+        data_vars = {v:(["time_step"],t) for (v,t) in zip(varnames, tmp.T)},
         attrs = {
             "date_created": str(datetime.datetime.now()),
         }
@@ -85,10 +85,10 @@ def ray_tracing(
 
     varnames = ["time", "x", "y", "kx", "ky"]
     output = xr.Dataset(
-        data_vars = {v:(["time", "trajectory"],t) for (v,t) in zip(varnames, tmp.T)},
+        data_vars = {v:(["time_step", "ray"],t) for (v,t) in zip(varnames, tmp.T)},
         attrs = {
             "date_created": str(datetime.datetime.now()),
         }
-    ).transpose("trajectory", "time")
+    ).transpose("ray", "time_step")
 
     return output
