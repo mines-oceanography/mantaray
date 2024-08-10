@@ -60,7 +60,7 @@ def single_ray(
         attrs={
             "date_created": str(datetime.datetime.now()),
         },
-    )
+    ).set_coords(["time", "x", "y"])
 
     return output
 
@@ -119,6 +119,6 @@ def ray_tracing(
         attrs={
             "date_created": str(datetime.datetime.now()),
         },
-    ).transpose("ray", "time_step")
+    ).transpose("ray", "time_step").set_coords(["time", "x", "y"])
 
     return output
