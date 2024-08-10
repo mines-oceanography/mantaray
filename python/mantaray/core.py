@@ -21,6 +21,25 @@ def single_ray(
 
     Parameters
     ----------
+    x0 : float
+        Initial x position of the ray
+    y0 : float
+        Initial y position of the ray
+    kx0 : float
+        Initial wavenumber, x component
+    ky0 : float
+        Initial wavenumber, y component
+    duration : float
+        Duration of the simulation
+    step_size : float
+        Time step for the simulation
+    bathymetry : str
+        Path to a netCDF file containing the bathymetry file. It is expected
+        to have x and y dimensions as floats and depth (x, y) as a float,
+        where depth is zero at surface and positive downwards.
+    current : str
+        Paths to a netCDF file containing the current field. It is expected
+        to have x and y dimensions as floats and u(x,y) and v(x,y) as floats.
 
     Return
     ------
@@ -64,13 +83,24 @@ def ray_tracing(
     Parameters
     ----------
     x0 : Sequence[float]
+        Initial x position of the ray
     y0 : Sequence[float]
+        Initial y position of the ray
     kx0 : Sequence[float]
+        Initial wavenumber, x component
     ky0 : Sequence[float]
+        Initial wavenumber, y component
     duration : float
+        Duration of the simulation
     step_size : float
+        Time step for the simulation
     bathymetry : str
+        Path to a netCDF file containing the bathymetry file. It is expected
+        x and y dimensions as floats and depth (x, y) as a float, where
+        depth is zero at surface and positive downwards.
     current : str
+        Paths to a netCDF file containing the current field. It is expected
+        to have x and y dimensions as floats and u(x,y) and v(x,y) as floats.
 
     Returns
     -------
