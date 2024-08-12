@@ -24,7 +24,7 @@ pub(super) use array_depth::ArrayDepth;
 #[allow(unused_imports)]
 pub use cartesian_netcdf3::CartesianNetcdf3;
 #[allow(unused_imports)]
-pub(super) use constant_depth::ConstantDepth;
+pub use constant_depth::ConstantDepth;
 #[allow(unused_imports)]
 pub(super) use constant_slope::ConstantSlope;
 

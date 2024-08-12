@@ -29,7 +29,7 @@ mod datatype;
 mod error;
 mod ffi;
 mod interpolator;
-mod io;
+pub mod io;
 pub mod ray;
 mod ray_result;
 /// cbindgen:ignore
@@ -37,3 +37,5 @@ mod wave_ray_path;
 
 #[allow(unused_imports)]
 use datatype::{Coordinate, Current, Point};
+#[allow(unused_imports)]
+pub use wave_ray_path::State;
