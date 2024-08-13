@@ -9,7 +9,7 @@ use netcdf3::{DataType, FileReader};
 
 use super::BathymetryData;
 use crate::{
-    datatype::Point,
+    datatype::{Gradient, Point},
     error::{Error, Result},
     interpolator,
 };
@@ -106,11 +106,11 @@ impl BathymetryData for CartesianNetcdf3 {
     /// `x` or `y` input give an out of bounds output.
     /// - `Error::InvalidArgument` : this error is returned from
     ///   `interpolator::bilinear` due to incorrect argument passed.
-    fn depth_and_gradient(&self, point: &Point<f32>) -> Result<(f32, (f32, f32))> {
+    fn depth_and_gradient(&self, point: &Point<f32>) -> Result<(f32, Gradient<f32>)> {
         let x = point.x();
         let y = point.y();
         if x.is_nan() || y.is_nan() {
-            return Ok((f32::NAN, (f32::NAN, f32::NAN)));
+            return Ok((f32::NAN, Gradient::new(f32::NAN, f32::NAN)));
         }
 
         let corner_points = match self.four_corners(x, y) {
@@ -142,7 +142,7 @@ impl BathymetryData for CartesianNetcdf3 {
             - self.depth_at_indexes(&sw_point.0, &sw_point.1)?)
             / y_space;
 
-        Ok((depth, (x_gradient as f32, y_gradient as f32)))
+        Ok((depth, Gradient::new(x_gradient as f32, y_gradient as f32)))
     }
 }
 
@@ -776,18 +776,17 @@ mod test_cartesian_file {
                 let x = x as f32;
                 let y = y as f32;
                 let (depth, gradient) = data.depth_and_gradient(&Point::new(x, y)).unwrap();
-                let (x_gradient, y_gradient) = gradient;
                 assert!(
-                    (x_gradient - dhdx).abs() < f32::EPSILON,
+                    (gradient.dx() - dhdx).abs() < f32::EPSILON,
                     "Expected {}, but got {}",
                     dhdx,
-                    x_gradient
+                    gradient.dx()
                 );
                 assert!(
-                    (y_gradient - dhdy).abs() < f32::EPSILON,
+                    (gradient.dy() - dhdy).abs() < f32::EPSILON,
                     "Expected {}, but got {}",
                     dhdy,
-                    y_gradient
+                    gradient.dy()
                 );
                 assert!(
                     (depth - depth_fn(x, y) as f32).abs() < f32::EPSILON,
@@ -823,18 +822,17 @@ mod test_cartesian_file {
                 let x = x as f32;
                 let y = y as f32;
                 let (depth, gradient) = data.depth_and_gradient(&Point::new(x, y)).unwrap();
-                let (x_gradient, y_gradient) = gradient;
                 assert!(
-                    (x_gradient - dhdx).abs() < f32::EPSILON,
+                    (gradient.dx() - dhdx).abs() < f32::EPSILON,
                     "Expected {}, but got {}",
                     dhdx,
-                    x_gradient
+                    gradient.dx()
                 );
                 assert!(
-                    (y_gradient - dhdy).abs() < f32::EPSILON,
+                    (gradient.dy() - dhdy).abs() < f32::EPSILON,
                     "Expected {}, but got {}",
                     dhdy,
-                    y_gradient
+                    gradient.dy()
                 );
                 assert!(
                     (depth - depth_fn(x, y) as f32).abs() < f32::EPSILON,

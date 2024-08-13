@@ -1,7 +1,7 @@
 //! Struct used to create and access bathymetry data with a constant slope.
 
 use super::BathymetryData;
-use crate::{datatype::Point, error::Result};
+use crate::{datatype::{Gradient, Point}, error::Result};
 use derive_builder::Builder;
 
 #[derive(Builder, Debug, PartialEq)]
@@ -64,14 +64,14 @@ impl BathymetryData for ConstantSlope {
     /// Returns NaN when any input is NaN. Since it is a constant slope,
     /// there is no concept of boundaries, thus it can't fail as out of
     /// bounds.
-    fn depth_and_gradient(&self, point: &Point<f32>) -> Result<(f32, (f32, f32))> {
+    fn depth_and_gradient(&self, point: &Point<f32>) -> Result<(f32, Gradient<f32>)> {
         let x = point.x();
         let y = point.y();
         if x.is_nan() || y.is_nan() {
-            Ok((f32::NAN, (f32::NAN, f32::NAN)))
+            Ok((f32::NAN, Gradient::new(f32::NAN, f32::NAN)))
         } else {
             let h = self.h0 + self.dhdx * (x - self.x0) + self.dhdy * (y - self.y0);
-            Ok((h, (self.dhdx, self.dhdy)))
+            Ok((h, Gradient::new(self.dhdx, self.dhdy)))
         }
     }
 }

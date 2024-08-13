@@ -1,5 +1,5 @@
 use crate::bathymetry::BathymetryData;
-use crate::datatype::Point;
+use crate::datatype::{Gradient, Point};
 use crate::error::Result;
 
 pub(crate) struct BathymetryFromNetCDF {
@@ -81,7 +81,7 @@ impl BathymetryData for BathymetryFromNetCDF {
         Ok(self.depth_by_index(i, j))
     }
 
-    fn depth_and_gradient(&self, point: &Point<f32>) -> Result<(f32, (f32, f32))> {
+    fn depth_and_gradient(&self, point: &Point<f32>) -> Result<(f32, Gradient<f32>)> {
         let (i, j) = self.nearest_location_index(point.x(), point.y())?;
         let z0 = self.depth_by_index(i, j);
 
@@ -91,7 +91,7 @@ impl BathymetryData for BathymetryFromNetCDF {
         let delta_2y = self.y[j + 1] - self.y[j - 1];
         let dzdy = (self.depth_by_index(i, j + 1) + self.depth_by_index(i, j - 1)) / delta_2y;
 
-        Ok((z0, (dzdx, dzdy)))
+        Ok((z0, Gradient::new(dzdx, dzdy)))
     }
 }
 

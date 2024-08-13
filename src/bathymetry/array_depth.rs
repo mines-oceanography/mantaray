@@ -4,7 +4,7 @@
 //! of bounds.
 
 use super::BathymetryData;
-use crate::{datatype::Point, error::Result};
+use crate::{datatype::{Gradient, Point}, error::Result};
 
 pub(crate) struct ArrayDepth {
     array: Vec<Vec<f32>>,
@@ -24,13 +24,13 @@ impl BathymetryData for ArrayDepth {
         Ok(self.array[x][y])
     }
 
-    fn depth_and_gradient(&self, point: &Point<f32>) -> Result<(f32, (f32, f32))> {
+    fn depth_and_gradient(&self, point: &Point<f32>) -> Result<(f32, Gradient<f32>)> {
         let x = *point.x() as usize;
         let y = *point.y() as usize;
         if x >= self.array.len() || y >= self.array.len() {
-            return Ok((f32::NAN, (f32::NAN, f32::NAN)));
+            return Ok((f32::NAN, Gradient::new(f32::NAN, f32::NAN)));
         }
-        Ok((self.array[x][y], (0.0, 0.0)))
+        Ok((self.array[x][y], Gradient::new(0.0, 0.0)))
     }
 }
 
