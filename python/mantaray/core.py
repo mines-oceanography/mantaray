@@ -50,7 +50,7 @@ def single_ray(
     >>> mantaray.single_ray(-1000, 0, 0.01, 0, 10, 2, "island.nc")
     """
     tmp = _mantaray.single_ray(
-        x0, y0, kx0, ky0, duration, step_size, bathymetry, current
+        x0, y0, kx0, ky0, duration, step_size, str(bathymetry), str(current)
     )
 
     tmp = np.array(tmp)
