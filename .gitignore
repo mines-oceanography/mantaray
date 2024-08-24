@@ -1,6 +1,7 @@
 /target
 
 __pycache__
+*.so
 
 # pixi environments
 .pixi
