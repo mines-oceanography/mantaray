@@ -1,3 +1,4 @@
+use crate::datatype::{Current, Gradient, Point};
 use crate::error::Result;
 
 use super::CurrentData;
@@ -41,8 +42,8 @@ impl CurrentData for ConstantCurrent {
     /// # Error
     /// The trait definition includes the chance for error. However, the
     /// `ConstantCurrent::current` should never return an error.
-    fn current(&self, _x: &f64, _y: &f64) -> Result<(f64, f64)> {
-        Ok((self.u, self.v))
+    fn current(&self, _point: &Point<f64>) -> Result<Current<f64>> {
+        Ok(Current::new(self.u, self.v))
     }
 
     /// get the current and gradient at point (x, y)
@@ -61,9 +62,11 @@ impl CurrentData for ConstantCurrent {
     /// `ConstantCurrent::current_and_gradient` should never return an error.
     fn current_and_gradient(
         &self,
-        _x: &f64,
-        _y: &f64,
-    ) -> Result<((f64, f64), (f64, f64, f64, f64))> {
-        Ok(((self.u, self.v), (0.0, 0.0, 0.0, 0.0)))
+        _point: &Point<f64>,
+    ) -> Result<(Current<f64>, (Gradient<f64>, Gradient<f64>))> {
+        Ok((
+            Current::new(self.u, self.v),
+            (Gradient::new(0.0, 0.0), Gradient::new(0.0, 0.0)),
+        ))
     }
 }
