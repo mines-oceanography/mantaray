@@ -6,7 +6,7 @@ build-backend = "maturin"
 
 [project]
 name = "mantaray"
-version = "0.0.1"
+version = "0.0.2"
 authors = [
   {email = "bryceirving@mines.edu",  name = "Bryce Irving"},
   {email = "guilherme@castelao.net",  name = "Guilherme Castelao"},
@@ -24,6 +24,18 @@ dependencies = [
   "cffi>=1.14.0",
   "xarray>=2023",
   ]
+
+[project.optional-dependencies]
+netcdf = ["netcdf4>=1.5.7"]
+dev = [
+  "build>=0.6",
+]
+test = [
+  "pytest>=7.0",
+  "pytest-cov>=3.0",
+  "pytest-xdist>=3.0",
+  "netcdf4>=1.5.7",
+]
 
 #[tool.cibuildwheel]
 #build = "cp310-*"

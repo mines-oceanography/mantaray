@@ -3,3 +3,11 @@
 # Ray Tracing
 
 A library for surface gravity waves ray tracing.
+
+## Development
+
+To test Python library run:
+
+```
+pixi run -e dev pytest
+```
