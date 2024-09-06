@@ -1,9 +1,9 @@
 from typing import Optional
+
 import matplotlib.axes
 import matplotlib.figure
-import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib
+import numpy as np
 import xarray as xr
 
 
