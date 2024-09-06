@@ -10,9 +10,8 @@ import xarray as xr
 def plot_ray_tracing(
     ray_bundle: xr.Dataset,
     *,
-    bathymetry: Optional[str] = None,
-    current: Optional[str] = None,
-    spacing: int = 5,
+    bathymetry: Optional[xr.Dataset] = None,
+    current: Optional[xr.Dataset] = None,
 ) -> tuple[matplotlib.figure.Figure, matplotlib.axes.Axes]:
     '''Plot the ray bundle using matplotlib. Optionally plot bathymetry or current.
 
@@ -22,15 +21,11 @@ def plot_ray_tracing(
         An xarray dataset containing the rays, time steps, x, y, kx, and ky,
         values
 
-    bathymetry : str, optional
+    bathymetry : xarray.Dataset, optional
         The path to the bathymetry file to plot
 
-    current : str, optional
+    current : xarray.Dataset, optional
         The path of the current file to plot
-
-    spacing : int, default=5
-        The spacing between plotting nearby current vectors. The default is 5,
-        which means every fifth current vector will be plotted.
 
     Returns
     -------
@@ -46,7 +41,7 @@ def plot_ray_tracing(
     ax.set_title("Plot of Ray Tracing")
 
     if current:
-        plot_current(current, ax, spacing)
+        plot_current(current, ax)
 
     if bathymetry:
         # plot as contour or heatmap?
@@ -72,10 +67,10 @@ def plot_ray_bundle(ray_path, ax):
 
 
 def plot_bathymetry_heatmap(bathymetry, ax):
-    ds = xr.open_dataset(bathymetry)
-    x = ds.x.values
-    y = ds.y.values
-    h = ds.depth.values
+    #FIXME: make xarray style
+    x = bathymetry.x.values
+    y = bathymetry.y.values
+    h = bathymetry.depth.values
     im = ax.imshow(h, extent=(x[0], x[-1], y[0], y[-1]))
     # Color bar
     colorbar = ax.figure.colorbar(im, ax=ax)
@@ -83,20 +78,20 @@ def plot_bathymetry_heatmap(bathymetry, ax):
 
 
 def plot_bathymetry_contour(bathymetry, ax):
-    ds = xr.open_dataset(bathymetry)
-    x = ds.x.values
-    y = ds.y.values
-    h = ds.depth.values
+    #FIXME: make xarray style
+    x = bathymetry.x.values
+    y = bathymetry.y.values
+    h = bathymetry.depth.values
     cs = ax.contour(x, y, h, extent=(x[0], x[-1], y[0], y[-1]), colors="k")
     ax.clabel(cs, cs.levels, inline=True, fontsize=10, colors="k")
 
 
-def plot_current(current, ax, spacing):
-    ds = xr.open_dataset(current)
-    x = ds.x.values
-    y = ds.y.values
-    u = ds.u.values
-    v = ds.v.values
+def plot_current(current, ax):
+    #FIXME: make xarray style
+    x = current.x.values
+    y = current.y.values
+    u = current.u.values
+    v = current.v.values
 
     speed = np.sqrt(u**2 + v**2)
     im = ax.imshow(speed, extent=(x[0], x[-1], y[0], y[-1]))
@@ -105,9 +100,9 @@ def plot_current(current, ax, spacing):
     X, Y = np.meshgrid(x, y)
 
     ax.quiver(
-        X[::spacing, ::spacing],
-        Y[::spacing, ::spacing],
-        u[::spacing, ::spacing],
-        v[::spacing, ::spacing],
+        X,
+        Y,
+        u,
+        v,
         scale=10,
     )
