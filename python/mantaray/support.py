@@ -1,3 +1,6 @@
+# TODOs: fix labels, fix colormaps, fixed squished-looking shape, fix ticks,
+# reduce colorbar size, ...
+
 from typing import Optional
 
 import matplotlib.axes
@@ -34,21 +37,22 @@ def plot_ray_tracing(
         `plt.subplots()` return type.
 
     '''
-    fig, ax = plt.subplots()
+    if current and bathymetry:
+        fig, axs = plt.subplots(1,2, figsize=(10,4))
+        ax1, ax2 = axs
 
-    if current:
-        plot_current(current, ax)
-
-    if bathymetry:
-        # plot as contour or heatmap?
+        plot_current(current, ax1)
+        plot_bathymetry_heatmap(bathymetry, ax2)
+    else:
+        fig, ax = plt.subplots()
         if current:
-            pass
-            # plot_bathymetry_contour(bathymetry, ax)
-        else:
-            #plot_bathymetry_contour(bathymetry, ax)
+            plot_current(current, ax)
+        if bathymetry:
             plot_bathymetry_heatmap(bathymetry, ax)
 
-    if ray_bundle:
+        axs = [ax]
+
+    for ax in axs:
         plot_ray_bundle(ray_bundle, ax)
 
     plt.show()
@@ -63,11 +67,7 @@ def plot_ray_bundle(ray_bundle, ax):
 
 
 def plot_bathymetry_heatmap(bathymetry, ax):
-    bathymetry.depth.plot()
-
-
-def plot_bathymetry_contour(bathymetry, ax):
-    bathymetry.depth.plot.contour(levels=20, add_colorbar=True)
+    bathymetry.depth.plot(ax=ax, cbar_kwargs={"orientation": "horizontal"})
 
 
 def plot_current(current, ax):
@@ -78,8 +78,8 @@ def plot_current(current, ax):
 
     speed = np.sqrt(u**2 + v**2)
     im = ax.imshow(speed, extent=(x[0], x[-1], y[0], y[-1]))
-    colorbar = ax.figure.colorbar(im, ax=ax)
-    colorbar.ax.set_ylabel("Current Speed [m/s]", rotation=-90, va="bottom")
+    colorbar = ax.figure.colorbar(im, ax=ax, orientation='horizontal')
+    colorbar.ax.set_xlabel("Current Speed [m/s]")
     X, Y = np.meshgrid(x, y)
 
     ax.quiver(
