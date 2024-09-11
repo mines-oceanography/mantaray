@@ -36,10 +36,6 @@ def plot_ray_tracing(
     '''
     fig, ax = plt.subplots()
 
-    ax.set_xlabel("x [m]")
-    ax.set_ylabel("y [m]")
-    ax.set_title("Plot of Ray Tracing")
-
     if current:
         plot_current(current, ax)
 
@@ -49,6 +45,7 @@ def plot_ray_tracing(
             pass
             # plot_bathymetry_contour(bathymetry, ax)
         else:
+            #plot_bathymetry_contour(bathymetry, ax)
             plot_bathymetry_heatmap(bathymetry, ax)
 
     if ray_bundle:
@@ -58,36 +55,22 @@ def plot_ray_tracing(
     return fig, ax
 
 
-def plot_ray_bundle(ray_path, ax):
-    number_of_rays = ray_path.ray.size
-    for i in range(number_of_rays):
-        x = ray_path.x.values[i]
-        y = ray_path.y.values[i]
-    ax.plot(x, y, color="r")
+def plot_ray_bundle(ray_bundle, ax):
+    for _, ray in ray_bundle.groupby('ray'):
+        x = ray.x.values.flatten()
+        y = ray.y.values.flatten()
+        ax.plot(x, y, color="r")
 
 
 def plot_bathymetry_heatmap(bathymetry, ax):
-    #FIXME: make xarray style
-    x = bathymetry.x.values
-    y = bathymetry.y.values
-    h = bathymetry.depth.values
-    im = ax.imshow(h, extent=(x[0], x[-1], y[0], y[-1]))
-    # Color bar
-    colorbar = ax.figure.colorbar(im, ax=ax)
-    colorbar.ax.set_ylabel("Depth [m]", rotation=-90, va="bottom")
+    bathymetry.depth.plot()
 
 
 def plot_bathymetry_contour(bathymetry, ax):
-    #FIXME: make xarray style
-    x = bathymetry.x.values
-    y = bathymetry.y.values
-    h = bathymetry.depth.values
-    cs = ax.contour(x, y, h, extent=(x[0], x[-1], y[0], y[-1]), colors="k")
-    ax.clabel(cs, cs.levels, inline=True, fontsize=10, colors="k")
+    bathymetry.depth.plot.contour(levels=20, add_colorbar=True)
 
 
 def plot_current(current, ax):
-    #FIXME: make xarray style
     x = current.x.values
     y = current.y.values
     u = current.u.values
