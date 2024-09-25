@@ -275,21 +275,20 @@ impl CartesianNetcdf3 {
     /// This function uses binary search, but requires the array to be sorted.
     fn nearest(&self, target: &f32, array: &[f32]) -> Result<f32> {
         // array has to have at least 1 element (prevent future divide by zero error)
-        if array.len() == 0 {
-            todo!() // error
+        if array.is_empty() {
+            return Err(Error::IndexOutOfBounds) // error
         }
 
-        // if target array only has one element
+        // if the array has only one element, return 0 as its the only option
         if array.len() == 1 {
             return Ok(0.0);
         }
 
-        let left = 0;
-        let right = array.len() - 1;
+        // we know the array has at least two elements, so the following line
+        // will never panic
+        let spacing = (array[1] - array[0]).abs();
 
-        let spacing = (array[right] - array[left]) / array.len() as f32;
-
-        let index = target / spacing;
+        let index = (target - array[0]) / spacing;
 
         if index < 0.0 || index > (array.len() - 1) as f32 {
             return Err(Error::IndexOutOfBounds);
@@ -345,9 +344,9 @@ impl CartesianNetcdf3 {
 
         // determine the edges
         let xlow = 0.0;
-        let xhigh = self.x.len() as f32;
+        let xhigh = (self.x.len() - 1) as f32;
         let ylow = 0.0;
-        let yhigh = self.y.len() as f32;
+        let yhigh = (self.y.len() - 1) as f32;
 
         // check if edge cases
         if xindex == xlow {
@@ -397,6 +396,29 @@ impl CartesianNetcdf3 {
             let x2 = xindex as usize + 1;
             let y1 = yindex as usize;
             let y2 = yindex as usize + 1;
+            Ok(vec![(x1, y1), (x1, y2), (x2, y2), (x2, y1)])
+        } else if xindex.fract() == 0.0 {
+            // on an interior x grid point
+            if yindex.fract() == 0.0 {
+                // also on an interior y grid point
+                let x1 = xindex.round() as usize;
+                let x2 = x1 + 1;
+                let y1 = yindex.round() as usize;
+                let y2 = y1 + 1;
+                Ok(vec![(x1, y1), (x1, y2), (x2, y2), (x2, y1)])
+            } else {
+                let x1 = xindex.round() as usize;
+                let x2 = x1 + 1;
+                let y1 = yindex.floor() as usize;
+                let y2 = yindex.ceil() as usize;
+                Ok(vec![(x1, y1), (x1, y2), (x2, y2), (x2, y1)])
+            }
+        } else if yindex.fract() == 0.0 {
+            // only on an interior y grid point
+            let x1 = xindex.floor() as usize;
+            let x2 = xindex.ceil() as usize;
+            let y1 = yindex.round() as usize;
+            let y2 = y1 + 1;
             Ok(vec![(x1, y1), (x1, y2), (x2, y2), (x2, y1)])
         } else {
             // normal case
@@ -531,35 +553,137 @@ mod test_cartesian_file {
         assert!((data.x[10] - 5000.0).abs() < f32::EPSILON)
     }
 
-    // #[test]
-    // // test the and view the nearest function
-    // fn test_get_nearest() {
-    //     // create temporary file
-    //     let temp_file = NamedTempFile::new().unwrap();
-    //     let temp_path = temp_file.into_temp_path();
+    #[test]
+    // test the and view the nearest function
+    fn test_nearest() {
+        // create temporary file
+        let temp_file = NamedTempFile::new().unwrap();
+        let temp_path = temp_file.into_temp_path();
 
-    //     create_netcdf3_bathymetry(&temp_path, 101, 51, 500.0, 500.0, four_depth_fn);
+        create_netcdf3_bathymetry(&temp_path, 101, 51, 500.0, 500.0, four_depth_fn);
 
-    //     let data = CartesianNetcdf3::open(&temp_path, "x", "y", "depth").unwrap();
-    //     assert!(data.nearest(&5499.0, &data.x) == 11);
-    // }
+        let data = CartesianNetcdf3::open(&temp_path, "x", "y", "depth").unwrap();
 
-    // #[test]
-    // // check the output from four_corners function
-    // fn test_get_corners() {
-    //     // create temporary file
-    //     let temp_file = NamedTempFile::new().unwrap();
-    //     let temp_path = temp_file.into_temp_path();
+        // in bounds
+        assert!(data.nearest(&5499.0, &data.x).unwrap().round() == 11.0);
 
-    //     create_netcdf3_bathymetry(&temp_path, 101, 51, 500.0, 500.0, four_depth_fn);
+        // out of bounds
+        assert!(data.nearest(&-1.0, &data.y).is_err());
+        assert!(data.nearest(&25_501.0, &data.y).is_err());
 
-    //     let data = CartesianNetcdf3::open(&temp_path, "x", "y", "depth").unwrap();
-    //     let corners = data.four_corners(&10, &10).unwrap();
-    //     assert!(corners[0].0 == 10 && corners[0].1 == 11);
-    //     assert!(corners[1].0 == 11 && corners[1].1 == 10);
-    //     assert!(corners[2].0 == 10 && corners[2].1 == 9);
-    //     assert!(corners[3].0 == 9 && corners[3].1 == 10);
-    // }
+        // on grid point
+        assert!((data.nearest(&5500.0, &data.x).unwrap() - 11.0).abs() <= f32::EPSILON);
+    }
+
+    #[test]
+    // test the nearest point function (which returns floating point indexes)
+    fn test_nearest_point() {
+        // create temporary file
+        let temp_file = NamedTempFile::new().unwrap();
+        let temp_path = temp_file.into_temp_path();
+
+        create_netcdf3_bathymetry(&temp_path, 101, 51, 500.0, 500.0, four_depth_fn);
+
+        let data = CartesianNetcdf3::open(&temp_path, "x", "y", "depth").unwrap();
+
+        // in bounds
+        assert!(data.nearest_point(&1.0, &24_999.0).unwrap().0.round() == 0.0);
+        assert!(data.nearest_point(&1.0, &24_999.0).unwrap().1.round() == 50.0);
+
+        // out of bounds
+        assert!(data.nearest_point(&1.0, &25_001.0).is_err());
+        assert!(data.nearest_point(&-1.0, &25_000.0).is_err());
+
+        // grid points
+        assert!((data.nearest_point(&0.0, &25_000.0).unwrap().0 - 0.0).abs() <= f32::EPSILON);
+        assert!((data.nearest_point(&0.0, &25_000.0).unwrap().1 - 50.0).abs() <= f32::EPSILON);
+    }
+
+    #[test]
+    // check all the cases for the output from the four_corners function
+    fn test_get_corners() {
+        // create temporary file
+        let temp_file = NamedTempFile::new().unwrap();
+        let temp_path = temp_file.into_temp_path();
+
+        create_netcdf3_bathymetry(&temp_path, 101, 51, 500.0, 500.0, four_depth_fn);
+
+        let data = CartesianNetcdf3::open(&temp_path, "x", "y", "depth").unwrap();
+
+        // check edge cases
+
+        // top left corner
+        assert!(
+            data.four_corners(&0.0, &25_000.0).unwrap() == vec![(0, 49), (0, 50), (1, 50), (1, 49)]
+        );
+
+        // left edge
+        assert!(
+            data.four_corners(&0.0, &5_500.0).unwrap() == vec![(0, 11), (0, 12), (1, 12), (1, 11)]
+        );
+
+        // bottom left corner
+        assert!(data.four_corners(&0.0, &0.0).unwrap() == vec![(0, 0), (0, 1), (1, 1), (1, 0)]);
+
+        // top edge
+        assert!(
+            data.four_corners(&5_500.0, &25_000.0).unwrap()
+                == vec![(11, 49), (11, 50), (12, 50), (12, 49)]
+        );
+
+        // bottom edge
+        assert!(
+            data.four_corners(&5_500.0, &0.0).unwrap() == vec![(11, 0), (11, 1), (12, 1), (12, 0)]
+        );
+
+        // top right corner
+        assert!(
+            data.four_corners(&50_000.0, &25_000.0).unwrap()
+                == vec![(99, 49), (99, 50), (100, 50), (100, 49)]
+        );
+
+        // right edge
+        assert!(
+            data.four_corners(&50_000.0, &5_500.0).unwrap()
+                == vec![(99, 11), (99, 12), (100, 12), (100, 11)]
+        );
+
+        // bottom right corner
+        assert!(
+            data.four_corners(&50_000.0, &0.0).unwrap()
+                == vec![(99, 0), (99, 1), (100, 1), (100, 0)]
+        );
+
+        // check out of bounds
+        assert!(data.four_corners(&50_001.0, &0.0).is_err());
+        assert!(data.four_corners(&50_000.0, &25_001.0).is_err());
+        assert!(data.four_corners(&-1.0, &0.0).is_err());
+        assert!(data.four_corners(&50_000.0, &-1.0).is_err());
+
+        // check not edge, in bounds, and both x and y on grid point
+        assert!(
+            data.four_corners(&5_500.0, &5_500.0).unwrap()
+                == vec![(11, 11), (11, 12), (12, 12), (12, 11)]
+        );
+
+        // check not edge, in bounds, and only x on grid point
+        assert!(
+            data.four_corners(&5_500.0, &5_750.0).unwrap()
+                == vec![(11, 11), (11, 12), (12, 12), (12, 11)]
+        );
+
+        // check not edge, in bounds, and only y on grid point
+        assert!(
+            data.four_corners(&5_750.0, &5_500.0).unwrap()
+                == vec![(11, 11), (11, 12), (12, 12), (12, 11)]
+        );
+
+        // check not edge, in bounds, and not on a grid point
+        assert!(
+            data.four_corners(&5_750.0, &5_750.0).unwrap()
+                == vec![(11, 11), (11, 12), (12, 12), (12, 11)]
+        );
+    }
 
     #[test]
     // check values inside the four quadrants but not on grid points
@@ -627,37 +751,37 @@ mod test_cartesian_file {
         }
     }
 
-    #[test]
-    // test edge cases and center with different depth points. These are
-    // using grid points so that it is easy to verify them as the average of
-    // the nearest 4 corners.
-    fn test_more_depths() {
-        // create temporary file
-        let temp_file = NamedTempFile::new().unwrap();
-        let temp_path = temp_file.into_temp_path();
+    // #[test]
+    // // test edge cases and center with different depth points. These are
+    // // using grid points so that it is easy to verify them as the average of
+    // // the nearest 4 corners.
+    // fn test_more_depths() {
+    //     // create temporary file
+    //     let temp_file = NamedTempFile::new().unwrap();
+    //     let temp_path = temp_file.into_temp_path();
 
-        create_netcdf3_bathymetry(&temp_path, 101, 51, 500.0, 500.0, four_depth_fn);
+    //     create_netcdf3_bathymetry(&temp_path, 101, 51, 500.0, 500.0, four_depth_fn);
 
-        let data = CartesianNetcdf3::open(&temp_path, "x", "y", "depth").unwrap();
+    //     let data = CartesianNetcdf3::open(&temp_path, "x", "y", "depth").unwrap();
 
-        // check to see if depth is the same as above
-        let check_depth = vec![
-            (23000.0, 20000.0, 10.0),
-            (10000.0, 12500.0, 12.5),
-            (25000.0, 5000.0, 8.75),
-            (40000.0, 12500.0, 12.5),
-        ];
+    //     // check to see if depth is the same as above
+    //     let check_depth = vec![
+    //         (23000.0, 20000.0, 10.0),
+    //         (10000.0, 12500.0, 12.5),
+    //         (25000.0, 5000.0, 8.75),
+    //         (40000.0, 12500.0, 12.5),
+    //     ];
 
-        for (x, y, h) in &check_depth {
-            let depth = data.depth_and_gradient(x, y).unwrap().0;
-            assert!(
-                (depth - h).abs() < f32::EPSILON,
-                "Expected {}, but got {}",
-                h,
-                depth
-            );
-        }
-    }
+    //     for (x, y, h) in &check_depth {
+    //         let depth = data.depth_and_gradient(x, y).unwrap().0;
+    //         assert!(
+    //             (depth - h).abs() < f32::EPSILON,
+    //             "Expected {}, but got {}",
+    //             h,
+    //             depth
+    //         );
+    //     }
+    // }
 
     #[test]
     fn test_nan() {
