@@ -1,4 +1,7 @@
 //! Struct used to create and access bathymetry data stored in a netcdf3 file.
+//! 
+//! Note: the x and y dimensions of the dataset have to be equally-spaced arrays
+//! in ascending order.
 
 use std::path::Path;
 
@@ -74,7 +77,7 @@ impl BathymetryData for CartesianNetcdf3 {
             return Ok(f32::NAN);
         }
 
-        let corner_points = match self.four_corners(&x, &y) {
+        let corner_points = match self.four_corners(x, y) {
             Ok(point) => point,
             Err(e) => return Err(e),
         };
@@ -105,7 +108,7 @@ impl BathymetryData for CartesianNetcdf3 {
             return Ok((f32::NAN, (f32::NAN, f32::NAN)));
         }
 
-        let corner_points = match self.four_corners(&x, &y) {
+        let corner_points = match self.four_corners(x, y) {
             Ok(point) => point,
             Err(e) => return Err(e),
         };
@@ -115,7 +118,7 @@ impl BathymetryData for CartesianNetcdf3 {
 
         // get the gradient
 
-        // NOTE: the gradient assumes that the depth is linear in both the x
+        // Note: the gradient assumes that the depth is linear in both the x
         // and y directions, and since bilinear interpolation is used to
         // interpolate the depth at any given point, this is a good
         // approximation.
@@ -124,7 +127,6 @@ impl BathymetryData for CartesianNetcdf3 {
 
         let sw_point = &corner_points[0];
         let nw_point = &corner_points[1];
-        let ne_point = &corner_points[2];
         let se_point = &corner_points[3];
 
         let x_gradient = (self.depth_at_indexes(&se_point.0, &se_point.1)?
@@ -269,10 +271,12 @@ impl CartesianNetcdf3 {
     /// - the array that will be used when searching for the closest value.
     ///
     /// # Returns
-    /// `usize`: index of closest value
+    /// `Result<f32>`: index of closest value or error
     ///
     /// # Note
-    /// This function uses binary search, but requires the array to be sorted.
+    /// This function assumes the array has equal spacing between all elements
+    /// and is ordered from least to greatest. Given those two conditions, it is
+    /// valid to have fractional indexes.
     fn nearest(&self, target: &f32, array: &[f32]) -> Result<f32> {
         // array has to have at least 1 element (prevent future divide by zero error)
         if array.is_empty() {
@@ -291,9 +295,9 @@ impl CartesianNetcdf3 {
         let index = (target - array[0]) / spacing;
 
         if index < 0.0 || index > (array.len() - 1) as f32 {
-            return Err(Error::IndexOutOfBounds);
+            Err(Error::IndexOutOfBounds)
         } else {
-            return Ok(index);
+            Ok(index)
         }
     }
 
@@ -307,16 +311,11 @@ impl CartesianNetcdf3 {
     /// - y location in meters
     ///
     /// # Returns
-    /// `Option<(usize, usize)>`
-    /// - `Some((usize, usize))` : the indices of the nearest point to the given
-    ///   `x`, `y` input.
-    /// - `None` : based on the calculated nearest point, the given `x` and `y`
-    ///   are assumed to be out of bounds, so a value does not exist.
+    /// `Result<(f32, f32)>`: the indexes of the nearest point or an error.
     ///
     /// # Note
-    /// This function will return `None` on points that are on the edges. This
-    /// causes a small bug requiring the user to initialize the ray at least
-    /// half a grid space away from the edge.
+    /// This function assumes the x and y dimensions of the data are equally
+    /// spaced arrays in ascending order. Therefore, fractional indexes are expected.
     fn nearest_point(&self, x: &f32, y: &f32) -> Result<(f32, f32)> {
         // find floating point "index"
         let xindex = self.nearest(x, &self.x)?;
@@ -335,10 +334,9 @@ impl CartesianNetcdf3 {
     /// - index of the y location
     ///
     /// # Returns
-    /// `Option<Vec<(usize, usize)>>`
-    /// - `Some(Vec<(usize, usize)>)` : corner points in surrounding given
-    ///   `xindex` and `yindex` in clockwise order.
-    /// - `None` : `xindex` or `yindex` is out of range and no value exists.
+    /// `Result<Vec<(usize, usize)>>`: returns a vector of the 4 points
+    /// surrounding the target point. The points are in clockwise order starting
+    /// with the bottom left point. Or it will return an out of bounds error.
     fn four_corners(&self, x: &f32, y: &f32) -> Result<Vec<(usize, usize)>> {
         let (xindex, yindex) = self.nearest_point(x, y)?;
 
