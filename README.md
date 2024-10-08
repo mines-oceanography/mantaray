@@ -17,7 +17,7 @@ cd ray_tracing
 ```
 pixi run maturin develop
 ```
-This will take about 20 to 30 minutes (at least on windows 10).
+This will take about 20 to 30 minutes (at least for first time compiling on windows 10).
 
 4. Import `mantaray`
 ```python
@@ -34,7 +34,7 @@ pixi run python path_to_file.py
 6. To test Python library run:
 
 ```
-pixi run -e dev pytest
+pixi run -e test pytest
 ```
 
 
