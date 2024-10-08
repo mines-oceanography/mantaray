@@ -1,5 +1,5 @@
 //! Struct used to create and access bathymetry data stored in a netcdf3 file.
-//! 
+//!
 //! Note: the x and y dimensions of the dataset have to be equally-spaced arrays
 //! in ascending order.
 
@@ -49,7 +49,7 @@ pub struct CartesianNetcdf3 {
     y: Vec<f32>,
     /// a vector containing the depth values from the netcdf3 file. Note this is
     /// a flattened 2d array and is accessed by the function `depth_from_array`.
-    depth: Vec<f32>,
+    depth: Vec<f64>,
 }
 
 impl BathymetryData for CartesianNetcdf3 {
@@ -122,8 +122,8 @@ impl BathymetryData for CartesianNetcdf3 {
         // and y directions, and since bilinear interpolation is used to
         // interpolate the depth at any given point, this is a good
         // approximation.
-        let x_space = self.x[1] - self.x[0];
-        let y_space = self.y[1] - self.y[0];
+        let x_space = self.x[1] as f64 - self.x[0] as f64;
+        let y_space = self.y[1] as f64 - self.y[0] as f64;
 
         let sw_point = &corner_points[0];
         let nw_point = &corner_points[1];
@@ -137,7 +137,7 @@ impl BathymetryData for CartesianNetcdf3 {
             - self.depth_at_indexes(&sw_point.0, &sw_point.1)?)
             / y_space;
 
-        Ok((depth, (x_gradient, y_gradient)))
+        Ok((depth, (x_gradient as f32, y_gradient as f32)))
     }
 }
 
@@ -229,33 +229,33 @@ impl CartesianNetcdf3 {
                 .get_i16_into()
                 .unwrap()
                 .iter()
-                .map(|x| *x as f32)
+                .map(|x| *x as f64)
                 .collect(),
             DataType::I8 => depth
                 .get_i8_into()
                 .unwrap()
                 .iter()
-                .map(|x| *x as f32)
+                .map(|x| *x as f64)
                 .collect(),
             DataType::U8 => depth
                 .get_u8_into()
                 .unwrap()
                 .iter()
-                .map(|x| *x as f32)
+                .map(|x| *x as f64)
                 .collect(),
             DataType::I32 => depth
                 .get_i32_into()
                 .unwrap()
                 .iter()
-                .map(|x| *x as f32)
+                .map(|x| *x as f64)
                 .collect(),
-            DataType::F32 => depth.get_f32_into().unwrap(),
-            DataType::F64 => depth
-                .get_f64_into()
+            DataType::F32 => depth
+                .get_f32_into()
                 .unwrap()
                 .iter()
-                .map(|x| *x as f32)
+                .map(|x| *x as f64)
                 .collect(),
+            DataType::F64 => depth.get_f64_into().unwrap(),
         };
 
         Ok(CartesianNetcdf3 { x, y, depth })
@@ -462,22 +462,22 @@ impl CartesianNetcdf3 {
             (
                 self.x[index_points[0].0],
                 self.y[index_points[0].1],
-                self.depth_at_indexes(&index_points[0].0, &index_points[0].1)?,
+                self.depth_at_indexes(&index_points[0].0, &index_points[0].1)? as f32,
             ),
             (
                 self.x[index_points[1].0],
                 self.y[index_points[1].1],
-                self.depth_at_indexes(&index_points[1].0, &index_points[1].1)?,
+                self.depth_at_indexes(&index_points[1].0, &index_points[1].1)? as f32,
             ),
             (
                 self.x[index_points[2].0],
                 self.y[index_points[2].1],
-                self.depth_at_indexes(&index_points[2].0, &index_points[2].1)?,
+                self.depth_at_indexes(&index_points[2].0, &index_points[2].1)? as f32,
             ),
             (
                 self.x[index_points[3].0],
                 self.y[index_points[3].1],
-                self.depth_at_indexes(&index_points[3].0, &index_points[3].1)?,
+                self.depth_at_indexes(&index_points[3].0, &index_points[3].1)? as f32,
             ),
         ];
         interpolator::bilinear(&depth_points, target_point)
@@ -501,7 +501,7 @@ impl CartesianNetcdf3 {
     /// # Errors
     /// `Err(Error::IndexOutOfBounds)` : this error is returned when `x_index`
     /// and `y_index` produce a value outside of the depth array.
-    fn depth_at_indexes(&self, xindex: &usize, yindex: &usize) -> Result<f32> {
+    fn depth_at_indexes(&self, xindex: &usize, yindex: &usize) -> Result<f64> {
         let index = self.x.len() * yindex + xindex;
         if index >= self.depth.len() {
             return Err(Error::IndexOutOfBounds);
@@ -749,38 +749,6 @@ mod test_cartesian_file {
         }
     }
 
-    // #[test]
-    // // test edge cases and center with different depth points. These are
-    // // using grid points so that it is easy to verify them as the average of
-    // // the nearest 4 corners.
-    // fn test_more_depths() {
-    //     // create temporary file
-    //     let temp_file = NamedTempFile::new().unwrap();
-    //     let temp_path = temp_file.into_temp_path();
-
-    //     create_netcdf3_bathymetry(&temp_path, 101, 51, 500.0, 500.0, four_depth_fn);
-
-    //     let data = CartesianNetcdf3::open(&temp_path, "x", "y", "depth").unwrap();
-
-    //     // check to see if depth is the same as above
-    //     let check_depth = vec![
-    //         (23000.0, 20000.0, 10.0),
-    //         (10000.0, 12500.0, 12.5),
-    //         (25000.0, 5000.0, 8.75),
-    //         (40000.0, 12500.0, 12.5),
-    //     ];
-
-    //     for (x, y, h) in &check_depth {
-    //         let depth = data.depth_and_gradient(x, y).unwrap().0;
-    //         assert!(
-    //             (depth - h).abs() < f32::EPSILON,
-    //             "Expected {}, but got {}",
-    //             h,
-    //             depth
-    //         );
-    //     }
-    // }
-
     #[test]
     fn test_nan() {
         // create temporary file
@@ -799,7 +767,8 @@ mod test_cartesian_file {
     }
 
     #[test]
-    // Note: these fail for certain values due to floating point errors
+    // verify the depth and gradient function returns correct values for all
+    // points in domain, using a file with a constant dhdx
     fn test_depth_and_gradient_x() {
         // create temporary file
         let temp_file = NamedTempFile::new().unwrap();
@@ -813,46 +782,40 @@ mod test_cartesian_file {
 
         let data = CartesianNetcdf3::open(&temp_path, "x", "y", "depth").unwrap();
 
-        // check to see if depth is the same as above
-        let check_depth = vec![(10.0, 30.0, 0.5), (30.0, 10.0, 1.5)];
-
-        for (x, y, h) in &check_depth {
-            let depth = data.depth_and_gradient(x, y).unwrap().0;
-            assert!(
-                (depth - h).abs() < f32::EPSILON,
-                "Expected {}, but got {}",
-                h,
-                depth
-            );
-        }
-
-        // check to see if gradient is the same
-        let check_gradient = vec![
-            (50.0, 50.0, 0.05, 0.0),
-            (14.0, 12.0, 0.05, 0.0),
-            (10.0, 80.0, 0.05, 0.0),
-        ];
-
-        for (x, y, dhdx, dhdy) in &check_gradient {
-            let x_gradient = data.depth_and_gradient(x, y).unwrap().1 .0;
-            let y_gradient = data.depth_and_gradient(x, y).unwrap().1 .1;
-            assert!(
-                (x_gradient - dhdx).abs() < f32::EPSILON,
-                "Expected {}, but got {}",
-                dhdx,
-                x_gradient
-            );
-            assert!(
-                (y_gradient - dhdy).abs() < f32::EPSILON,
-                "Expected {}, but got {}",
-                dhdy,
-                y_gradient
-            );
+        // check the depth is what it should be and gradient is the same
+        let dhdx = 0.05;
+        let dhdy = 0.0;
+        for x in 0..100 {
+            for y in 0..100 {
+                let x = &(x as f32);
+                let y = &(y as f32);
+                let (depth, gradient) = data.depth_and_gradient(x, y).unwrap();
+                let (x_gradient, y_gradient) = gradient;
+                assert!(
+                    (x_gradient - dhdx).abs() < f32::EPSILON,
+                    "Expected {}, but got {}",
+                    dhdx,
+                    x_gradient
+                );
+                assert!(
+                    (y_gradient - dhdy).abs() < f32::EPSILON,
+                    "Expected {}, but got {}",
+                    dhdy,
+                    y_gradient
+                );
+                assert!(
+                    (depth - depth_fn(*x, *y) as f32).abs() < f32::EPSILON,
+                    "Expected {}, but got {}",
+                    depth_fn(*x, *y),
+                    depth
+                );
+            }
         }
     }
 
     #[test]
-    // Note: these fail for some values due to floating point errors
+    // verify the depth and gradient function returns correct values for all
+    // points in domain, using a file with a constant dhdy
     fn test_depth_and_gradient_y() {
         // create temporary file
         let temp_file = NamedTempFile::new().unwrap();
@@ -866,41 +829,34 @@ mod test_cartesian_file {
 
         let data = CartesianNetcdf3::open(&temp_path, "x", "y", "depth").unwrap();
 
-        // check to see if depth is the same as above
-        let check_depth = vec![(10.0, 30.0, 1.5), (30.0, 10.0, 0.5)];
-
-        for (x, y, h) in &check_depth {
-            let depth = data.depth_and_gradient(x, y).unwrap().0;
-            assert!(
-                (depth - h).abs() < f32::EPSILON,
-                "Expected {}, but got {}",
-                h,
-                depth
-            );
-        }
-
-        // check to see if gradient is the same
-        let check_gradient = vec![
-            (50.0, 50.0, 0.0, 0.05),
-            (14.0, 12.0, 0.0, 0.05),
-            (80.0, 10.0, 0.0, 0.05),
-        ];
-
-        for (x, y, dhdx, dhdy) in &check_gradient {
-            let x_gradient = data.depth_and_gradient(x, y).unwrap().1 .0;
-            let y_gradient = data.depth_and_gradient(x, y).unwrap().1 .1;
-            assert!(
-                (x_gradient - dhdx).abs() < f32::EPSILON,
-                "Expected {}, but got {}",
-                dhdx,
-                x_gradient
-            );
-            assert!(
-                (y_gradient - dhdy).abs() < f32::EPSILON,
-                "Expected {}, but got {}",
-                dhdy,
-                y_gradient
-            );
+        // check the depth is what it should be and gradient is the same
+        let dhdx = 0.0;
+        let dhdy = 0.05;
+        for x in 0..100 {
+            for y in 0..100 {
+                let x = &(x as f32);
+                let y = &(y as f32);
+                let (depth, gradient) = data.depth_and_gradient(x, y).unwrap();
+                let (x_gradient, y_gradient) = gradient;
+                assert!(
+                    (x_gradient - dhdx).abs() < f32::EPSILON,
+                    "Expected {}, but got {}",
+                    dhdx,
+                    x_gradient
+                );
+                assert!(
+                    (y_gradient - dhdy).abs() < f32::EPSILON,
+                    "Expected {}, but got {}",
+                    dhdy,
+                    y_gradient
+                );
+                assert!(
+                    (depth - depth_fn(*x, *y) as f32).abs() < f32::EPSILON,
+                    "Expected {}, but got {}",
+                    depth_fn(*x, *y),
+                    depth
+                );
+            }
         }
     }
 }
