@@ -6,7 +6,7 @@ use crate::wave_ray_path::State;
 /// A point in 2D cartesian space
 ///
 /// A `Point` is composed by `x` and `y`, expected to be in meters.
-pub struct Point<T> {
+pub(crate) struct Point<T> {
     x: T,
     y: T,
 }
