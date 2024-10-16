@@ -212,123 +212,163 @@ impl CartesianCurrent {
         }
     }
 
-    /// Find nearest point
+    /// Find the index of the closest value to the target in the array
     ///
     /// # Arguments
-    /// `target` : `f64`
+    /// `target` : `&f64`
     /// - the value to find
     ///
     /// `arr` : `&[f64]`
     /// - the array that will be used when searching for the closest value.
     ///
     /// # Returns
-    /// `usize`: index of closest value
+    /// `Result<f64>`: index of closest value or error
     ///
     /// # Note
-    /// Binary search might be faster, but this is a simple implementation. And
-    /// binary search requires it to be sorted.
-    fn nearest(&self, target: &f64, arr: &[f64]) -> usize {
-        let mut left = 0;
-        let mut right = arr.len() - 1;
-        let mut closest_index = 0;
-        let mut closest_distance = f64::MAX;
-
-        // edge cases
-        if *target <= arr[left] {
-            return left;
-        }
-        if *target >= arr[right] {
-            return right;
+    /// This function assumes the array has equal spacing between all elements
+    /// and is ordered from least to greatest. Given those two conditions, it is
+    /// valid to have fractional indexes.
+    fn nearest(&self, target: &f64, array: &[f64]) -> Result<f64> {
+        // array has to have at least 1 element (prevent future divide by zero error)
+        if array.is_empty() {
+            return Err(Error::IndexOutOfBounds); // error
         }
 
-        // binary search
-        while left <= right {
-            let mid = (left + right) / 2;
-            let distance = (target - arr[mid]).abs();
+        // if the array has only one element, return 0 as its the only option
+        if array.len() == 1 {
+            return Ok(0.0);
+        }
 
-            if distance < closest_distance {
-                closest_index = mid;
-                closest_distance = distance;
-            }
+        // we know the array has at least two elements, so the following line
+        // will never panic
+        let spacing = (array[1] - array[0]).abs();
 
-            if arr[mid] == *target {
-                return mid;
-            }
+        let index = (target - array[0]) / spacing;
 
-            if arr[mid] > *target {
-                right = mid - 1;
+        if index < 0.0 || index > (array.len() - 1) as f64 {
+            Err(Error::IndexOutOfBounds)
+        } else {
+            Ok(index)
+        }
+    }
+
+    /// Returns the nearest (xindex, yindex) point to given (x ,y) point
+    ///
+    /// # Arguments
+    /// `point` : `&Point<f64>` the location of the ray
+    ///
+    /// # Returns
+    /// `Result<(f64, f64)>`: the indexes of the nearest point or an error.
+    ///
+    /// # Note
+    /// This function assumes the x and y dimensions of the data are equally
+    /// spaced arrays in ascending order. Therefore, fractional indexes are expected.
+    fn nearest_point(&self, point: &Point<f64>) -> Result<(f64, f64)> {
+        // find floating point "index"
+        let xindex = self.nearest(point.x(), &self.x_vec)?;
+        let yindex = self.nearest(point.y(), &self.y_vec)?;
+
+        Ok((xindex, yindex))
+    }
+    
+    /// Get four adjacent points
+    ///
+    /// # Arguments
+    /// `point` : `&Point<f64>` the location of the ray
+    ///
+    /// # Returns
+    /// `Result<Vec<(usize, usize)>>`: returns a vector of the 4 points
+    /// surrounding the target point. The points are in clockwise order starting
+    /// with the bottom left point. Or it will return an out of bounds error.
+    fn four_corners(&self, point: &Point<f64>) -> Result<Vec<(usize, usize)>> {
+        let (xindex, yindex) = self.nearest_point(point)?;
+
+        // determine the edges
+        let xlow = 0.0;
+        let xhigh = (self.x_vec.len() - 1) as f64;
+        let ylow = 0.0;
+        let yhigh = (self.y_vec.len() - 1) as f64;
+
+        // check if edge cases
+        if xindex == xlow {
+            // on left edge
+            if yindex == yhigh {
+                // on upper edge
+                let x1 = xindex as usize;
+                let x2 = xindex as usize + 1;
+                let y1 = yindex as usize - 1;
+                let y2 = yindex as usize;
+                Ok(vec![(x1, y1), (x1, y2), (x2, y2), (x2, y1)])
             } else {
-                left = mid + 1;
+                // on lower edge or center
+                let x1 = xindex as usize;
+                let x2 = xindex as usize + 1;
+                let y1 = yindex as usize;
+                let y2 = yindex as usize + 1;
+                Ok(vec![(x1, y1), (x1, y2), (x2, y2), (x2, y1)])
             }
+        } else if xindex == xhigh {
+            // on right edge
+            if yindex == yhigh {
+                // on upper edge
+                let x1 = xindex as usize - 1;
+                let x2 = xindex as usize;
+                let y1 = yindex as usize - 1;
+                let y2 = yindex as usize;
+                Ok(vec![(x1, y1), (x1, y2), (x2, y2), (x2, y1)])
+            } else {
+                // on lower edge or in center
+                let x1 = xindex as usize - 1;
+                let x2 = xindex as usize;
+                let y1 = yindex as usize;
+                let y2 = yindex as usize + 1;
+                Ok(vec![(x1, y1), (x1, y2), (x2, y2), (x2, y1)])
+            }
+        } else if yindex == yhigh {
+            // we already know that x is not on the edge, so no more checks
+            let x1 = xindex as usize;
+            let x2 = xindex as usize + 1;
+            let y1 = yindex as usize - 1;
+            let y2 = yindex as usize;
+            Ok(vec![(x1, y1), (x1, y2), (x2, y2), (x2, y1)])
+        } else if yindex == ylow {
+            // we already know x is not on the edge, so no more checks
+            let x1 = xindex as usize;
+            let x2 = xindex as usize + 1;
+            let y1 = yindex as usize;
+            let y2 = yindex as usize + 1;
+            Ok(vec![(x1, y1), (x1, y2), (x2, y2), (x2, y1)])
+        } else if xindex.fract() == 0.0 {
+            // on an interior x grid point
+            if yindex.fract() == 0.0 {
+                // also on an interior y grid point
+                let x1 = xindex.round() as usize;
+                let x2 = x1 + 1;
+                let y1 = yindex.round() as usize;
+                let y2 = y1 + 1;
+                Ok(vec![(x1, y1), (x1, y2), (x2, y2), (x2, y1)])
+            } else {
+                let x1 = xindex.round() as usize;
+                let x2 = x1 + 1;
+                let y1 = yindex.floor() as usize;
+                let y2 = yindex.ceil() as usize;
+                Ok(vec![(x1, y1), (x1, y2), (x2, y2), (x2, y1)])
+            }
+        } else if yindex.fract() == 0.0 {
+            // only on an interior y grid point
+            let x1 = xindex.floor() as usize;
+            let x2 = xindex.ceil() as usize;
+            let y1 = yindex.round() as usize;
+            let y2 = y1 + 1;
+            Ok(vec![(x1, y1), (x1, y2), (x2, y2), (x2, y1)])
+        } else {
+            // normal case
+            let x1 = xindex.floor() as usize;
+            let x2 = xindex.ceil() as usize;
+            let y1 = yindex.floor() as usize;
+            let y2 = yindex.ceil() as usize;
+            Ok(vec![(x1, y1), (x1, y2), (x2, y2), (x2, y1)])
         }
-
-        closest_index
-    }
-
-    /// Nearest (x, y) index point for given coordinate
-    ///
-    /// # Arguments
-    /// `x`: `&f64`
-    /// - x coordinate
-    ///
-    /// `y`: `&f64`
-    /// - y coordinate
-    ///
-    /// # Returns
-    /// `Option<(usize, usize)>`
-    /// - `Some((usize, usize))` : the nearest point to the given `x`, `y`
-    ///   input.
-    /// - `None` : based on the calculated nearest point, the given `x` and
-    ///   `y` are assumed to be out of bounds, so a value does not exist.
-    ///
-    /// # Note
-    /// This function will never panic, but if given an out of bounds point,
-    /// it will return the closest edge. To attempt to fix this problem,
-    /// `nearest_point` should return `None` on points that are on the edges.
-    fn nearest_point(&self, x: &f64, y: &f64) -> Option<(usize, usize)> {
-        let indx = self.nearest(x, &self.x_vec);
-        let indy = self.nearest(y, &self.y_vec);
-
-        if indx == 0 || indy == 0 || indx >= self.x_vec.len() - 1 || indy >= self.y_vec.len() - 1 {
-            return None;
-        }
-
-        Some((indx, indy))
-    }
-
-    /// Get four adjecent points
-    ///
-    /// # Arguments
-    /// `indx` : `&usize`
-    /// - index of the x location
-    ///
-    /// `indy` : `&usize`
-    /// - index of the y location
-    ///
-    /// # Returns
-    /// `Option<Vec<(usize, usize)>>`
-    /// - `Some(Vec<(usize, usize)>)` : corner points in surrounding given
-    ///   `indx` and `indy` in clockwise order.
-    /// - `None` : `indx` or `indy` is out of range and no value exists.
-    ///
-    /// NOTE: with the addition of the time dimension, this function will need
-    /// to be updated to include the time dimension. Therefore, it will need to
-    /// return a vec of 6 (t, x, y)
-    fn four_corners(&self, indx: &usize, indy: &usize) -> Option<Vec<(usize, usize)>> {
-        if *indx == 0
-            || *indy == 0
-            || *indx >= self.x_vec.len() - 1
-            || *indy >= self.y_vec.len() - 1
-        {
-            return None;
-        }
-        // clockwise in order
-        Some(vec![
-            (*indx, indy + 1),
-            (indx + 1, *indy),
-            (*indx, indy - 1),
-            (indx - 1, *indy),
-        ])
     }
 
     /// Interpolate the depth using crate::interpolator::bilinear
@@ -439,16 +479,10 @@ impl CurrentData for CartesianCurrent {
     /// `Error::IndexOutOfBounds` : the point (x, y) is out of bounds of the
     /// data
     fn current(&self, point: &Point<f64>) -> Result<Current<f64>> {
-        // get the nearest point
-        let (indx, indy) = match self.nearest_point(point.x(), point.y()) {
-            Some((indx, indy)) => (indx, indy),
-            None => return Err(Error::IndexOutOfBounds),
-        };
-
         // get the four corners
-        let corners = match self.four_corners(&indx, &indy) {
-            Some(corners) => corners,
-            None => return Err(Error::IndexOutOfBounds),
+        let corners = match self.four_corners(point) {
+            Ok(corners) => corners,
+            Err(e) => return Err(e),
         };
 
         // interpolate the u and v values
@@ -487,16 +521,10 @@ impl CurrentData for CartesianCurrent {
         &self,
         point: &Point<f64>,
     ) -> Result<(Current<f64>, (Gradient<f64>, Gradient<f64>))> {
-        // get the nearest point
-        let (indx, indy) = match self.nearest_point(point.x(), point.y()) {
-            Some((indx, indy)) => (indx, indy),
-            None => return Err(Error::IndexOutOfBounds),
-        };
-
         // get the four corners
-        let corners = match self.four_corners(&indx, &indy) {
-            Some(corners) => corners,
-            None => return Err(Error::IndexOutOfBounds),
+        let corners = match self.four_corners(point) {
+            Ok(corners) => corners,
+            Err(e) => return Err(e),
         };
 
         // interpolate the u and v values
@@ -520,21 +548,25 @@ impl CurrentData for CartesianCurrent {
         let x_space = self.x_vec[1] - self.x_vec[0];
         let y_space = self.y_vec[1] - self.y_vec[0];
 
-        let dudx = (self.val_from_arr(&corners[1].0, &corners[1].1, &self.u_vec)?
-            - self.val_from_arr(&corners[3].0, &corners[3].1, &self.u_vec)?)
-            / (2.0 * x_space);
+        let sw_point = &corners[0];
+        let nw_point = &corners[1];
+        let se_point = &corners[3];
 
-        let dudy = (self.val_from_arr(&corners[0].0, &corners[0].1, &self.u_vec)?
-            - self.val_from_arr(&corners[2].0, &corners[2].1, &self.u_vec)?)
-            / (2.0 * y_space);
+        let dudx = (self.val_from_arr(&se_point.0, &se_point.1, &self.u_vec)?
+            - self.val_from_arr(&sw_point.0, &sw_point.1, &self.u_vec)?)
+            / x_space;
 
-        let dvdx = (self.val_from_arr(&corners[1].0, &corners[1].1, &self.v_vec)?
-            - self.val_from_arr(&corners[3].0, &corners[3].1, &self.v_vec)?)
-            / (2.0 * x_space);
+        let dudy = (self.val_from_arr(&nw_point.0, &nw_point.1, &self.u_vec)?
+            - self.val_from_arr(&sw_point.0, &sw_point.1, &self.u_vec)?)
+            / y_space;
 
-        let dvdy = (self.val_from_arr(&corners[0].0, &corners[0].1, &self.v_vec)?
-            - self.val_from_arr(&corners[2].0, &corners[2].1, &self.v_vec)?)
-            / (2.0 * y_space);
+        let dvdx = (self.val_from_arr(&se_point.0, &se_point.1, &self.v_vec)?
+            - self.val_from_arr(&sw_point.0, &sw_point.1, &self.v_vec)?)
+            / x_space;
+
+        let dvdy = (self.val_from_arr(&nw_point.0, &nw_point.1, &self.v_vec)?
+            - self.val_from_arr(&sw_point.0, &sw_point.1, &self.v_vec)?)
+            / y_space;
 
         Ok((
             Current::new(u as f64, v as f64),
@@ -657,70 +689,137 @@ mod test_cartesian_file_current {
     }
 
     #[test]
-    // test the and view the nearest function. Note that this is the same test
-    // case as in bathymetry/cartesian.rs
-    fn test_get_nearest() {
+    // test the and view the nearest function
+    fn test_nearest() {
         // create temporary file
         let temp_file = NamedTempFile::new().unwrap();
-        let path = temp_file.into_temp_path();
+        let temp_path = temp_file.into_temp_path();
 
-        create_netcdf3_current(&path, 100, 100, 500.0, 500.0, simple_current);
+        create_netcdf3_current(&temp_path, 101, 51, 500.0, 500.0, simple_current);
 
-        let data = CartesianCurrent::open(Path::new(&path), "x", "y", "u", "v");
+        let data = CartesianCurrent::open(&temp_path, "x", "y", "u", "v");
 
-        // inside the bounds
-        assert_eq!(data.nearest(&5499.0, &data.x_vec), 11);
+        // in bounds
+        assert!(data.nearest(&5499.0, &data.x_vec).unwrap().round() == 11.0);
 
-        // test out of bounds
-        assert_eq!(data.nearest(&-5499.0, &data.x_vec), 0);
-        assert_eq!(data.nearest(&50_001.0, &data.x_vec), 99);
+        // out of bounds
+        assert!(data.nearest(&-1.0, &data.y_vec).is_err());
+        assert!(data.nearest(&25_501.0, &data.y_vec).is_err());
+
+        // on grid point
+        assert!((data.nearest(&5500.0, &data.x_vec).unwrap() - 11.0).abs() <= f64::EPSILON);
     }
 
     #[test]
-    // test the and nearest point function on one point
-    fn test_get_nearest_point() {
+    // test the nearest point function (which returns floating point indexes)
+    fn test_nearest_point() {
         // create temporary file
         let temp_file = NamedTempFile::new().unwrap();
-        let path = temp_file.into_temp_path();
+        let temp_path = temp_file.into_temp_path();
 
-        create_netcdf3_current(&path, 101, 51, 500.0, 500.0, simple_current);
+        create_netcdf3_current(&temp_path, 101, 51, 500.0, 500.0, simple_current);
 
-        let data = CartesianCurrent::open(Path::new(&path), "x", "y", "u", "v");
+        let data = CartesianCurrent::open(&temp_path, "x", "y", "u","v");
 
-        // inside the bounds
-        assert!(data.nearest_point(&5499.0, &499.0) == Some((11, 1)));
+        // in bounds
+        assert!(data.nearest_point(&Point::new(1.0, 24_999.0)).unwrap().0.round() == 0.0);
+        assert!(data.nearest_point(&Point::new(1.0, 24_999.0)).unwrap().1.round() == 50.0);
 
-        // test out of bounds
-        assert!(data.nearest_point(&-5499.0, &-499.0) == None);
-        assert!(data.nearest_point(&-5499.0, &50_001.0) == None);
-        assert!(data.nearest_point(&50_001.0, &50_001.0) == None);
+        // out of bounds
+        assert!(data.nearest_point(&Point::new(1.0, 25_001.0)).is_err());
+        assert!(data.nearest_point(&Point::new(-1.0, 25_000.0)).is_err());
+
+        // grid points
+        assert!((data.nearest_point(&Point::new(0.0, 25_000.0)).unwrap().0 - 0.0).abs() <= f64::EPSILON);
+        assert!((data.nearest_point(&Point::new(0.0, 25_000.0)).unwrap().1 - 50.0).abs() <= f64::EPSILON);
     }
 
     #[test]
-    // check the output from four_corners function
+    // check all the cases for the output from the four_corners function
     fn test_get_corners() {
         // create temporary file
         let temp_file = NamedTempFile::new().unwrap();
-        let path = temp_file.into_temp_path();
+        let temp_path = temp_file.into_temp_path();
 
-        create_netcdf3_current(&path, 101, 51, 500.0, 500.0, simple_current);
+        create_netcdf3_current(&temp_path, 101, 51, 500.0, 500.0, simple_current);
 
-        let data = CartesianCurrent::open(Path::new(&path), "x", "y", "u", "v");
+        let data = CartesianCurrent::open(&temp_path, "x", "y", "u","v");
 
-        // in bounds
-        let corners = data.four_corners(&10, &10).unwrap();
-        assert!(corners[0].0 == 10 && corners[0].1 == 11);
-        assert!(corners[1].0 == 11 && corners[1].1 == 10);
-        assert!(corners[2].0 == 10 && corners[2].1 == 9);
-        assert!(corners[3].0 == 9 && corners[3].1 == 10);
+        // check edge cases
 
-        // out of bounds
-        let corners = data.four_corners(&0, &0);
-        assert!(corners == None);
+        // top left corner
+        assert!(
+            data.four_corners(&Point::new(0.0, 25_000.0)).unwrap() == vec![(0, 49), (0, 50), (1, 50), (1, 49)]
+        );
 
-        let corners = data.four_corners(&100, &100);
-        assert!(corners == None);
+        // left edge
+        assert!(
+            data.four_corners(&Point::new(0.0, 5_500.0)).unwrap() == vec![(0, 11), (0, 12), (1, 12), (1, 11)]
+        );
+
+        // bottom left corner
+        assert!(data.four_corners(&Point::new(0.0, 0.0)).unwrap() == vec![(0, 0), (0, 1), (1, 1), (1, 0)]);
+
+        // top edge
+        assert!(
+            data.four_corners(&Point::new(5_500.0, 25_000.0)).unwrap()
+                == vec![(11, 49), (11, 50), (12, 50), (12, 49)]
+        );
+
+        // bottom edge
+        assert!(
+            data.four_corners(&Point::new(5_500.0, 0.0)).unwrap() == vec![(11, 0), (11, 1), (12, 1), (12, 0)]
+        );
+
+        // top right corner
+        assert!(
+            data.four_corners(&Point::new(50_000.0, 25_000.0)).unwrap()
+                == vec![(99, 49), (99, 50), (100, 50), (100, 49)]
+        );
+
+        // right edge
+        assert!(
+            data.four_corners(&Point::new(50_000.0, 5_500.0)).unwrap()
+                == vec![(99, 11), (99, 12), (100, 12), (100, 11)]
+        );
+
+        // bottom right corner
+        assert!(
+            data.four_corners(&Point::new(50_000.0, 0.0)).unwrap()
+                == vec![(99, 0), (99, 1), (100, 1), (100, 0)]
+        );
+
+        // check out of bounds
+        assert!(data.four_corners(&Point::new(50_001.0, 0.0)).is_err());
+        assert!(data.four_corners(&Point::new(50_000.0, 25_001.0)).is_err());
+        assert!(data.four_corners(&Point::new(-1.0, 0.0)).is_err());
+        assert!(data.four_corners(&Point::new(50_000.0, -1.0)).is_err());
+
+        // check not edge, in bounds, and both x and y on grid point
+        assert!(
+            data.four_corners(&Point::new(5_500.0, 5_500.0)).unwrap()
+                == vec![(11, 11), (11, 12), (12, 12), (12, 11)]
+        );
+
+        // check not edge, in bounds, and only x on grid point
+        assert!(
+            data.four_corners(&Point::new(5_500.0, 5_750.0)).unwrap()
+                == vec![(11, 11), (11, 12), (12, 12), (12, 11)]
+        );
+
+        // check not edge, in bounds, and only y on grid point
+        assert!(
+            data.four_corners(&Point::new(5_750.0, 5_500.0)).unwrap()
+                == vec![(11, 11), (11, 12), (12, 12), (12, 11)]
+        );
+
+        // check not edge, in bounds, and not on a grid point
+        assert!(
+            data.four_corners(&Point::new(5_750.0, 5_750.0)).unwrap()
+                == vec![(11, 11), (11, 12), (12, 12), (12, 11)]
+        );
     }
+
 
     #[test]
     // test the interpolate function
@@ -732,7 +831,7 @@ mod test_cartesian_file_current {
         create_netcdf3_current(&path, 101, 51, 500.0, 500.0, simple_current);
 
         let data = CartesianCurrent::open(Path::new(&path), "x", "y", "u", "v");
-        let corners = data.four_corners(&10, &10).unwrap();
+        let corners = data.four_corners(&Point::new(10.0,10.0)).unwrap();
         let interpolated = data.interpolate(&corners, &(5499.0, 499.0), &data.u_vec);
         assert!(interpolated.unwrap() == 5.0);
 
