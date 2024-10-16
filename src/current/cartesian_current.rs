@@ -270,7 +270,7 @@ impl CartesianCurrent {
 
         Ok((xindex, yindex))
     }
-    
+
     /// Get four adjacent points
     ///
     /// # Arguments
@@ -719,19 +719,36 @@ mod test_cartesian_file_current {
 
         create_netcdf3_current(&temp_path, 101, 51, 500.0, 500.0, simple_current);
 
-        let data = CartesianCurrent::open(&temp_path, "x", "y", "u","v");
+        let data = CartesianCurrent::open(&temp_path, "x", "y", "u", "v");
 
         // in bounds
-        assert!(data.nearest_point(&Point::new(1.0, 24_999.0)).unwrap().0.round() == 0.0);
-        assert!(data.nearest_point(&Point::new(1.0, 24_999.0)).unwrap().1.round() == 50.0);
+        assert!(
+            data.nearest_point(&Point::new(1.0, 24_999.0))
+                .unwrap()
+                .0
+                .round()
+                == 0.0
+        );
+        assert!(
+            data.nearest_point(&Point::new(1.0, 24_999.0))
+                .unwrap()
+                .1
+                .round()
+                == 50.0
+        );
 
         // out of bounds
         assert!(data.nearest_point(&Point::new(1.0, 25_001.0)).is_err());
         assert!(data.nearest_point(&Point::new(-1.0, 25_000.0)).is_err());
 
         // grid points
-        assert!((data.nearest_point(&Point::new(0.0, 25_000.0)).unwrap().0 - 0.0).abs() <= f64::EPSILON);
-        assert!((data.nearest_point(&Point::new(0.0, 25_000.0)).unwrap().1 - 50.0).abs() <= f64::EPSILON);
+        assert!(
+            (data.nearest_point(&Point::new(0.0, 25_000.0)).unwrap().0 - 0.0).abs() <= f64::EPSILON
+        );
+        assert!(
+            (data.nearest_point(&Point::new(0.0, 25_000.0)).unwrap().1 - 50.0).abs()
+                <= f64::EPSILON
+        );
     }
 
     #[test]
@@ -743,22 +760,27 @@ mod test_cartesian_file_current {
 
         create_netcdf3_current(&temp_path, 101, 51, 500.0, 500.0, simple_current);
 
-        let data = CartesianCurrent::open(&temp_path, "x", "y", "u","v");
+        let data = CartesianCurrent::open(&temp_path, "x", "y", "u", "v");
 
         // check edge cases
 
         // top left corner
         assert!(
-            data.four_corners(&Point::new(0.0, 25_000.0)).unwrap() == vec![(0, 49), (0, 50), (1, 50), (1, 49)]
+            data.four_corners(&Point::new(0.0, 25_000.0)).unwrap()
+                == vec![(0, 49), (0, 50), (1, 50), (1, 49)]
         );
 
         // left edge
         assert!(
-            data.four_corners(&Point::new(0.0, 5_500.0)).unwrap() == vec![(0, 11), (0, 12), (1, 12), (1, 11)]
+            data.four_corners(&Point::new(0.0, 5_500.0)).unwrap()
+                == vec![(0, 11), (0, 12), (1, 12), (1, 11)]
         );
 
         // bottom left corner
-        assert!(data.four_corners(&Point::new(0.0, 0.0)).unwrap() == vec![(0, 0), (0, 1), (1, 1), (1, 0)]);
+        assert!(
+            data.four_corners(&Point::new(0.0, 0.0)).unwrap()
+                == vec![(0, 0), (0, 1), (1, 1), (1, 0)]
+        );
 
         // top edge
         assert!(
@@ -768,7 +790,8 @@ mod test_cartesian_file_current {
 
         // bottom edge
         assert!(
-            data.four_corners(&Point::new(5_500.0, 0.0)).unwrap() == vec![(11, 0), (11, 1), (12, 1), (12, 0)]
+            data.four_corners(&Point::new(5_500.0, 0.0)).unwrap()
+                == vec![(11, 0), (11, 1), (12, 1), (12, 0)]
         );
 
         // top right corner
@@ -820,7 +843,6 @@ mod test_cartesian_file_current {
         );
     }
 
-
     #[test]
     // test the interpolate function
     fn test_interpolate() {
@@ -831,7 +853,7 @@ mod test_cartesian_file_current {
         create_netcdf3_current(&path, 101, 51, 500.0, 500.0, simple_current);
 
         let data = CartesianCurrent::open(Path::new(&path), "x", "y", "u", "v");
-        let corners = data.four_corners(&Point::new(10.0,10.0)).unwrap();
+        let corners = data.four_corners(&Point::new(10.0, 10.0)).unwrap();
         let interpolated = data.interpolate(&corners, &(5499.0, 499.0), &data.u_vec);
         assert!(interpolated.unwrap() == 5.0);
 
@@ -870,8 +892,18 @@ mod test_cartesian_file_current {
         create_netcdf3_current(&path, 101, 51, 500.0, 500.0, simple_current);
 
         let data = CartesianCurrent::open(Path::new(&path), "x", "y", "u", "v");
-        let current = data.current(&Point::new(5499.0, 499.0));
-        assert!(current.unwrap() == Current::new(5.0, 0.0));
+
+        // check full domain is accurate
+        for i in 0..100 {
+            for j in 0..100 {
+                let i = i as f64;
+                let j = j as f64;
+
+                let current = data.current(&Point::new(i, j)).unwrap();
+
+                assert_eq!(current, Current::new(5.0, 0.0))
+            }
+        }
 
         // test out of bounds
         let current = data.current(&Point::new(50_001.0, 1000.0));
@@ -891,14 +923,24 @@ mod test_cartesian_file_current {
         create_netcdf3_current(&path, 101, 51, 500.0, 500.0, simple_current);
 
         let data = CartesianCurrent::open(Path::new(&path), "x", "y", "u", "v");
-        let current = data.current_and_gradient(&Point::new(5499.0, 499.0));
-        assert!(
-            current.unwrap()
-                == (
-                    Current::new(5.0, 0.0),
-                    (Gradient::new(0.0, 0.0), Gradient::new(0.0, 0.0))
+
+        // check full domain is accurate
+        for i in 0..100 {
+            for j in 0..100 {
+                let i = i as f64;
+                let j = j as f64;
+
+                let current_and_gradient = data.current_and_gradient(&Point::new(i, j)).unwrap();
+
+                assert_eq!(
+                    current_and_gradient,
+                    (
+                        Current::new(5.0, 0.0),
+                        (Gradient::new(0.0, 0.0), Gradient::new(0.0, 0.0))
+                    )
                 )
-        );
+            }
+        }
 
         // test out of bounds
         let current = data.current_and_gradient(&Point::new(50_001.0, 1000.0));
@@ -918,14 +960,24 @@ mod test_cartesian_file_current {
         create_netcdf3_current(&path, 100, 100, 1.0, 1.0, simple_x_gradient);
 
         let data = CartesianCurrent::open(Path::new(&path), "x", "y", "u", "v");
-        let current = data.current_and_gradient(&Point::new(45.0, 45.0));
-        assert_eq!(
-            current.unwrap(),
-            (
-                Current::new(45.0, 45.0),
-                (Gradient::new(1.0, 0.0), Gradient::new(1.0, 0.0))
-            )
-        );
+
+        // check full domain is accurate
+        for i in 0..100 {
+            for j in 0..100 {
+                let i = i as f64;
+                let j = j as f64;
+
+                let current_and_gradient = data.current_and_gradient(&Point::new(i, j)).unwrap();
+
+                assert_eq!(
+                    current_and_gradient,
+                    (
+                        Current::new(i, i),
+                        (Gradient::new(1.0, 0.0), Gradient::new(1.0, 0.0))
+                    )
+                )
+            }
+        }
     }
 
     #[test]
@@ -938,13 +990,23 @@ mod test_cartesian_file_current {
         create_netcdf3_current(&path, 100, 100, 1.0, 1.0, simple_y_gradient);
 
         let data = CartesianCurrent::open(Path::new(&path), "x", "y", "u", "v");
-        let current = data.current_and_gradient(&Point::new(45.0, 45.0));
-        assert_eq!(
-            current.unwrap(),
-            (
-                Current::new(45.0, 45.0),
-                (Gradient::new(0.0, 1.0), Gradient::new(0.0, 1.0))
-            )
-        );
+
+        // check full domain is accurate
+        for i in 0..100 {
+            for j in 0..100 {
+                let i = i as f64;
+                let j = j as f64;
+
+                let current_and_gradient = data.current_and_gradient(&Point::new(i, j)).unwrap();
+
+                assert_eq!(
+                    current_and_gradient,
+                    (
+                        Current::new(j, j),
+                        (Gradient::new(0.0, 1.0), Gradient::new(0.0, 1.0))
+                    )
+                )
+            }
+        }
     }
 }
