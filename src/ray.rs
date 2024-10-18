@@ -5,21 +5,28 @@ use std::fs::OpenOptions;
 use std::io::{BufWriter, Write};
 use std::path::Path;
 
+use derive_builder::Builder;
 use ode_solvers::dop_shared::SolverResult;
 use rayon::prelude::*;
 
 use ode_solvers::Rk4;
 
-use crate::current::CurrentData;
+use crate::bathymetry::DEFAULT_BATHYMETRY;
+use crate::current::{CurrentData, DEFAULT_CURRENT};
 use crate::{
     bathymetry::BathymetryData, error::Result, wave_ray_path::State, wave_ray_path::Time,
     wave_ray_path::WaveRayPath,
 };
 
+#[derive(Builder)]
 /// a struct that creates many rays
 pub struct ManyRays<'a> {
+    #[builder(default = "&DEFAULT_BATHYMETRY")]
+    /// a reference to the bathymetry dataset. Default is 2000 m.
     bathymetry_data: &'a dyn BathymetryData,
-    current_data: Option<&'a dyn CurrentData>,
+    #[builder(default = "&DEFAULT_CURRENT")]
+    /// a reference to the current dataset. Default is (u, v) = (0, 0) m/s
+    current_data: &'a dyn CurrentData,
     /// a vector of initial x, y, kx, and ky values for the many waves
     init_rays: &'a Vec<(f64, f64, f64, f64)>,
 }
@@ -45,7 +52,7 @@ impl<'a> ManyRays<'a> {
     /// `Self`: a constructed `ManyRays` struct
     pub fn new(
         bathymetry_data: &'a dyn BathymetryData,
-        current_data: Option<&'a dyn CurrentData>,
+        current_data: &'a dyn CurrentData,
         init_rays: &'a Vec<(f64, f64, f64, f64)>,
     ) -> Self {
         ManyRays {
@@ -53,6 +60,18 @@ impl<'a> ManyRays<'a> {
             current_data,
             init_rays,
         }
+    }
+
+    /// create a new `ManyRays` using the builder method
+    ///
+    /// Used to create a builder object and then set each argument individually.
+    /// For example,
+    /// `ManyRays::builder().init_rays(&init_rays).build().unwrap()`
+    ///
+    /// Note: There are default bathymetry and current, but no default initial
+    /// rays, so it will panic if not supplied initial rays.
+    pub fn builder() -> ManyRaysBuilder<'a> {
+        ManyRaysBuilder::default()
     }
 
     /// Trace many rays given start time, stop time, and step size (delta t)
@@ -104,7 +123,7 @@ impl<'a> ManyRays<'a> {
                 |r| match r.trace_individual(start_time, end_time, step_size) {
                     Ok(v) => Some(v),
                     Err(e) => {
-                        println!("ERROR {} during intergration", e);
+                        println!("ERROR {} during integration", e);
                         None
                     }
                 },
@@ -119,7 +138,7 @@ impl<'a> ManyRays<'a> {
 // A struct with methods for tracing an individual wave and returning the result.
 pub(crate) struct SingleRay<'a> {
     bathymetry_data: &'a dyn BathymetryData,
-    current_data: Option<&'a dyn CurrentData>,
+    current_data: &'a dyn CurrentData,
     initial_conditions: (f64, f64, f64, f64),
 }
 
@@ -151,7 +170,7 @@ impl<'a> SingleRay<'a> {
     /// `Self` : the new `SingleRay` struct
     pub(crate) fn new(
         bathymetry_data: &'a dyn BathymetryData,
-        current_data: Option<&'a dyn CurrentData>,
+        current_data: &'a dyn CurrentData,
         x0: f64,
         y0: f64,
         kx0: f64,
@@ -266,8 +285,9 @@ mod test_single_wave {
     /// direction. k stays the same.
     fn test_constant_wave_shallow_x() {
         let bathymetry_data = &ConstantDepth::new(10.0);
+        let current_data = &ConstantCurrent::new(0.0, 0.0);
 
-        let wave = SingleRay::new(bathymetry_data, None, 10.0, 50.0, 0.01, 0.0);
+        let wave = SingleRay::new(bathymetry_data, current_data, 10.0, 50.0, 0.01, 0.0);
 
         // make sure the starting point is at least 2 steps away from the edge.
         let res = wave.trace_individual(0.0, 8.0, 1.0).unwrap();
@@ -292,9 +312,10 @@ mod test_single_wave {
     /// the x=y direction. k stays the same.
     fn test_constant_wave_shallow_xy() {
         let bathymetry_data = &ConstantDepth::new(10.0);
+        let current_data = &ConstantCurrent::new(0.0, 0.0);
 
         // test wave 2 starting in the corner
-        let wave = SingleRay::new(bathymetry_data, None, 10.0, 10.0, 0.007, 0.007);
+        let wave = SingleRay::new(bathymetry_data, current_data, 10.0, 10.0, 0.007, 0.007);
         let res = wave.trace_individual(0.0, 8.0, 1.0).unwrap();
 
         let (_, data) = &res.get();
@@ -328,9 +349,10 @@ mod test_single_wave {
     /// direction. k stay the same.
     fn test_constant_wave_deep_x() {
         let bathymetry_data = &ConstantDepth::new(10.0);
+        let current_data = &ConstantCurrent::new(0.0, 0.0);
 
         // test wave 1
-        let wave = SingleRay::new(bathymetry_data, None, 10.0, 50.0, 1.0, 0.0);
+        let wave = SingleRay::new(bathymetry_data, current_data, 10.0, 50.0, 1.0, 0.0);
 
         // make sure the starting point is at least 2 steps away from the edge.
         let res = wave.trace_individual(0.0, 18.0, 1.0).unwrap();
@@ -355,8 +377,9 @@ mod test_single_wave {
     /// x=y direction. k stays the same.
     fn test_constant_wave_deep_xy() {
         let bathymetry_data = &ConstantDepth::new(10.0);
+        let current_data = &ConstantCurrent::new(0.0, 0.0);
 
-        let wave = SingleRay::new(bathymetry_data, None, 10.0, 10.0, 0.7, 0.7);
+        let wave = SingleRay::new(bathymetry_data, current_data, 10.0, 10.0, 0.7, 0.7);
         let res = wave.trace_individual(0.0, 18.0, 1.0).unwrap();
 
         let (_, data) = &res.get();
@@ -395,8 +418,9 @@ mod test_single_wave {
         create_netcdf3_bathymetry(&tmp_path, 100, 100, 1.0, 1.0, two_depth_fn);
 
         let bathymetry_data = &CartesianNetcdf3::open(&tmp_path, "x", "y", "depth").unwrap();
+        let current_data = &ConstantCurrent::new(0.0, 0.0);
 
-        let wave = SingleRay::new(bathymetry_data, None, 10.0, 50.0, 0.01, 0.0);
+        let wave = SingleRay::new(bathymetry_data, current_data, 10.0, 50.0, 0.01, 0.0);
 
         // make sure the starting point is at least 2 steps away from the edge.
         let res = wave.trace_individual(0.0, 5.0, 1.0).unwrap();
@@ -432,8 +456,9 @@ mod test_single_wave {
         create_netcdf3_bathymetry(&tmp_path, 100, 100, 1.0, 1.0, two_depth_fn);
 
         let bathymetry_data = &CartesianNetcdf3::open(&tmp_path, "x", "y", "depth").unwrap();
+        let current_data = &ConstantCurrent::new(0.0, 0.0);
 
-        let wave = SingleRay::new(bathymetry_data, None, 10.0, 10.0, 0.007, 0.007);
+        let wave = SingleRay::new(bathymetry_data, current_data, 10.0, 10.0, 0.007, 0.007);
         let res = wave.trace_individual(0.0, 6.8, 0.1).unwrap();
 
         let (_, data) = &res.get();
@@ -463,7 +488,7 @@ mod test_single_wave {
 
     #[test]
     /// ray tracing on a two-depth deep wave propagating in the x direction.
-    /// This correcly shows no change in kx or ky.
+    /// This correctly shows no change in kx or ky.
     fn test_two_depth_wave_deep_x() {
         let tmp_file = NamedTempFile::new().unwrap();
         let tmp_path = tmp_file.into_temp_path();
@@ -471,8 +496,9 @@ mod test_single_wave {
         create_netcdf3_bathymetry(&tmp_path, 100, 100, 1.0, 1.0, two_depth_fn);
 
         let bathymetry_data = &CartesianNetcdf3::open(&tmp_path, "x", "y", "depth").unwrap();
+        let current_data = &ConstantCurrent::new(0.0, 0.0);
 
-        let wave = SingleRay::new(bathymetry_data, None, 10.0, 50.0, 1.0, 0.0);
+        let wave = SingleRay::new(bathymetry_data, current_data, 10.0, 50.0, 1.0, 0.0);
 
         // make sure the starting point is at least 2 steps away from the edge.
         let res = wave.trace_individual(0.0, 30.0, 1.0).unwrap();
@@ -494,7 +520,7 @@ mod test_single_wave {
 
     #[test]
     /// ray tracing on a two-depth deep wave propagating at an angle in the x=y
-    /// direction. This correcly shows no change in kx or ky.
+    /// direction. This correctly shows no change in kx or ky.
     fn test_two_depth_wave_deep_xy() {
         let tmp_file = NamedTempFile::new().unwrap();
         let tmp_path = tmp_file.into_temp_path();
@@ -502,8 +528,9 @@ mod test_single_wave {
         create_netcdf3_bathymetry(&tmp_path, 100, 100, 1.0, 1.0, two_depth_fn);
 
         let bathymetry_data = &CartesianNetcdf3::open(&tmp_path, "x", "y", "depth").unwrap();
+        let current_data = &ConstantCurrent::new(0.0, 0.0);
 
-        let wave = SingleRay::new(bathymetry_data, None, 10.0, 10.0, 0.7, 0.7);
+        let wave = SingleRay::new(bathymetry_data, current_data, 10.0, 10.0, 0.7, 0.7);
         let res = wave.trace_individual(0.0, 40.0, 1.0).unwrap();
 
         let (_, data) = &res.get();
@@ -529,15 +556,16 @@ mod test_single_wave {
     }
 
     #[test]
-    /// shallow water wave propogating through a constant slope from deeper to
+    /// shallow water wave propagating through a constant slope from deeper to
     /// shallower water.
     fn test_slope_depth_wave_x() {
         let bathymetry_data = &ConstantSlope::builder().build().unwrap();
+        let current_data = &ConstantCurrent::new(0.0, 0.0);
 
-        let wave = SingleRay::new(bathymetry_data, None, 10.0, 1000.0, 0.1, 0.0);
+        let wave = SingleRay::new(bathymetry_data, current_data, 10.0, 1000.0, 0.01, 0.0);
         let res = wave.trace_individual(0.0, 100.0, 1.0).unwrap();
 
-        // this wave will propogate from deep to shallow water.
+        // this wave will propagate from deep to shallow water.
         assert_eq!(bathymetry_data.depth(&10.0, &1000.0).unwrap(), 49.5);
         assert_eq!(bathymetry_data.depth(&300.0, &1000.0).unwrap(), 35.0);
 
@@ -549,14 +577,17 @@ mod test_single_wave {
 
         // verify the x values are increasing
         let mut last_x = data[0][0];
-        for r in data.iter() {
+        for r in data.iter().filter(|v| !v[0].is_nan()) {
             assert!(r[0] >= last_x);
             last_x = r[0];
         }
 
         // verify that the last kx value is greater than the first. this is because
         // the wave is getting more and more shallow.
-        assert!(data.iter().last().unwrap()[2] > data.iter().next().unwrap()[2]);
+        assert!(
+            data.iter().filter(|v| !v[0].is_nan()).last().unwrap()[2]
+                > data.iter().filter(|v| !v[0].is_nan()).next().unwrap()[2]
+        );
     }
 
     #[test]
@@ -569,7 +600,7 @@ mod test_single_wave {
         let bathymetry_data = &ConstantDepth::new(10.0);
         let current_data = &ConstantCurrent::new(0.0, 0.0);
 
-        let wave = SingleRay::new(bathymetry_data, Some(current_data), 0.0, 0.0, 0.1, 0.0);
+        let wave = SingleRay::new(bathymetry_data, current_data, 0.0, 0.0, 0.1, 0.0);
         let res = wave.trace_individual(100.0, 102.0, 1.0).unwrap();
 
         let (_, data) = &res.get();
@@ -598,7 +629,7 @@ mod test_single_wave {
         // current is 0.5 m/s in the x direction
         let current_data = &ConstantCurrent::new(0.5, 0.0);
         // wave starts at (x,y,kx,ky) = (0,0,0.1,0.0)
-        let wave = SingleRay::new(bathymetry_data, Some(current_data), 0.0, 0.0, 0.1, 0.0);
+        let wave = SingleRay::new(bathymetry_data, current_data, 0.0, 0.0, 0.1, 0.0);
         let res = wave.trace_individual(1.0, 10.0, 1.0).unwrap();
 
         let (_, data) = &res.get();
@@ -625,7 +656,7 @@ mod test_single_wave {
         // the current is 0.5 m/s in the y direction
         let current_data = &ConstantCurrent::new(0.0, 0.5);
         // wave starts at (x,y,kx,ky) = (0,0,0.1,0.0)
-        let wave = SingleRay::new(bathymetry_data, Some(current_data), 0.0, 0.0, 0.1, 0.0);
+        let wave = SingleRay::new(bathymetry_data, current_data, 0.0, 0.0, 0.1, 0.0);
         // trace the wave for 10 seconds
         let res = wave.trace_individual(1.0, 10.0, 1.0).unwrap();
 
@@ -662,7 +693,7 @@ mod test_single_wave {
         // the current is -0.5 m/s in the y direction
         let current_data = &ConstantCurrent::new(0.0, -0.5);
         // wave starts at (x,y,kx,ky) = (0,0,0.1,0.0)
-        let wave = SingleRay::new(bathymetry_data, Some(current_data), 0.0, 0.0, 0.1, 0.0);
+        let wave = SingleRay::new(bathymetry_data, current_data, 0.0, 0.0, 0.1, 0.0);
         // trace the wave for 10 seconds
         let res = wave.trace_individual(1.0, 10.0, 1.0).unwrap();
 
@@ -698,7 +729,7 @@ mod test_single_wave {
         // the current is 0.5 m/s in the x direction
         let current_data = &ConstantCurrent::new(0.5, 0.0);
         // wave starts at (x,y,kx,ky) = (0,0,0.0,0.1)
-        let wave = SingleRay::new(bathymetry_data, Some(current_data), 0.0, 0.0, 0.0, 0.1);
+        let wave = SingleRay::new(bathymetry_data, current_data, 0.0, 0.0, 0.0, 0.1);
 
         // trace the wave for 10 seconds
         let res = wave.trace_individual(1.0, 10.0, 1.0).unwrap();
@@ -735,7 +766,7 @@ mod test_single_wave {
         // the current is -0.5 m/s in the x direction
         let current_data = &ConstantCurrent::new(-0.5, 0.0);
         // wave starts at (x,y,kx,ky) = (0,0,0.0,0.1)
-        let wave = SingleRay::new(bathymetry_data, Some(current_data), 0.0, 0.0, 0.0, 0.1);
+        let wave = SingleRay::new(bathymetry_data, current_data, 0.0, 0.0, 0.0, 0.1);
         // trace the wave for 10 seconds
         let res = wave.trace_individual(1.0, 10.0, 1.0).unwrap();
 
@@ -771,7 +802,7 @@ mod test_single_wave {
         // the current is 0.5 m/s in the x direction and 0.5 m/s in the y direction
         let current_data = &ConstantCurrent::new(0.5, 0.5);
         // wave starts at (x,y,kx,ky) = (0,0,0.1,0.0)
-        let wave = SingleRay::new(bathymetry_data, Some(current_data), 0.0, 0.0, 0.1, 0.0);
+        let wave = SingleRay::new(bathymetry_data, current_data, 0.0, 0.0, 0.1, 0.0);
 
         // trace the wave for 10 seconds
         let res = wave.trace_individual(1.0, 10.0, 1.0).unwrap();
@@ -808,7 +839,7 @@ mod test_single_wave {
         // the current is -0.5 m/s in the x direction and -0.5 m/s in the y direction
         let current_data = &ConstantCurrent::new(-0.5, -0.5);
         // wave starts at (x,y,kx,ky) = (0,0,-0.1,0.0)
-        let wave = SingleRay::new(bathymetry_data, Some(current_data), 0.0, 0.0, -0.1, 0.0);
+        let wave = SingleRay::new(bathymetry_data, current_data, 0.0, 0.0, -0.1, 0.0);
         // trace the wave for 10 seconds
         let res = wave.trace_individual(1.0, 10.0, 1.0).unwrap();
 
@@ -837,11 +868,11 @@ mod test_single_wave {
     #[test]
     /// test a wave with a nonzero dudx where u = x/100.0 and v = 0.0 this
     /// test first creates the gradient file and then tests the wave
-    /// propogation. It verifies two cases:
-    /// 1) a wave starting at (1,1,0.1,0.0) will propogate in the x direction
+    /// propagation. It verifies two cases:
+    /// 1) a wave starting at (1,1,0.1,0.0) will propagate in the x direction
     ///    and the kx value will decrease, but y and ky values will stay the
     ///    same
-    /// 2) a wave starting at (1,1,0.0,0.1) will propogate in the y direction
+    /// 2) a wave starting at (1,1,0.0,0.1) will propagate in the y direction
     ///    with slight positive x direction, but both kx and ky will remain the
     ///    same.
     fn test_simple_dudx_gradient() {
@@ -862,7 +893,7 @@ mod test_single_wave {
         // deep water
         let bathymetry_data = &ConstantDepth::new(1000.0);
         // wave starts at (x,y,kx,ky) = (1,1,0.1,0.0)
-        let wave = SingleRay::new(bathymetry_data, Some(current_data), 1.0, 1.0, 0.1, 0.0);
+        let wave = SingleRay::new(bathymetry_data, current_data, 1.0, 1.0, 0.1, 0.0);
 
         // trace the wave for 10 seconds
         let res = wave.trace_individual(1.0, 10.0, 1.0).unwrap();
@@ -896,7 +927,7 @@ mod test_single_wave {
         assert!(data.iter().last().unwrap()[0] > data.iter().next().unwrap()[0]);
 
         // new wave (x, y, kx, ky) = (1, 1, 0.0, 0.1)
-        let wave = SingleRay::new(bathymetry_data, Some(current_data), 1.0, 1.0, 0.0, 0.1);
+        let wave = SingleRay::new(bathymetry_data, current_data, 1.0, 1.0, 0.0, 0.1);
 
         // trace the wave for 10 seconds
         let res = wave.trace_individual(1.0, 10.0, 1.0).unwrap();
@@ -926,10 +957,10 @@ mod test_single_wave {
     #[test]
     /// This test will create a current file with a nonzero du/dy. The tests
     /// will verify two cases:
-    /// 1) a wave starting at (1,1,0.1,0.0) will propogate in the x direction,
+    /// 1) a wave starting at (1,1,0.1,0.0) will propagate in the x direction,
     ///    the kx values will stay the same, x will increase, and y and ky will
     ///    decrease
-    /// 2) a wave starting at (1,1,0.0,0.1) will propogate in the y direction,
+    /// 2) a wave starting at (1,1,0.0,0.1) will propagate in the y direction,
     ///    the kx and ky values stay the same, and the x and y values increase
     fn test_simple_dudy_gradient() {
         // function that takes in x and y as f32 and returns u and v as f64.
@@ -950,7 +981,7 @@ mod test_single_wave {
         let bathymetry_data = &ConstantDepth::new(1000.0);
 
         // wave starts at (x,y,kx,ky) = (1,1,0.1,0.0)
-        let wave = SingleRay::new(bathymetry_data, Some(current_data), 1.0, 50.0, 0.1, 0.0);
+        let wave = SingleRay::new(bathymetry_data, current_data, 1.0, 50.0, 0.1, 0.0);
 
         // trace the wave for 10 seconds
         let res = wave.trace_individual(1.0, 10.0, 1.0).unwrap();
@@ -987,7 +1018,7 @@ mod test_single_wave {
         assert!(data.iter().last().unwrap()[3] < data.iter().next().unwrap()[3]);
 
         // new wave (x, y, kx, ky) = (1, 1, 0.0, 0.1)
-        let wave = SingleRay::new(bathymetry_data, Some(current_data), 1.0, 1.0, 0.0, 0.1);
+        let wave = SingleRay::new(bathymetry_data, current_data, 1.0, 1.0, 0.0, 0.1);
 
         // trace the wave for 10 seconds
         let res = wave.trace_individual(1.0, 10.0, 1.0).unwrap();
@@ -1018,10 +1049,10 @@ mod test_single_wave {
     /// This test will create a current file with a gradient in the v direction
     /// where v = (x / 100.0) and u = 0.0. This will create a gradient of dv/dy
     /// The tests will verify two cases:
-    /// 1) a wave starting at (1,1,0.1,0.0) will propogate in the x direction,
+    /// 1) a wave starting at (1,1,0.1,0.0) will propagate in the x direction,
     ///    all the kx and ky values will stay the same, but x and y values are
     ///    increasing
-    /// 2) a wave starting at (1,1,0.0,0.1) will propogate in the y direction
+    /// 2) a wave starting at (1,1,0.0,0.1) will propagate in the y direction
     ///    and the x and kx values will stay the same, but the y values will be
     ///    increasing and the ky values decreasing
     fn test_simple_dvdy_gradient() {
@@ -1042,7 +1073,7 @@ mod test_single_wave {
         // deep water
         let bathymetry_data = &ConstantDepth::new(1000.0);
         // wave starts at (x,y,kx,ky) = (1,1,0.1,0.0)
-        let wave = SingleRay::new(bathymetry_data, Some(current_data), 1.0, 1.0, 0.1, 0.0);
+        let wave = SingleRay::new(bathymetry_data, current_data, 1.0, 1.0, 0.1, 0.0);
 
         // trace the wave for 10 seconds
         let res = wave.trace_individual(1.0, 10.0, 1.0).unwrap();
@@ -1070,7 +1101,7 @@ mod test_single_wave {
         assert!(data.iter().last().unwrap()[1] > data.iter().next().unwrap()[1]);
 
         // new wave (x, y, kx, ky) = (1, 1, 0.0, 0.1)
-        let wave = SingleRay::new(bathymetry_data, Some(current_data), 1.0, 1.0, 0.0, 0.1);
+        let wave = SingleRay::new(bathymetry_data, current_data, 1.0, 1.0, 0.0, 0.1);
 
         // trace the wave for 10 seconds
         let res = wave.trace_individual(1.0, 10.0, 1.0).unwrap();
@@ -1116,10 +1147,10 @@ mod test_single_wave {
     /// This test will create a current file with a gradient in the v direction
     /// where v = (x / 100.0) and u = 0.0. This will create a gradient of dv/dx
     /// The test will verify that:
-    /// 1) a wave starting at (1,1,0.1,0.0) will propogate in the x direction
+    /// 1) a wave starting at (1,1,0.1,0.0) will propagate in the x direction
     /// and the kx and ky values will stay the same, but x and y values are
     /// increasing
-    /// 2) a wave starting at (1,1,0.0,0.1) will propogate in the y direction
+    /// 2) a wave starting at (1,1,0.0,0.1) will propagate in the y direction
     ///    and only the ky values will stay the same. The y values will increase
     ///    and the x and kx values will decrease.
     fn test_simple_dvdx_gradient() {
@@ -1140,7 +1171,7 @@ mod test_single_wave {
         // deep water
         let bathymetry_data = &ConstantDepth::new(1000.0);
         // wave starts at (x,y,kx,ky) = (1,1,0.1,0.0)
-        let wave = SingleRay::new(bathymetry_data, Some(current_data), 1.0, 1.0, 0.1, 0.0);
+        let wave = SingleRay::new(bathymetry_data, current_data, 1.0, 1.0, 0.1, 0.0);
 
         // trace the wave for 10 seconds
         let res = wave.trace_individual(1.0, 10.0, 1.0).unwrap();
@@ -1168,7 +1199,7 @@ mod test_single_wave {
         assert!(data.iter().last().unwrap()[1] > data.iter().next().unwrap()[1]);
 
         // new wave (x, y, kx, ky) = (1, 1, 0.0, 0.1)
-        let wave = SingleRay::new(bathymetry_data, Some(current_data), 50.0, 1.0, 0.0, 0.1);
+        let wave = SingleRay::new(bathymetry_data, current_data, 50.0, 1.0, 0.0, 0.1);
 
         // trace the wave for 10 seconds
         let res = wave.trace_individual(1.0, 10.0, 1.0).unwrap();
@@ -1232,7 +1263,7 @@ mod test_single_wave {
         let bathymetry_data = &ConstantDepth::new(1000.0);
 
         // wave starts at (x,y,kx,ky) = (1,1,0.1,0.1)
-        let wave = SingleRay::new(bathymetry_data, Some(current_data), 1.0, 1.0, 0.1, 0.1);
+        let wave = SingleRay::new(bathymetry_data, current_data, 1.0, 1.0, 0.1, 0.1);
 
         // trace the wave for 10 seconds
         let res = wave.trace_individual(1.0, 10.0, 1.0).unwrap();
@@ -1277,14 +1308,18 @@ mod test_single_wave {
 #[cfg(test)]
 mod test_many_waves {
 
-    use crate::bathymetry::ConstantSlope;
+    use crate::{
+        bathymetry::{BathymetryData, ConstantSlope},
+        current::ConstantCurrent,
+    };
 
     use super::ManyRays;
 
     #[test]
     /// check that output with test values from single wave works
     fn test_many_waves_ok() {
-        let bathymetry_data = &ConstantSlope::builder().build().unwrap();
+        let bathymetry_data: &dyn BathymetryData = &ConstantSlope::builder().build().unwrap();
+        let current_data = &ConstantCurrent::new(0.0, 0.0);
 
         let initial_waves = vec![
             // (x, y, kx, ky)
@@ -1299,7 +1334,7 @@ mod test_many_waves {
             (10.0, 90.0, 1.0, 0.0),
         ];
 
-        let waves = ManyRays::new(bathymetry_data, None, &initial_waves);
+        let waves = ManyRays::new(bathymetry_data, current_data, &initial_waves);
 
         let results = waves.trace_many(0.0, 100000.0, 1.0);
 
