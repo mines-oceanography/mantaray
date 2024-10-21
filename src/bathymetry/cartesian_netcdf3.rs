@@ -346,86 +346,53 @@ impl CartesianNetcdf3 {
         let ylow = 0.0;
         let yhigh = (self.y.len() - 1) as f32;
 
-        // check if edge cases
-        if xindex == xlow {
-            // on left edge
-            if yindex == yhigh {
-                // on upper edge
-                let x1 = xindex as usize;
-                let x2 = xindex as usize + 1;
-                let y1 = yindex as usize - 1;
-                let y2 = yindex as usize;
-                Ok(vec![(x1, y1), (x1, y2), (x2, y2), (x2, y1)])
-            } else {
-                // on lower edge or center
-                let x1 = xindex as usize;
-                let x2 = xindex as usize + 1;
-                let y1 = yindex as usize;
-                let y2 = yindex as usize + 1;
-                Ok(vec![(x1, y1), (x1, y2), (x2, y2), (x2, y1)])
-            }
+        // check edges, interior points, or normal case
+        let (x1, x2) = if xindex == xlow {
+            // left edge
+            let x1 = xindex as usize;
+            let x2 = xindex as usize + 1;
+            (x1, x2)
         } else if xindex == xhigh {
-            // on right edge
-            if yindex == yhigh {
-                // on upper edge
-                let x1 = xindex as usize - 1;
-                let x2 = xindex as usize;
-                let y1 = yindex as usize - 1;
-                let y2 = yindex as usize;
-                Ok(vec![(x1, y1), (x1, y2), (x2, y2), (x2, y1)])
-            } else {
-                // on lower edge or in center
-                let x1 = xindex as usize - 1;
-                let x2 = xindex as usize;
-                let y1 = yindex as usize;
-                let y2 = yindex as usize + 1;
-                Ok(vec![(x1, y1), (x1, y2), (x2, y2), (x2, y1)])
-            }
-        } else if yindex == yhigh {
-            // we already know that x is not on the edge, so no more checks
-            let x1 = xindex as usize;
-            let x2 = xindex as usize + 1;
-            let y1 = yindex as usize - 1;
-            let y2 = yindex as usize;
-            Ok(vec![(x1, y1), (x1, y2), (x2, y2), (x2, y1)])
-        } else if yindex == ylow {
-            // we already know x is not on the edge, so no more checks
-            let x1 = xindex as usize;
-            let x2 = xindex as usize + 1;
-            let y1 = yindex as usize;
-            let y2 = yindex as usize + 1;
-            Ok(vec![(x1, y1), (x1, y2), (x2, y2), (x2, y1)])
+            // right edge
+            let x1 = xindex as usize - 1;
+            let x2 = xindex as usize;
+            (x1, x2)
         } else if xindex.fract() == 0.0 {
-            // on an interior x grid point
-            if yindex.fract() == 0.0 {
-                // also on an interior y grid point
-                let x1 = xindex.round() as usize;
-                let x2 = x1 + 1;
-                let y1 = yindex.round() as usize;
-                let y2 = y1 + 1;
-                Ok(vec![(x1, y1), (x1, y2), (x2, y2), (x2, y1)])
-            } else {
-                let x1 = xindex.round() as usize;
-                let x2 = x1 + 1;
-                let y1 = yindex.floor() as usize;
-                let y2 = yindex.ceil() as usize;
-                Ok(vec![(x1, y1), (x1, y2), (x2, y2), (x2, y1)])
-            }
-        } else if yindex.fract() == 0.0 {
-            // only on an interior y grid point
-            let x1 = xindex.floor() as usize;
-            let x2 = xindex.ceil() as usize;
-            let y1 = yindex.round() as usize;
-            let y2 = y1 + 1;
-            Ok(vec![(x1, y1), (x1, y2), (x2, y2), (x2, y1)])
+            // on x grid point, but not on edge
+            let x1 = xindex.round() as usize;
+            let x2 = x1 + 1;
+            (x1, x2)
         } else {
             // normal case
             let x1 = xindex.floor() as usize;
             let x2 = xindex.ceil() as usize;
+            (x1, x2)
+        };
+
+        // check edges, interior points, or normal case
+        let (y1, y2) = if yindex == ylow {
+            // bottom edge
+            let y1 = yindex as usize;
+            let y2 = yindex as usize + 1;
+            (y1, y2)
+        } else if yindex == yhigh {
+            // top edge
+            let y1 = yindex as usize - 1;
+            let y2 = yindex as usize;
+            (y1, y2)
+        } else if yindex.fract() == 0.0 {
+            // on y grid point, but not edge
+            let y1 = yindex.round() as usize;
+            let y2 = y1 + 1;
+            (y1, y2)
+        } else {
+            // normal case
             let y1 = yindex.floor() as usize;
             let y2 = yindex.ceil() as usize;
-            Ok(vec![(x1, y1), (x1, y2), (x2, y2), (x2, y1)])
-        }
+            (y1, y2)
+        };
+
+        Ok(vec![(x1, y1), (x1, y2), (x2, y2), (x2, y1)])
     }
 
     /// Interpolate the depth using crate::interpolator::bilinear
