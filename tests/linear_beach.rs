@@ -67,7 +67,7 @@ fn test_linear_beach_right() {
 
     let initial_rays = vec![up_ray, down_ray, straight_ray];
 
-    let waves = ManyRays::new(&bathymetry_data, Some(&current_data), &initial_rays);
+    let waves = ManyRays::new(&bathymetry_data, &current_data, &initial_rays);
 
     let results = waves.trace_many(0.0, 1_000.0, 1.0);
 
@@ -162,7 +162,7 @@ fn test_linear_beach_left() {
 
     let initial_rays = vec![up_ray, down_ray, straight_ray];
 
-    let waves = ManyRays::new(&bathymetry_data, Some(&current_data), &initial_rays);
+    let waves = ManyRays::new(&bathymetry_data, &current_data, &initial_rays);
 
     let results = waves.trace_many(0.0, 1_000.0, 1.0);
 
@@ -267,7 +267,7 @@ fn test_linear_beach_top() {
 
     let initial_rays = vec![left_ray, right_ray, vertical_ray];
 
-    let waves = ManyRays::new(&bathymetry_data, Some(&current_data), &initial_rays);
+    let waves = ManyRays::new(&bathymetry_data, &current_data, &initial_rays);
 
     let results = waves.trace_many(0.0, 1_000.0, 1.0);
 
@@ -372,7 +372,7 @@ fn test_linear_beach_bottom() {
 
     let initial_rays = vec![left_ray, right_ray, vertical_ray];
 
-    let waves = ManyRays::new(&bathymetry_data, Some(&current_data), &initial_rays);
+    let waves = ManyRays::new(&bathymetry_data, &current_data, &initial_rays);
 
     let results = waves.trace_many(0.0, 1_000.0, 1.0);
 

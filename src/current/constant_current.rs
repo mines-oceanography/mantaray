@@ -5,6 +5,10 @@ use crate::error::Result;
 
 use super::CurrentData;
 
+#[allow(dead_code)]
+/// the default current is (u, v) = (0, 0)
+pub(crate) const DEFAULT_CURRENT: ConstantCurrent = ConstantCurrent { u: 0.0, v: 0.0 };
+
 /// struct representing a constant current field.
 ///
 /// # Properties:
