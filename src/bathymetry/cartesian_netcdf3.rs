@@ -620,10 +620,23 @@ mod test_cartesian_file {
         );
 
         // check out of bounds
-        assert!(data.four_corners(&50_001.0, &0.0).is_err());
-        assert!(data.four_corners(&50_000.0, &25_001.0).is_err());
-        assert!(data.four_corners(&-1.0, &0.0).is_err());
-        assert!(data.four_corners(&50_000.0, &-1.0).is_err());
+        // check out of bounds
+        assert!(match data.four_corners(&50_001.0, &0.0) {
+            Err(Error::IndexOutOfBounds) => true,
+            _ => false,
+        });
+        assert!(match data.four_corners(&50_000.0, &25_001.0) {
+            Err(Error::IndexOutOfBounds) => true,
+            _ => false,
+        });
+        assert!(match data.four_corners(&-1.0, &0.0) {
+            Err(Error::IndexOutOfBounds) => true,
+            _ => false,
+        });
+        assert!(match data.four_corners(&50_000.0, &-1.0) {
+            Err(Error::IndexOutOfBounds) => true,
+            _ => false,
+        });
 
         // check not edge, in bounds, and both x and y on grid point
         assert!(
