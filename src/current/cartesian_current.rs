@@ -549,6 +549,7 @@ mod test_cartesian_file_current {
     use super::{Current, Gradient, Point};
     use crate::{
         current::{cartesian_current::CartesianCurrent, CurrentData},
+        error::Error,
         io::utility::create_netcdf3_current,
     };
     use std::path::Path;
@@ -780,10 +781,22 @@ mod test_cartesian_file_current {
         );
 
         // check out of bounds
-        assert!(data.four_corners(&Point::new(50_001.0, 0.0)).is_err());
-        assert!(data.four_corners(&Point::new(50_000.0, 25_001.0)).is_err());
-        assert!(data.four_corners(&Point::new(-1.0, 0.0)).is_err());
-        assert!(data.four_corners(&Point::new(50_000.0, -1.0)).is_err());
+        assert!(match data.four_corners(&Point::new(50_001.0, 0.0)) {
+            Err(Error::IndexOutOfBounds) => true,
+            _ => false,
+        });
+        assert!(match data.four_corners(&Point::new(50_000.0, 25_001.0)) {
+            Err(Error::IndexOutOfBounds) => true,
+            _ => false,
+        });
+        assert!(match data.four_corners(&Point::new(-1.0, 0.0)) {
+            Err(Error::IndexOutOfBounds) => true,
+            _ => false,
+        });
+        assert!(match data.four_corners(&Point::new(50_000.0, -1.0)) {
+            Err(Error::IndexOutOfBounds) => true,
+            _ => false,
+        });
 
         // check not edge, in bounds, and both x and y on grid point
         assert!(
@@ -856,13 +869,13 @@ mod test_cartesian_file_current {
         let temp_file = NamedTempFile::new().unwrap();
         let path = temp_file.into_temp_path();
 
-        create_netcdf3_current(&path, 101, 51, 500.0, 500.0, simple_current);
+        create_netcdf3_current(&path, 100, 50, 1.0, 1.0, simple_current);
 
         let data = CartesianCurrent::open(Path::new(&path), "x", "y", "u", "v");
 
         // check full domain is accurate
         for i in 0..100 {
-            for j in 0..100 {
+            for j in 0..50 {
                 let i = i as f64;
                 let j = j as f64;
 
@@ -887,13 +900,13 @@ mod test_cartesian_file_current {
         let temp_file = NamedTempFile::new().unwrap();
         let path = temp_file.into_temp_path();
 
-        create_netcdf3_current(&path, 101, 51, 500.0, 500.0, simple_current);
+        create_netcdf3_current(&path, 100, 50, 1.0, 1.0, simple_current);
 
         let data = CartesianCurrent::open(Path::new(&path), "x", "y", "u", "v");
 
         // check full domain is accurate
         for i in 0..100 {
-            for j in 0..100 {
+            for j in 0..50 {
                 let i = i as f64;
                 let j = j as f64;
 
