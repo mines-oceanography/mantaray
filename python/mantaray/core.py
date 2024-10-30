@@ -111,14 +111,22 @@ def ray_tracing(
         x0, y0, kx0, ky0, duration, step_size, bathymetry, current
     )
 
-    tmp = np.array(tmp)
+    bundle = []
+    for n, ray in enumerate(tmp):
+        varnames = ["time_step", "x", "y", "kx", "ky"]
+        ds = (
+            xr.Dataset(
+                data_vars={
+                    v: (["time_step"], t) for (v, t) in zip(varnames, np.array(ray).T)
+                },
+            )
+            .expand_dims("ray", axis=0)
+            .set_coords(["time_step", "x", "y"])
+        )
+        ds["ray"] = [n]
+        bundle.append(ds)
 
-    varnames = ["time", "x", "y", "kx", "ky"]
-    output = xr.Dataset(
-        data_vars={v: (["time_step", "ray"], t) for (v, t) in zip(varnames, tmp.T)},
-        attrs={
-            "date_created": str(datetime.datetime.now()),
-        },
-    ).transpose("ray", "time_step").set_coords(["time", "x", "y"])
+    ds = xr.concat(bundle, dim="ray")
+    ds.attrs["date_created"] = str(datetime.datetime.now())
 
-    return output
+    return ds
