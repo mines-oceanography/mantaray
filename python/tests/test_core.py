@@ -49,3 +49,20 @@ def test_single_ray(tmp_path):
     assert ds.sizes['time_step'] == 6
     assert (ds.kx == 0.01).all()
     assert (ds.ky == 0.0).all()
+
+
+def test_multiple_rays(tmp_path):
+    """Test multiple rays."""
+    ds = deep_water_constant_depth()
+    ds.to_netcdf(tmp_path / "island.nc", format="NETCDF3_CLASSIC")
+
+    ds = zero_current_field()
+    ds.to_netcdf(tmp_path / "current.nc", format="NETCDF3_CLASSIC")
+
+    ds = mantaray.ray_tracing(3*[-1000], 3*[0], 3*[0.01], 3*[0], 10, 2, str(tmp_path / "island.nc"), str(tmp_path / "current.nc"))
+
+    breakpoint()
+    assert ds.sizes['time_step'] == 6
+    assert ds.sizes['ray'] == 3
+    assert (ds.kx == 0.01).all()
+    assert (ds.ky == 0.0).all()
