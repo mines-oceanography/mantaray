@@ -12,8 +12,8 @@ def deep_water_constant_depth():
             depth=(["x", "y"], 10_000 * np.ones((3, 3))),
         ),
         coords=dict(
-            x=("x", [-1e8, 0, 1e8]),
-            y=("y", [-1e8, 0, 1e8]),
+            x=("x", [-1e4, 0, 1e4]),
+            y=("y", [-1e4, 0, 1e4]),
         ),
         attrs=dict(description="Test dataset, "),
     )
