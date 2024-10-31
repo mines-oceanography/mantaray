@@ -123,6 +123,7 @@ def ray_tracing(
             .expand_dims("ray", axis=0)
             .set_coords(["time", "x", "y"])
         )
+        ds["time_step"] = range(ds.sizes['time_step'])
         ds["ray"] = [n]
         bundle.append(ds)
 
