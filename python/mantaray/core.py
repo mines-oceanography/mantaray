@@ -113,7 +113,7 @@ def ray_tracing(
 
     bundle = []
     for n, ray in enumerate(tmp):
-        varnames = ["time_step", "x", "y", "kx", "ky"]
+        varnames = ["time", "x", "y", "kx", "ky"]
         ds = (
             xr.Dataset(
                 data_vars={
@@ -121,7 +121,7 @@ def ray_tracing(
                 },
             )
             .expand_dims("ray", axis=0)
-            .set_coords(["time_step", "x", "y"])
+            .set_coords(["time", "x", "y"])
         )
         ds["ray"] = [n]
         bundle.append(ds)
