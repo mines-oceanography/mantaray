@@ -112,8 +112,8 @@ def ray_tracing(
     )
 
     bundle = []
+    varnames = ["time", "x", "y", "kx", "ky"]
     for n, ray in enumerate(tmp):
-        varnames = ["time", "x", "y", "kx", "ky"]
         ds = (
             xr.Dataset(
                 data_vars={
