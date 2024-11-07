@@ -8,7 +8,7 @@ use crate::datatype::{Current, Gradient, Point};
 use crate::error::Result;
 
 mod cartesian_current;
-mod constant_current;
+pub mod constant_current;
 
 #[allow(unused_imports)]
 pub(super) use cartesian_current::CartesianCurrent;
@@ -17,7 +17,7 @@ pub use constant_current::ConstantCurrent;
 #[allow(unused_imports)]
 pub(super) use constant_current::DEFAULT_CURRENT;
 
-/// Trait that gives methods to return current and gradient at given point
+/// A trait implementing methods to get current and gradient
 pub trait CurrentData: Sync {
     /// Current (u, v) at the given (x, y)
     fn current(&self, point: &Point<f64>) -> Result<Current<f64>>;
