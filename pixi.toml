@@ -37,6 +37,7 @@ test = { features = ["test"], solve-group = "default" }
 [feature.dev.dependencies]
 ruff = ">=0.4"
 ipython = ">=8.0"
+cmake = ">=3.30.5,<4"
 
 [feature.test.dependencies]
 pytest = ">=7.0"
