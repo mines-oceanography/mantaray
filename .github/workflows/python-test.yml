@@ -48,19 +48,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: ${{ matrix.rust }}
-          override: true
-
-      - name: Run tests
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --no-fail-fast
-
-
-      - name:
+      - name: Setup Pixi
         uses: prefix-dev/setup-pixi@v0.8.0
         with:
           pixi-version: v0.36.0
