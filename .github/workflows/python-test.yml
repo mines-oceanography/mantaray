@@ -8,24 +8,21 @@ on:
     - cron: '4 5 * * 5'
 
 jobs:
-  check:
-    name: Check
+  ruff:
+    name: Ruff
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout sources
-        uses: actions/checkout@v4
-
-      - name: Install stable toolchain
-        uses: actions-rs/toolchain@v1
+      - uses: actions/checkout@v4
+      - uses: chartboost/ruff-action@v1
         with:
-          profile: minimal
-          toolchain: stable
-          override: true
-
-      - name: Run cargo check
-        uses: actions-rs/cargo@v1
+          version: 0.7.0
+          args: check
+          src: "./python/mantaray"
+      - uses: chartboost/ruff-action@v1
         with:
-          command: check
+          version: 0.7.0
+          args: format --check
+          src: "./python/mantaray"
 
   test:
     runs-on: ${{ matrix.os }}
@@ -71,5 +68,3 @@ jobs:
           cache: true
 
       - run: pixi run -e test pytest
-
-
