@@ -1,4 +1,7 @@
 //! Struct used to create and access bathymetry data stored in a netcdf3 file.
+//!
+//! Note: the x and y dimensions of the dataset have to be equally-spaced arrays
+//! in ascending order.
 
 use std::path::Path;
 
@@ -46,7 +49,7 @@ pub struct CartesianNetcdf3 {
     y: Vec<f32>,
     /// a vector containing the depth values from the netcdf3 file. Note this is
     /// a flattened 2d array and is accessed by the function `depth_from_array`.
-    depth: Vec<f32>,
+    depth: Vec<f64>,
 }
 
 impl BathymetryData for CartesianNetcdf3 {
@@ -74,13 +77,9 @@ impl BathymetryData for CartesianNetcdf3 {
             return Ok(f32::NAN);
         }
 
-        let (nearest_x, nearest_y) = match self.nearest_point(x, y) {
-            Some(point) => point,
-            None => return Err(Error::IndexOutOfBounds),
-        };
-        let corner_points = match self.four_corners(&nearest_x, &nearest_y) {
-            Some(point) => point,
-            None => return Err(Error::IndexOutOfBounds),
+        let corner_points = match self.four_corners(x, y) {
+            Ok(point) => point,
+            Err(e) => return Err(e),
         };
         self.interpolate(&corner_points, &(*x, *y))
     }
@@ -109,13 +108,9 @@ impl BathymetryData for CartesianNetcdf3 {
             return Ok((f32::NAN, (f32::NAN, f32::NAN)));
         }
 
-        let (nearest_x, nearest_y) = match self.nearest_point(x, y) {
-            Some(point) => point,
-            None => return Err(Error::IndexOutOfBounds),
-        };
-        let corner_points = match self.four_corners(&nearest_x, &nearest_y) {
-            Some(point) => point,
-            None => return Err(Error::IndexOutOfBounds),
+        let corner_points = match self.four_corners(x, y) {
+            Ok(point) => point,
+            Err(e) => return Err(e),
         };
 
         // interpolate the depth
@@ -123,27 +118,26 @@ impl BathymetryData for CartesianNetcdf3 {
 
         // get the gradient
 
-        // NOTE: the gradient assumes that the depth is linear in both the x
+        // Note: the gradient assumes that the depth is linear in both the x
         // and y directions, and since bilinear interpolation is used to
         // interpolate the depth at any given point, this is a good
         // approximation.
-        let x_space = self.x[1] - self.x[0];
-        let y_space = self.y[1] - self.y[0];
+        let x_space = self.x[1] as f64 - self.x[0] as f64;
+        let y_space = self.y[1] as f64 - self.y[0] as f64;
 
-        let north_point = &corner_points[0];
-        let east_point = &corner_points[1];
-        let south_point = &corner_points[2];
-        let west_point = &corner_points[3];
+        let sw_point = &corner_points[0];
+        let nw_point = &corner_points[1];
+        let se_point = &corner_points[3];
 
-        let x_gradient = (self.depth_at_indexes(&east_point.0, &east_point.1)?
-            - self.depth_at_indexes(&west_point.0, &west_point.1)?)
-            / (2.0 * x_space);
+        let x_gradient = (self.depth_at_indexes(&se_point.0, &se_point.1)?
+            - self.depth_at_indexes(&sw_point.0, &sw_point.1)?)
+            / x_space;
 
-        let y_gradient = (self.depth_at_indexes(&north_point.0, &north_point.1)?
-            - self.depth_at_indexes(&south_point.0, &south_point.1)?)
-            / (2.0 * y_space);
+        let y_gradient = (self.depth_at_indexes(&nw_point.0, &nw_point.1)?
+            - self.depth_at_indexes(&sw_point.0, &sw_point.1)?)
+            / y_space;
 
-        Ok((depth, (x_gradient, y_gradient)))
+        Ok((depth, (x_gradient as f32, y_gradient as f32)))
     }
 }
 
@@ -235,33 +229,33 @@ impl CartesianNetcdf3 {
                 .get_i16_into()
                 .unwrap()
                 .iter()
-                .map(|x| *x as f32)
+                .map(|x| *x as f64)
                 .collect(),
             DataType::I8 => depth
                 .get_i8_into()
                 .unwrap()
                 .iter()
-                .map(|x| *x as f32)
+                .map(|x| *x as f64)
                 .collect(),
             DataType::U8 => depth
                 .get_u8_into()
                 .unwrap()
                 .iter()
-                .map(|x| *x as f32)
+                .map(|x| *x as f64)
                 .collect(),
             DataType::I32 => depth
                 .get_i32_into()
                 .unwrap()
                 .iter()
-                .map(|x| *x as f32)
+                .map(|x| *x as f64)
                 .collect(),
-            DataType::F32 => depth.get_f32_into().unwrap(),
-            DataType::F64 => depth
-                .get_f64_into()
+            DataType::F32 => depth
+                .get_f32_into()
                 .unwrap()
                 .iter()
-                .map(|x| *x as f32)
+                .map(|x| *x as f64)
                 .collect(),
+            DataType::F64 => depth.get_f64_into().unwrap(),
         };
 
         Ok(CartesianNetcdf3 { x, y, depth })
@@ -277,46 +271,34 @@ impl CartesianNetcdf3 {
     /// - the array that will be used when searching for the closest value.
     ///
     /// # Returns
-    /// `usize`: index of closest value
+    /// `Result<f32>`: index of closest value or error
     ///
     /// # Note
-    /// This function uses binary search, but requires the array to be sorted.
-    fn nearest(&self, target: &f32, array: &[f32]) -> usize {
-        let mut left = 0;
-        let mut right = array.len() - 1;
-        let mut closest_index = 0;
-        let mut closest_distance = f32::MAX;
-
-        // edge cases
-        if *target <= array[left] {
-            return left;
-        }
-        if *target >= array[right] {
-            return right;
+    /// This function assumes the array has equal spacing between all elements
+    /// and is ordered from least to greatest. Given those two conditions, it is
+    /// valid to have fractional indexes.
+    fn nearest(&self, target: &f32, array: &[f32]) -> Result<f32> {
+        // array has to have at least 1 element (prevent future divide by zero error)
+        if array.is_empty() {
+            return Err(Error::IndexOutOfBounds); // error
         }
 
-        // binary search
-        while left <= right {
-            let mid = (left + right) / 2;
-            let distance = (target - array[mid]).abs();
-
-            if distance < closest_distance {
-                closest_index = mid;
-                closest_distance = distance;
-            }
-
-            if array[mid] == *target {
-                return mid;
-            }
-
-            if array[mid] > *target {
-                right = mid - 1;
-            } else {
-                left = mid + 1;
-            }
+        // if the array has only one element, return 0 as its the only option
+        if array.len() == 1 {
+            return Ok(0.0);
         }
 
-        closest_index
+        // we know the array has at least two elements, so the following line
+        // will never panic
+        let spacing = (array[1] - array[0]).abs();
+
+        let index = (target - array[0]) / spacing;
+
+        if index < 0.0 || index > (array.len() - 1) as f32 {
+            Err(Error::IndexOutOfBounds)
+        } else {
+            Ok(index)
+        }
     }
 
     /// Returns the nearest (xindex, yindex) point to given (x ,y) point
@@ -329,25 +311,17 @@ impl CartesianNetcdf3 {
     /// - y location in meters
     ///
     /// # Returns
-    /// `Option<(usize, usize)>`
-    /// - `Some((usize, usize))` : the indices of the nearest point to the given
-    ///   `x`, `y` input.
-    /// - `None` : based on the calculated nearest point, the given `x` and `y`
-    ///   are assumed to be out of bounds, so a value does not exist.
+    /// `Result<(f32, f32)>`: the indexes of the nearest point or an error.
     ///
     /// # Note
-    /// This function will return `None` on points that are on the edges. This
-    /// causes a small bug requiring the user to initialize the ray at least
-    /// half a grid space away from the edge.
-    fn nearest_point(&self, x: &f32, y: &f32) -> Option<(usize, usize)> {
-        let xindex = self.nearest(x, &self.x);
-        let yindex = self.nearest(y, &self.y);
+    /// This function assumes the x and y dimensions of the data are equally
+    /// spaced arrays in ascending order. Therefore, fractional indexes are expected.
+    fn nearest_point(&self, x: &f32, y: &f32) -> Result<(f32, f32)> {
+        // find floating point "index"
+        let xindex = self.nearest(x, &self.x)?;
+        let yindex = self.nearest(y, &self.y)?;
 
-        if xindex == 0 || yindex == 0 || xindex >= self.x.len() - 1 || yindex >= self.y.len() {
-            return None;
-        }
-
-        Some((xindex, yindex))
+        Ok((xindex, yindex))
     }
 
     /// Get four adjacent points
@@ -360,25 +334,65 @@ impl CartesianNetcdf3 {
     /// - index of the y location
     ///
     /// # Returns
-    /// `Option<Vec<(usize, usize)>>`
-    /// - `Some(Vec<(usize, usize)>)` : corner points in surrounding given
-    ///   `xindex` and `yindex` in clockwise order.
-    /// - `None` : `xindex` or `yindex` is out of range and no value exists.
-    fn four_corners(&self, xindex: &usize, yindex: &usize) -> Option<Vec<(usize, usize)>> {
-        if *xindex == 0
-            || *yindex == 0
-            || *xindex >= self.x.len() - 1
-            || *yindex >= self.y.len() - 1
-        {
-            return None;
-        }
-        // clockwise in order
-        Some(vec![
-            (*xindex, yindex + 1),
-            (xindex + 1, *yindex),
-            (*xindex, yindex - 1),
-            (xindex - 1, *yindex),
-        ])
+    /// `Result<Vec<(usize, usize)>>`: returns a vector of the 4 points
+    /// surrounding the target point. The points are in clockwise order starting
+    /// with the bottom left point. Or it will return an out of bounds error.
+    fn four_corners(&self, x: &f32, y: &f32) -> Result<Vec<(usize, usize)>> {
+        let (xindex, yindex) = self.nearest_point(x, y)?;
+
+        // determine the edges
+        let xlow = 0.0;
+        let xhigh = (self.x.len() - 1) as f32;
+        let ylow = 0.0;
+        let yhigh = (self.y.len() - 1) as f32;
+
+        // check edges, interior points, or normal case
+        let (x1, x2) = if xindex == xlow {
+            // left edge
+            let x1 = xindex as usize;
+            let x2 = xindex as usize + 1;
+            (x1, x2)
+        } else if xindex == xhigh {
+            // right edge
+            let x1 = xindex as usize - 1;
+            let x2 = xindex as usize;
+            (x1, x2)
+        } else if xindex.fract() == 0.0 {
+            // on x grid point, but not on edge
+            let x1 = xindex.round() as usize;
+            let x2 = x1 + 1;
+            (x1, x2)
+        } else {
+            // normal case
+            let x1 = xindex.floor() as usize;
+            let x2 = xindex.ceil() as usize;
+            (x1, x2)
+        };
+
+        // check edges, interior points, or normal case
+        let (y1, y2) = if yindex == ylow {
+            // bottom edge
+            let y1 = yindex as usize;
+            let y2 = yindex as usize + 1;
+            (y1, y2)
+        } else if yindex == yhigh {
+            // top edge
+            let y1 = yindex as usize - 1;
+            let y2 = yindex as usize;
+            (y1, y2)
+        } else if yindex.fract() == 0.0 {
+            // on y grid point, but not edge
+            let y1 = yindex.round() as usize;
+            let y2 = y1 + 1;
+            (y1, y2)
+        } else {
+            // normal case
+            let y1 = yindex.floor() as usize;
+            let y2 = yindex.ceil() as usize;
+            (y1, y2)
+        };
+
+        Ok(vec![(x1, y1), (x1, y2), (x2, y2), (x2, y1)])
     }
 
     /// Interpolate the depth using crate::interpolator::bilinear
@@ -415,22 +429,22 @@ impl CartesianNetcdf3 {
             (
                 self.x[index_points[0].0],
                 self.y[index_points[0].1],
-                self.depth_at_indexes(&index_points[0].0, &index_points[0].1)?,
+                self.depth_at_indexes(&index_points[0].0, &index_points[0].1)? as f32,
             ),
             (
                 self.x[index_points[1].0],
                 self.y[index_points[1].1],
-                self.depth_at_indexes(&index_points[1].0, &index_points[1].1)?,
+                self.depth_at_indexes(&index_points[1].0, &index_points[1].1)? as f32,
             ),
             (
                 self.x[index_points[2].0],
                 self.y[index_points[2].1],
-                self.depth_at_indexes(&index_points[2].0, &index_points[2].1)?,
+                self.depth_at_indexes(&index_points[2].0, &index_points[2].1)? as f32,
             ),
             (
                 self.x[index_points[3].0],
                 self.y[index_points[3].1],
-                self.depth_at_indexes(&index_points[3].0, &index_points[3].1)?,
+                self.depth_at_indexes(&index_points[3].0, &index_points[3].1)? as f32,
             ),
         ];
         interpolator::bilinear(&depth_points, target_point)
@@ -454,7 +468,7 @@ impl CartesianNetcdf3 {
     /// # Errors
     /// `Err(Error::IndexOutOfBounds)` : this error is returned when `x_index`
     /// and `y_index` produce a value outside of the depth array.
-    fn depth_at_indexes(&self, xindex: &usize, yindex: &usize) -> Result<f32> {
+    fn depth_at_indexes(&self, xindex: &usize, yindex: &usize) -> Result<f64> {
         let index = self.x.len() * yindex + xindex;
         if index >= self.depth.len() {
             return Err(Error::IndexOutOfBounds);
@@ -506,7 +520,7 @@ mod test_cartesian_file {
 
     #[test]
     // test the and view the nearest function
-    fn test_get_nearest() {
+    fn test_nearest() {
         // create temporary file
         let temp_file = NamedTempFile::new().unwrap();
         let temp_path = temp_file.into_temp_path();
@@ -514,11 +528,44 @@ mod test_cartesian_file {
         create_netcdf3_bathymetry(&temp_path, 101, 51, 500.0, 500.0, four_depth_fn);
 
         let data = CartesianNetcdf3::open(&temp_path, "x", "y", "depth").unwrap();
-        assert!(data.nearest(&5499.0, &data.x) == 11);
+
+        // in bounds
+        assert!(data.nearest(&5499.0, &data.x).unwrap().round() == 11.0);
+
+        // out of bounds
+        assert!(data.nearest(&-1.0, &data.y).is_err());
+        assert!(data.nearest(&25_501.0, &data.y).is_err());
+
+        // on grid point
+        assert!((data.nearest(&5500.0, &data.x).unwrap() - 11.0).abs() <= f32::EPSILON);
     }
 
     #[test]
-    // check the output from four_corners function
+    // test the nearest point function (which returns floating point indexes)
+    fn test_nearest_point() {
+        // create temporary file
+        let temp_file = NamedTempFile::new().unwrap();
+        let temp_path = temp_file.into_temp_path();
+
+        create_netcdf3_bathymetry(&temp_path, 101, 51, 500.0, 500.0, four_depth_fn);
+
+        let data = CartesianNetcdf3::open(&temp_path, "x", "y", "depth").unwrap();
+
+        // in bounds
+        assert!(data.nearest_point(&1.0, &24_999.0).unwrap().0.round() == 0.0);
+        assert!(data.nearest_point(&1.0, &24_999.0).unwrap().1.round() == 50.0);
+
+        // out of bounds
+        assert!(data.nearest_point(&1.0, &25_001.0).is_err());
+        assert!(data.nearest_point(&-1.0, &25_000.0).is_err());
+
+        // grid points
+        assert!((data.nearest_point(&0.0, &25_000.0).unwrap().0 - 0.0).abs() <= f32::EPSILON);
+        assert!((data.nearest_point(&0.0, &25_000.0).unwrap().1 - 50.0).abs() <= f32::EPSILON);
+    }
+
+    #[test]
+    // check all the cases for the output from the four_corners function
     fn test_get_corners() {
         // create temporary file
         let temp_file = NamedTempFile::new().unwrap();
@@ -527,11 +574,93 @@ mod test_cartesian_file {
         create_netcdf3_bathymetry(&temp_path, 101, 51, 500.0, 500.0, four_depth_fn);
 
         let data = CartesianNetcdf3::open(&temp_path, "x", "y", "depth").unwrap();
-        let corners = data.four_corners(&10, &10).unwrap();
-        assert!(corners[0].0 == 10 && corners[0].1 == 11);
-        assert!(corners[1].0 == 11 && corners[1].1 == 10);
-        assert!(corners[2].0 == 10 && corners[2].1 == 9);
-        assert!(corners[3].0 == 9 && corners[3].1 == 10);
+
+        // check edge cases
+
+        // top left corner
+        assert!(
+            data.four_corners(&0.0, &25_000.0).unwrap() == vec![(0, 49), (0, 50), (1, 50), (1, 49)]
+        );
+
+        // left edge
+        assert!(
+            data.four_corners(&0.0, &5_500.0).unwrap() == vec![(0, 11), (0, 12), (1, 12), (1, 11)]
+        );
+
+        // bottom left corner
+        assert!(data.four_corners(&0.0, &0.0).unwrap() == vec![(0, 0), (0, 1), (1, 1), (1, 0)]);
+
+        // top edge
+        assert!(
+            data.four_corners(&5_500.0, &25_000.0).unwrap()
+                == vec![(11, 49), (11, 50), (12, 50), (12, 49)]
+        );
+
+        // bottom edge
+        assert!(
+            data.four_corners(&5_500.0, &0.0).unwrap() == vec![(11, 0), (11, 1), (12, 1), (12, 0)]
+        );
+
+        // top right corner
+        assert!(
+            data.four_corners(&50_000.0, &25_000.0).unwrap()
+                == vec![(99, 49), (99, 50), (100, 50), (100, 49)]
+        );
+
+        // right edge
+        assert!(
+            data.four_corners(&50_000.0, &5_500.0).unwrap()
+                == vec![(99, 11), (99, 12), (100, 12), (100, 11)]
+        );
+
+        // bottom right corner
+        assert!(
+            data.four_corners(&50_000.0, &0.0).unwrap()
+                == vec![(99, 0), (99, 1), (100, 1), (100, 0)]
+        );
+
+        // check out of bounds
+        // check out of bounds
+        assert!(match data.four_corners(&50_001.0, &0.0) {
+            Err(Error::IndexOutOfBounds) => true,
+            _ => false,
+        });
+        assert!(match data.four_corners(&50_000.0, &25_001.0) {
+            Err(Error::IndexOutOfBounds) => true,
+            _ => false,
+        });
+        assert!(match data.four_corners(&-1.0, &0.0) {
+            Err(Error::IndexOutOfBounds) => true,
+            _ => false,
+        });
+        assert!(match data.four_corners(&50_000.0, &-1.0) {
+            Err(Error::IndexOutOfBounds) => true,
+            _ => false,
+        });
+
+        // check not edge, in bounds, and both x and y on grid point
+        assert!(
+            data.four_corners(&5_500.0, &5_500.0).unwrap()
+                == vec![(11, 11), (11, 12), (12, 12), (12, 11)]
+        );
+
+        // check not edge, in bounds, and only x on grid point
+        assert!(
+            data.four_corners(&5_500.0, &5_750.0).unwrap()
+                == vec![(11, 11), (11, 12), (12, 12), (12, 11)]
+        );
+
+        // check not edge, in bounds, and only y on grid point
+        assert!(
+            data.four_corners(&5_750.0, &5_500.0).unwrap()
+                == vec![(11, 11), (11, 12), (12, 12), (12, 11)]
+        );
+
+        // check not edge, in bounds, and not on a grid point
+        assert!(
+            data.four_corners(&5_750.0, &5_750.0).unwrap()
+                == vec![(11, 11), (11, 12), (12, 12), (12, 11)]
+        );
     }
 
     #[test]
@@ -601,38 +730,6 @@ mod test_cartesian_file {
     }
 
     #[test]
-    // test edge cases and center with different depth points. These are
-    // using grid points so that it is easy to verify them as the average of
-    // the nearest 4 corners.
-    fn test_more_depths() {
-        // create temporary file
-        let temp_file = NamedTempFile::new().unwrap();
-        let temp_path = temp_file.into_temp_path();
-
-        create_netcdf3_bathymetry(&temp_path, 101, 51, 500.0, 500.0, four_depth_fn);
-
-        let data = CartesianNetcdf3::open(&temp_path, "x", "y", "depth").unwrap();
-
-        // check to see if depth is the same as above
-        let check_depth = vec![
-            (23000.0, 20000.0, 10.0),
-            (10000.0, 12500.0, 12.5),
-            (25000.0, 5000.0, 8.75),
-            (40000.0, 12500.0, 12.5),
-        ];
-
-        for (x, y, h) in &check_depth {
-            let depth = data.depth_and_gradient(x, y).unwrap().0;
-            assert!(
-                (depth - h).abs() < f32::EPSILON,
-                "Expected {}, but got {}",
-                h,
-                depth
-            );
-        }
-    }
-
-    #[test]
     fn test_nan() {
         // create temporary file
         let temp_file = NamedTempFile::new().unwrap();
@@ -650,6 +747,8 @@ mod test_cartesian_file {
     }
 
     #[test]
+    // verify the depth and gradient function returns correct values for all
+    // points in domain, using a file with a constant dhdx
     fn test_depth_and_gradient_x() {
         // create temporary file
         let temp_file = NamedTempFile::new().unwrap();
@@ -663,45 +762,40 @@ mod test_cartesian_file {
 
         let data = CartesianNetcdf3::open(&temp_path, "x", "y", "depth").unwrap();
 
-        // check to see if depth is the same as above
-        let check_depth = vec![(10.0, 30.0, 0.5), (30.0, 10.0, 1.5)];
-
-        for (x, y, h) in &check_depth {
-            let depth = data.depth_and_gradient(x, y).unwrap().0;
-            assert!(
-                (depth - h).abs() < f32::EPSILON,
-                "Expected {}, but got {}",
-                h,
-                depth
-            );
-        }
-
-        // check to see if gradient is the same
-        let check_gradient = vec![
-            (50.0, 50.0, 0.05, 0.0),
-            (14.0, 12.0, 0.05, 0.0),
-            (10.0, 80.0, 0.05, 0.0),
-        ];
-
-        for (x, y, dhdx, dhdy) in &check_gradient {
-            let x_gradient = data.depth_and_gradient(x, y).unwrap().1 .0;
-            let y_gradient = data.depth_and_gradient(x, y).unwrap().1 .1;
-            assert!(
-                (x_gradient - dhdx).abs() < f32::EPSILON,
-                "Expected {}, but got {}",
-                dhdx,
-                x_gradient
-            );
-            assert!(
-                (y_gradient - dhdy).abs() < f32::EPSILON,
-                "Expected {}, but got {}",
-                dhdy,
-                y_gradient
-            );
+        // check the depth is what it should be and gradient is the same
+        let dhdx = 0.05;
+        let dhdy = 0.0;
+        for x in 0..100 {
+            for y in 0..100 {
+                let x = &(x as f32);
+                let y = &(y as f32);
+                let (depth, gradient) = data.depth_and_gradient(x, y).unwrap();
+                let (x_gradient, y_gradient) = gradient;
+                assert!(
+                    (x_gradient - dhdx).abs() < f32::EPSILON,
+                    "Expected {}, but got {}",
+                    dhdx,
+                    x_gradient
+                );
+                assert!(
+                    (y_gradient - dhdy).abs() < f32::EPSILON,
+                    "Expected {}, but got {}",
+                    dhdy,
+                    y_gradient
+                );
+                assert!(
+                    (depth - depth_fn(*x, *y) as f32).abs() < f32::EPSILON,
+                    "Expected {}, but got {}",
+                    depth_fn(*x, *y),
+                    depth
+                );
+            }
         }
     }
 
     #[test]
+    // verify the depth and gradient function returns correct values for all
+    // points in domain, using a file with a constant dhdy
     fn test_depth_and_gradient_y() {
         // create temporary file
         let temp_file = NamedTempFile::new().unwrap();
@@ -715,41 +809,34 @@ mod test_cartesian_file {
 
         let data = CartesianNetcdf3::open(&temp_path, "x", "y", "depth").unwrap();
 
-        // check to see if depth is the same as above
-        let check_depth = vec![(10.0, 30.0, 1.5), (30.0, 10.0, 0.5)];
-
-        for (x, y, h) in &check_depth {
-            let depth = data.depth_and_gradient(x, y).unwrap().0;
-            assert!(
-                (depth - h).abs() < f32::EPSILON,
-                "Expected {}, but got {}",
-                h,
-                depth
-            );
-        }
-
-        // check to see if gradient is the same
-        let check_gradient = vec![
-            (50.0, 50.0, 0.0, 0.05),
-            (14.0, 12.0, 0.0, 0.05),
-            (10.0, 80.0, 0.0, 0.05),
-        ];
-
-        for (x, y, dhdx, dhdy) in &check_gradient {
-            let x_gradient = data.depth_and_gradient(x, y).unwrap().1 .0;
-            let y_gradient = data.depth_and_gradient(x, y).unwrap().1 .1;
-            assert!(
-                (x_gradient - dhdx).abs() < f32::EPSILON,
-                "Expected {}, but got {}",
-                dhdx,
-                x_gradient
-            );
-            assert!(
-                (y_gradient - dhdy).abs() < f32::EPSILON,
-                "Expected {}, but got {}",
-                dhdy,
-                y_gradient
-            );
+        // check the depth is what it should be and gradient is the same
+        let dhdx = 0.0;
+        let dhdy = 0.05;
+        for x in 0..100 {
+            for y in 0..100 {
+                let x = &(x as f32);
+                let y = &(y as f32);
+                let (depth, gradient) = data.depth_and_gradient(x, y).unwrap();
+                let (x_gradient, y_gradient) = gradient;
+                assert!(
+                    (x_gradient - dhdx).abs() < f32::EPSILON,
+                    "Expected {}, but got {}",
+                    dhdx,
+                    x_gradient
+                );
+                assert!(
+                    (y_gradient - dhdy).abs() < f32::EPSILON,
+                    "Expected {}, but got {}",
+                    dhdy,
+                    y_gradient
+                );
+                assert!(
+                    (depth - depth_fn(*x, *y) as f32).abs() < f32::EPSILON,
+                    "Expected {}, but got {}",
+                    depth_fn(*x, *y),
+                    depth
+                );
+            }
         }
     }
 }
