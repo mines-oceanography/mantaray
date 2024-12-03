@@ -16,7 +16,7 @@ def plot_ray_tracing(
     bathymetry: Optional[xr.Dataset] = None,
     current: Optional[xr.Dataset] = None,
 ) -> tuple[matplotlib.figure.Figure, matplotlib.axes.Axes]:
-    '''Plot the ray bundle using matplotlib. Optionally plot bathymetry or current.
+    """Plot the ray bundle using matplotlib. Optionally plot bathymetry or current.
 
     Parameters
     ----------
@@ -36,9 +36,9 @@ def plot_ray_tracing(
         The created figure and axes. See matplotlib documentation for
         `plt.subplots()` return type.
 
-    '''
+    """
     if current and bathymetry:
-        fig, axs = plt.subplots(1,2, figsize=(10,4))
+        fig, axs = plt.subplots(1, 2, figsize=(10, 4))
         ax1, ax2 = axs
 
         plot_current(current, ax1)
@@ -60,7 +60,7 @@ def plot_ray_tracing(
 
 
 def plot_ray_bundle(ray_bundle, ax):
-    for _, ray in ray_bundle.groupby('ray'):
+    for _, ray in ray_bundle.groupby("ray"):
         x = ray.x.values.flatten()
         y = ray.y.values.flatten()
         ax.plot(x, y, color="r")
@@ -78,7 +78,7 @@ def plot_current(current, ax):
 
     speed = np.sqrt(u**2 + v**2)
     im = ax.imshow(speed, extent=(x[0], x[-1], y[0], y[-1]))
-    colorbar = ax.figure.colorbar(im, ax=ax, orientation='horizontal')
+    colorbar = ax.figure.colorbar(im, ax=ax, orientation="horizontal")
     colorbar.ax.set_xlabel("Current Speed [m/s]")
     X, Y = np.meshgrid(x, y)
 
