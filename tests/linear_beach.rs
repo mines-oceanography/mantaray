@@ -1,7 +1,13 @@
 /// integration tests for linear beaches
 use std::f64::consts::PI;
 
-use mantaray::{self, bathymetry::ConstantSlope, current::ConstantCurrent, ray::ManyRays};
+use mantaray::{
+    self,
+    bathymetry::ConstantSlope,
+    current::ConstantCurrent,
+    datatype::{Point, RayState, WaveNumber},
+    ray::ManyRays,
+};
 
 mod helper;
 use helper::*;
@@ -59,11 +65,17 @@ fn test_linear_beach_right() {
 
     let k = 0.05;
 
-    let up_ray = (0.0, 0.0, k * (PI / 6.0).cos(), k * (PI / 6.0).sin());
+    let up_ray = RayState::new(
+        Point::new(0.0, 0.0),
+        WaveNumber::new(k * (PI / 6.0).cos(), k * (PI / 6.0).sin()),
+    );
 
-    let down_ray = (0.0, 0.0, k * (-PI / 6.0).cos(), k * (-PI / 6.0).sin());
+    let down_ray = RayState::new(
+        Point::new(0.0, 0.0),
+        WaveNumber::new(k * (-PI / 6.0).cos(), k * (-PI / 6.0).sin()),
+    );
 
-    let straight_ray = (0.0, 0.0, k, 0.0);
+    let straight_ray = RayState::new(Point::new(0.0, 0.0), WaveNumber::new(k, 0.0));
 
     let initial_rays = vec![up_ray, down_ray, straight_ray];
 
@@ -154,11 +166,17 @@ fn test_linear_beach_left() {
 
     let k = 0.05;
 
-    let up_ray = (2_000.0, 0.0, -k * (PI / 6.0).cos(), k * (PI / 6.0).sin());
+    let up_ray = RayState::new(
+        Point::new(2_000.0, 0.0),
+        WaveNumber::new(-k * (PI / 6.0).cos(), k * (PI / 6.0).sin()),
+    );
 
-    let down_ray = (2_000.0, 0.0, -k * (-PI / 6.0).cos(), k * (-PI / 6.0).sin());
+    let down_ray = RayState::new(
+        Point::new(2_000.0, 0.0),
+        WaveNumber::new(-k * (-PI / 6.0).cos(), k * (-PI / 6.0).sin()),
+    );
 
-    let straight_ray = (2_000.0, 100.0, -k, 0.0); // The y value is 100 to avoid a floating point error
+    let straight_ray = RayState::new(Point::new(2_000.0, 100.0), WaveNumber::new(-k, 0.0)); // The y value is 100 to avoid a floating point error
 
     let initial_rays = vec![up_ray, down_ray, straight_ray];
 
@@ -249,21 +267,17 @@ fn test_linear_beach_top() {
 
     let k = 0.05;
 
-    let left_ray = (
-        0.0,
-        0.0,
-        k * (4.0 * PI / 6.0).cos(),
-        k * (4.0 * PI / 6.0).sin(),
+    let left_ray = RayState::new(
+        Point::new(0.0, 0.0),
+        WaveNumber::new(k * (4.0 * PI / 6.0).cos(), k * (4.0 * PI / 6.0).sin()),
     );
 
-    let right_ray = (
-        0.0,
-        0.0,
-        k * (2.0 * PI / 6.0).cos(),
-        k * (2.0 * PI / 6.0).sin(),
+    let right_ray = RayState::new(
+        Point::new(0.0, 0.0),
+        WaveNumber::new(k * (2.0 * PI / 6.0).cos(), k * (2.0 * PI / 6.0).sin()),
     );
 
-    let vertical_ray = (100.0, 0.0, 0.0, k); // the x value is 100 to avoid a floating point error
+    let vertical_ray = RayState::new(Point::new(100.0, 0.0), WaveNumber::new(0.0, k)); // the x value is 100 to avoid a floating point error
 
     let initial_rays = vec![left_ray, right_ray, vertical_ray];
 
@@ -354,21 +368,17 @@ fn test_linear_beach_bottom() {
 
     let k = 0.05;
 
-    let left_ray = (
-        0.0,
-        2_000.0,
-        k * (4.0 * PI / 6.0).cos(),
-        -k * (4.0 * PI / 6.0).sin(),
+    let left_ray = RayState::new(
+        Point::new(0.0, 2_000.0),
+        WaveNumber::new(k * (4.0 * PI / 6.0).cos(), -k * (4.0 * PI / 6.0).sin()),
     );
 
-    let right_ray = (
-        0.0,
-        2_000.0,
-        k * (2.0 * PI / 6.0).cos(),
-        -k * (2.0 * PI / 6.0).sin(),
+    let right_ray = RayState::new(
+        Point::new(0.0, 2_000.0),
+        WaveNumber::new(k * (2.0 * PI / 6.0).cos(), -k * (2.0 * PI / 6.0).sin()),
     );
 
-    let vertical_ray = (100.0, 2_000.0, 0.0, -k); // the x value is 100 to prevent floating point error
+    let vertical_ray = RayState::new(Point::new(100.0, 2_000.0), WaveNumber::new(0.0, -k)); // the x value is 100 to prevent floating point error
 
     let initial_rays = vec![left_ray, right_ray, vertical_ray];
 
