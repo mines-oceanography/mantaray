@@ -12,7 +12,7 @@ hide-toc: true
 ```{toctree}
 :hidden:
 
-deploy
+api
 ```
 
 ```{toctree}
