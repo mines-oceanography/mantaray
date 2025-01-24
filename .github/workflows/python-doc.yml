@@ -1,4 +1,4 @@
-name: Documentation
+name: Python documentation
 
 on:
   push:
