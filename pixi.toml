@@ -20,7 +20,7 @@ python-docs = { cmd = "make html", cwd = "docs", depends_on = ["develop"] }
 [dependencies]
 maturin = ">=1.5.1,<1.6"
 rust = ">=1.77.2,<1.78"
-python = ">=3.10"
+python = ">=3.11"
 cffi = ">=1.16.0,<1.17"
 pip = ">=24.0,<25"
 xarray = ">=2023"
