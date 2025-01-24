@@ -11,10 +11,10 @@ build = "cargo build"
 develop = "maturin develop"
 test = "cargo test"
 fmt = "cargo fmt"
-lint = { cmd = "cargo clippy", depends_on = ["fmt"], env = {} }
+lint = { cmd = "cargo clippy", depends-on = ["fmt"], env = {} }
 wheel = "maturin build"
-pytest = { cmd = "pytest python/tests", depends_on = ["develop"], env = {} }
-python-docs = { cmd = "make html", cwd = "docs", depends_on = ["develop"] }
+pytest = { cmd = "pytest python/tests", depends-on = ["develop"], env = {} }
+python-docs = { cmd = "make html", cwd = "docs", depends-on = ["develop"] }
 
 
 [dependencies]
