@@ -21,4 +21,4 @@ jobs:
 
       - name: Build HTML
         # Turn warning into errors
-        run: SPHINXOPTS=-W pixi run -e docs python-docs
+        run: SPHINXOPTS="-W --keep-going -n" pixi run -e docs python-docs
