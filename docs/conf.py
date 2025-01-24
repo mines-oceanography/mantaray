@@ -67,5 +67,5 @@ myst_heading_anchors = 3
 
 html_theme = 'furo'
 html_title = 'mantaray'
-html_static_path = ['_static']
+# html_static_path = ['_static']
 html_css_files = ["pied-piper-admonition.css"]
