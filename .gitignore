@@ -2,6 +2,7 @@
 
 __pycache__
 *.so
+docs/_build
 
 # pixi environments
 .pixi
