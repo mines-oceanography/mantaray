@@ -1,6 +1,34 @@
 use crate::bathymetry::BathymetryData;
 use crate::datatype::{Gradient, Point};
-use crate::error::Result;
+use crate::error::{Error, Result};
+
+#[allow(dead_code)]
+#[derive(Debug)]
+struct LinearFit<T> {
+    slope: T,
+    intercept: T,
+}
+
+impl LinearFit<f32> {
+    fn from_fit(x: Vec<f32>) -> Result<Self> {
+        let delta: Vec<_> = x.windows(2).map(|v| v[1] - v[0]).collect();
+        let slope = delta.iter().sum::<f32>() / (delta.len() as f32 - 1.0);
+        let threshold = delta
+            .iter()
+            .map(|v| (v - slope).abs() / slope)
+            .any(|v| v > 0.005);
+        if threshold {
+            return Err(Error::Undefined);
+        }
+
+        let intercept = x[0];
+        Ok(LinearFit { slope, intercept })
+    }
+
+    fn predict(&self, y: f32) -> f32 {
+        (y - self.intercept) / self.slope
+    }
+}
 
 pub(crate) struct BathymetryFromNetCDF {
     file: netcdf::File,
