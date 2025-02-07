@@ -6,9 +6,9 @@
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
-project = 'mantaray'
-copyright = '2025, mantaray developers'
-author = 'mantaray developers'
+project = "mantaray"
+copyright = "2025, mantaray developers"
+author = "mantaray developers"
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
@@ -26,11 +26,11 @@ extensions = [
     "sphinx_copybutton",
     "sphinx_design",
     "sphinx_inline_tabs",
-    "sphinxcontrib.mermaid"
+    "sphinxcontrib.mermaid",
 ]
 
-templates_path = ['_templates']
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+templates_path = ["_templates"]
+exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
 # -- Options for extlinks ----------------------------------------------------
 #
@@ -45,6 +45,8 @@ extlinks = {
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3", None),
     "sphinx": ("https://www.sphinx-doc.org/en/master", None),
+    "xarray": ("https://docs.xarray.dev/en/stable/", None),
+    "matplotlib": ("https://matplotlib.org/stable/", None),
 }
 
 # -- Options for TODOs -------------------------------------------------------
@@ -65,7 +67,7 @@ myst_heading_anchors = 3
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
-html_theme = 'furo'
-html_title = 'mantaray'
+html_theme = "furo"
+html_title = "mantaray"
 # html_static_path = ['_static']
 html_css_files = ["pied-piper-admonition.css"]
