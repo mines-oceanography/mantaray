@@ -1,3 +1,5 @@
+<!-- start elevator-pitch -->
+
 [![Rust checks](https://github.com/mines-oceanography/ray_tracing/actions/workflows/ci.yml/badge.svg)](https://github.com/mines-oceanography/ray_tracing/actions/workflows/ci.yml)
 
 # Ray Tracing
@@ -25,7 +27,7 @@ At the top of your python file, you will need to include the following import li
 ```python
 from mantaray.core import single_ray, ray_tracing
 ```
-Documentation for these functions are located in [core.py](python/mantaray/core.py).
+Documentation for these functions are located in [core.py](#api).
 
 #### Run Python file
 
@@ -48,6 +50,6 @@ pixi run -e jupyterlab jupyter lab
 ```
 pixi run -e test pytest
 ```
-
+<!-- end elevator-pitch -->
 
 
