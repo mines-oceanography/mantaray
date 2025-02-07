@@ -559,8 +559,8 @@ mod test_single_wave {
         let res = wave.trace_individual(0.0, 100.0, 1.0).unwrap();
 
         // this wave will propagate from deep to shallow water.
-        assert_eq!(bathymetry_data.depth(&10.0, &1000.0).unwrap(), 49.5);
-        assert_eq!(bathymetry_data.depth(&300.0, &1000.0).unwrap(), 35.0);
+        assert_eq!(bathymetry_data.depth(&Point::new(10.0, 1000.0)).unwrap(), 49.5);
+        assert_eq!(bathymetry_data.depth(&Point::new(300.0, 1000.0)).unwrap(), 35.0);
 
         let (_, data) = &res.get();
 

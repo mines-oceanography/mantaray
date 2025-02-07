@@ -1,7 +1,7 @@
 //! Struct used to create and access bathymetry data with a constant slope.
 
 use super::BathymetryData;
-use crate::error::Result;
+use crate::{datatype::{Gradient, Point}, error::Result};
 use derive_builder::Builder;
 
 #[derive(Builder, Debug, PartialEq)]
@@ -49,7 +49,9 @@ impl BathymetryData for ConstantSlope {
     /// Returns NaN when any input is NaN. Since it is a constant slope,
     /// there is no concept of boundaries, thus it can't fail as out of
     /// bounds.
-    fn depth(&self, x: &f32, y: &f32) -> Result<f32> {
+    fn depth(&self, point: &Point<f32>) -> Result<f32> {
+        let x = point.x();
+        let y = point.y();
         if x.is_nan() || y.is_nan() {
             Ok(f32::NAN)
         } else {
@@ -62,12 +64,14 @@ impl BathymetryData for ConstantSlope {
     /// Returns NaN when any input is NaN. Since it is a constant slope,
     /// there is no concept of boundaries, thus it can't fail as out of
     /// bounds.
-    fn depth_and_gradient(&self, x: &f32, y: &f32) -> Result<(f32, (f32, f32))> {
+    fn depth_and_gradient(&self, point: &Point<f32>) -> Result<(f32, Gradient<f32>)> {
+        let x = point.x();
+        let y = point.y();
         if x.is_nan() || y.is_nan() {
-            Ok((f32::NAN, (f32::NAN, f32::NAN)))
+            Ok((f32::NAN, Gradient::new(f32::NAN, f32::NAN)))
         } else {
             let h = self.h0 + self.dhdx * (x - self.x0) + self.dhdy * (y - self.y0);
-            Ok((h, (self.dhdx, self.dhdy)))
+            Ok((h, Gradient::new(self.dhdx, self.dhdy)))
         }
     }
 }
@@ -87,6 +91,8 @@ impl ConstantSlope {
 
 #[cfg(test)]
 mod test_constant_slope {
+    use crate::datatype::Point;
+
     use super::{BathymetryData, ConstantSlope};
 
     #[test]
@@ -103,9 +109,9 @@ mod test_constant_slope {
             dhdy: 0.0,
         };
 
-        assert!(c.depth(&f32::NAN, &0.0).unwrap().is_nan());
-        assert!(c.depth(&0.0, &f32::NAN).unwrap().is_nan());
-        assert!(c.depth(&f32::NAN, &f32::NAN).unwrap().is_nan());
+        assert!(c.depth(&Point::new(f32::NAN, 0.0)).unwrap().is_nan());
+        assert!(c.depth(&Point::new(0.0, f32::NAN)).unwrap().is_nan());
+        assert!(c.depth(&Point::new(f32::NAN, f32::NAN)).unwrap().is_nan());
     }
 }
 
