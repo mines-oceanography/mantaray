@@ -55,4 +55,8 @@ jobs:
           frozen: true
           cache: true
 
+      - uses: Swatinem/rust-cache@v2
+        with:
+          save-if: ${{ github.ref == 'refs/heads/main' }}
+
       - run: pixi run -e test pytest
