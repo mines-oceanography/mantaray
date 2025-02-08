@@ -25,6 +25,10 @@ jobs:
           cache: true
           frozen: true
 
+      - uses: Swatinem/rust-cache@v2
+        with:
+          save-if: ${{ github.ref == 'refs/heads/main' }}
+
       - name: Build HTML
         # Turn warning into errors
         run: SPHINXOPTS="-W --keep-going -n" pixi run -e docs python-docs
