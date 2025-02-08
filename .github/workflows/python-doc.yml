@@ -2,11 +2,6 @@ name: Python documentation
 
 on:
   pull_request:
-    paths:
-      - python/**
-      - pyproject.toml
-      - pixi.toml
-      - .github/workflows/python-doc.yml
   push:
     branches: [ "main" ]
   workflow_dispatch:
