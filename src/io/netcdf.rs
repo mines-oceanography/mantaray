@@ -4,12 +4,24 @@ use crate::error::{Error, Result};
 
 #[allow(dead_code)]
 #[derive(Debug)]
+/// Holds and apply a linear relationship
+///
+/// This was originally created to handle the dimensions of regular girds,
+/// such latitude and longitude in a regularly spaced bathymetry dataset.
 struct LinearFit<T> {
     slope: T,
     intercept: T,
 }
 
 impl LinearFit<f32> {
+    /// Create a new LinearFit from a vector of values
+    ///
+    /// For a given vector of values, calculates the best linear relationship
+    /// between the values and its index position with the purpose to estimate
+    /// the index position of the closest value to a given target.
+    ///
+    /// This procedure also validates if a linear relationship is a good
+    /// approximation with a threshold of 0.5% of tolerance.
     fn from_fit(x: Vec<f32>) -> Result<Self> {
         let delta: Vec<_> = x.windows(2).map(|v| v[1] - v[0]).collect();
         let slope = delta.iter().sum::<f32>() / (delta.len() as f32 - 1.0);
