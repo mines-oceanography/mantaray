@@ -37,8 +37,75 @@ impl LinearFit<f32> {
         Ok(LinearFit { slope, intercept })
     }
 
+    /// Predict the index position of a given value
     fn predict(&self, y: f32) -> f32 {
         (y - self.intercept) / self.slope
+    }
+}
+
+struct RegularGrid {
+    dataset: netcdf::File,
+    x: LinearFit<f32>,
+    x_size: usize,
+    y: LinearFit<f32>,
+    y_size: usize,
+}
+
+impl RegularGrid {
+    /*
+        fn validate_as_regular_grid() {
+            // Open a full 1D array for x and another for y
+            // calculate delta and confirm that all are <0.01 diference (criteria for linear)
+            //
+        }
+    */
+    fn new<P>(file: P) -> Self
+    where
+        P: AsRef<std::path::Path>,
+    {
+        // confirm it is linear
+        // Define A & B coefficients
+        // get x_size and y_size
+
+        let dataset = netcdf::open(&file).unwrap();
+        let varname_x = "ETOPO05_X";
+        let varname_y = "ETOPO05_Y";
+
+        let x_size = dataset.dimension(varname_x).unwrap().len();
+        let x = dataset
+            .variable(varname_x)
+            .unwrap()
+            .get::<f64, _>(..)
+            .unwrap();
+        let map_i = LinearFit::from_fit(x.iter().map(|v| *v as f32).collect::<Vec<_>>()).unwrap();
+        let y_size = dataset.dimension(varname_y).unwrap().len();
+        let y = dataset
+            .variable(varname_y)
+            .unwrap()
+            .get::<f64, _>(..)
+            .unwrap();
+        let map_j = LinearFit::from_fit(y.iter().map(|v| *v as f32).collect::<Vec<_>>()).unwrap();
+
+        Self {
+            dataset,
+            x: map_i,
+            x_size,
+            y: map_j,
+            y_size,
+        }
+    }
+
+    /// Get the nearest `varname` value to the given `x` and `y` coordinates
+    fn nearest(&self, varname: &str, x: f32, y: f32) -> Result<f32> {
+        let j = self.x.predict(x).round() as usize;
+        let i = self.y.predict(y).round() as usize;
+        let z = self
+            .dataset
+            .variable(varname)
+            .unwrap()
+            .get_value::<f32, _>([i, j])
+            .unwrap();
+        Ok(z)
     }
 }
 
