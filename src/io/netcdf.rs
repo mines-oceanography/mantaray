@@ -73,7 +73,7 @@ impl RegularGrid {
             //
         }
     */
-    fn new<P>(file: P) -> Self
+    fn open<P>(file: P) -> Self
     where
         P: AsRef<std::path::Path>,
     {
