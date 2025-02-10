@@ -16,13 +16,13 @@ struct LinearFit<T> {
 impl<T> LinearFit<T>
 where
     T: Copy,
-    T: std::ops::Div<Output = T>,
     T: std::ops::Sub<Output = T>,
+    T: std::ops::Mul<Output = T>,
 {
     #[allow(dead_code)]
     /// Predict the index position of a given value
     fn predict(&self, y: T) -> T {
-        (y - self.intercept) / self.slope
+        (y - self.intercept) * self.slope
     }
 }
 
@@ -37,7 +37,7 @@ impl LinearFit<f32> {
     /// approximation with a threshold of 0.5% of tolerance.
     fn from_fit(x: Vec<f32>) -> Result<Self> {
         let delta: Vec<_> = x.windows(2).map(|v| v[1] - v[0]).collect();
-        let slope = delta.iter().sum::<f32>() / (delta.len() as f32 - 1.0);
+        let slope = (delta.len() as f32 - 1.0) / delta.iter().sum::<f32>();
         let threshold = delta
             .iter()
             .map(|v| (v - slope).abs() / slope)
