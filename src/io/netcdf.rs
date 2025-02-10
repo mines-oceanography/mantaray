@@ -13,6 +13,19 @@ struct LinearFit<T> {
     intercept: T,
 }
 
+impl<T> LinearFit<T>
+where
+    T: Copy,
+    T: std::ops::Div<Output = T>,
+    T: std::ops::Sub<Output = T>,
+{
+    #[allow(dead_code)]
+    /// Predict the index position of a given value
+    fn predict(&self, y: T) -> T {
+        (y - self.intercept) / self.slope
+    }
+}
+
 impl LinearFit<f32> {
     /// Create a new LinearFit from a vector of values
     ///
@@ -36,6 +49,7 @@ impl LinearFit<f32> {
         let intercept = x[0];
         Ok(LinearFit { slope, intercept })
     }
+}
 
     /// Predict the index position of a given value
     fn predict(&self, y: f32) -> f32 {
