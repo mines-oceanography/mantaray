@@ -51,9 +51,17 @@ impl LinearFit<f32> {
     }
 }
 
-    /// Predict the index position of a given value
-    fn predict(&self, y: f32) -> f32 {
-        (y - self.intercept) / self.slope
+trait Dataset {
+    fn get_variable(&self, name: &str, i: usize, j: usize) -> Result<f32>;
+}
+
+impl Dataset for netcdf::File {
+    fn get_variable(&self, name: &str, i: usize, j: usize) -> Result<f32> {
+        Ok(self
+            .variable(name)
+            .unwrap()
+            .get_value::<f32, _>([i, j])
+            .unwrap())
     }
 }
 
@@ -113,12 +121,7 @@ impl RegularGrid {
     fn nearest(&self, varname: &str, x: f32, y: f32) -> Result<f32> {
         let j = self.x.predict(x).round() as usize;
         let i = self.y.predict(y).round() as usize;
-        let z = self
-            .dataset
-            .variable(varname)
-            .unwrap()
-            .get_value::<f32, _>([i, j])
-            .unwrap();
+        let z = self.dataset.get_variable(varname, i, j).unwrap();
         Ok(z)
     }
 }
