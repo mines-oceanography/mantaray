@@ -1,0 +1,21 @@
+---
+hide-toc: true
+---
+
+# Welcome to Mantaray's documentation!
+
+```{include} ../README.md
+:start-after: <!-- start elevator-pitch -->
+:end-before: <!-- end elevator-pitch -->
+```
+
+```{toctree}
+:hidden:
+
+api
+```
+
+```{toctree}
+:caption: Development
+:hidden:
+```

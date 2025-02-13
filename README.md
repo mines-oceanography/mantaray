@@ -1,3 +1,5 @@
+<!-- start elevator-pitch -->
+
 [![Rust checks](https://github.com/mines-oceanography/ray_tracing/actions/workflows/ci.yml/badge.svg)](https://github.com/mines-oceanography/ray_tracing/actions/workflows/ci.yml)
 
 # Ray Tracing
@@ -5,6 +7,7 @@
 A library for surface gravity waves ray tracing.
 
 ## Development
+### Installation
 1. Install [Pixi](https://pixi.sh/latest/)
 
 2. Clone the repo
@@ -15,27 +18,38 @@ cd ray_tracing
 
 3. Build Python
 ```
-pixi run maturin develop
+pixi run develop
 ```
 This will take about 20 to 30 minutes (at least for first time compiling on windows 10).
 
-4. Import `mantaray`
+### Usage
+At the top of your python file, you will need to include the following import line:
 ```python
 from mantaray.core import single_ray, ray_tracing
 ```
-Documentation for these functions are located in [core.py](python/mantaray/core.py).
+Documentation for these functions are located in [core.py](#api).
 
-5. Run Python file using Pixi
+#### Run Python file
 
 ```
 pixi run python path_to_file.py
 ```
 
-6. To test Python library run:
+### Using Jupyter Lab
+1. Develop the code for the `jupyterlab` environment
+```
+pixi run -e jupyterlab develop
+```
+2. Open Jupyter Lab using the `jupyterlab` environment
+```
+pixi run -e jupyterlab jupyter lab
+```
+
+### To test Python library run:
 
 ```
 pixi run -e test pytest
 ```
-
+<!-- end elevator-pitch -->
 
 

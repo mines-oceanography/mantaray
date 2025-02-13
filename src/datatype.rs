@@ -1,10 +1,12 @@
 //! # Data types
 
+use crate::wave_ray_path::State;
+
 #[derive(Clone, Debug)]
 /// A point in 2D cartesian space
 ///
 /// A `Point` is composed by `x` and `y`, expected to be in meters.
-pub(crate) struct Point<T> {
+pub struct Point<T> {
     x: T,
     y: T,
 }
@@ -13,7 +15,7 @@ pub(crate) struct Point<T> {
 impl<T> Point<T> {
     /// Create a new `Point` with the given `x` and `y` coordinates.
     ///
-    pub(crate) fn new(x: T, y: T) -> Self {
+    pub fn new(x: T, y: T) -> Self {
         Point { x, y }
     }
 
@@ -86,33 +88,65 @@ impl<T> Current<T> {
 #[allow(dead_code)]
 #[derive(Clone, Debug)]
 /// A wave number in 2D cartesian space
-pub(crate) struct WaveNumber<T> {
+pub struct WaveNumber<T> {
     kx: T,
     ky: T,
 }
 
 #[allow(dead_code)]
 impl<T> WaveNumber<T> {
-    fn new(kx: T, ky: T) -> Self {
+    /// create a new wave number from the given `kx` and `ky` values
+    pub fn new(kx: T, ky: T) -> Self {
         WaveNumber { kx, ky }
     }
 
-    fn kx(&self) -> &T {
+    /// get the x component of the wave number
+    pub fn kx(&self) -> &T {
         &self.kx
     }
 
-    fn ky(&self) -> &T {
+    /// get the y component of the wave number
+    pub fn ky(&self) -> &T {
         &self.ky
     }
 }
 
 #[allow(dead_code)]
 #[derive(Clone, Debug)]
-struct RayState<T> {
+/// a ray state is the point and wave number of the ray
+pub struct RayState<T> {
     // Position in 2D cartesian space.
     point: Point<T>,
     // Wave number in 2D cartesian space.
     wave_number: WaveNumber<T>,
+}
+
+impl<T> RayState<T> {
+    /// create a new `RayState`
+    pub fn new(point: Point<T>, wave_number: WaveNumber<T>) -> Self {
+        RayState { point, wave_number }
+    }
+
+    fn point(&self) -> &Point<T> {
+        &self.point
+    }
+
+    /// get the wave number of the ray state
+    pub fn wave_number(&self) -> &WaveNumber<T> {
+        &self.wave_number
+    }
+}
+
+impl From<RayState<f64>> for State {
+    /// convert mantaray's `RayState` into `State` object used by `ode_solvers`.
+    fn from(value: RayState<f64>) -> Self {
+        State::new(
+            *value.point().x(),
+            *value.point().y(),
+            *value.wave_number().kx(),
+            *value.wave_number().ky(),
+        )
+    }
 }
 
 // Possible names:
