@@ -1,3 +1,7 @@
+use std::collections::HashMap;
+
+use tracing::trace;
+
 use crate::bathymetry::BathymetryData;
 use crate::datatype::{Gradient, Point};
 use crate::error::{Error, Result};
@@ -176,20 +180,33 @@ impl RegularGrid {
         }
     }
 
+    #[allow(dead_code)]
     /// Get the nearest `varname` value to the given `x` and `y` coordinates
-    fn nearest(&self, varname: &str, x: f32, y: f32) -> Result<f32> {
-        let j = self.x.predict(x).round() as usize;
-        let i = self.y.predict(y).round() as usize;
-        let z = self.dataset.get_variable(varname, i, j).unwrap();
-        Ok(z)
-    }
-}
+    fn nearest(&self, varname: &str, point: Point<f64>) -> Result<f32> {
+        let i = self.x_map.predict(*point.x()).round() as usize;
+        if i >= self.x_size {
+            return Err(Error::IndexOutOfBounds);
+        }
+        let j = self.y_map.predict(*point.y()).round() as usize;
+        if j >= self.y_size {
+            return Err(Error::IndexOutOfBounds);
+        }
 
-pub(crate) struct BathymetryFromNetCDF {
-    file: netcdf::File,
-    x: Vec<f32>,
-    y: Vec<f32>,
-    depth_name: String,
+        match self.dimension_order.get(varname) {
+            Some(v) => match v.as_str() {
+                "xy" => {
+                    trace!("Assuming dimension order is 'xy'");
+                    self.dataset.get_variable(varname, i, j)
+                }
+                "yx" => {
+                    trace!("Assuming dimension order is 'yx'");
+                    self.dataset.get_variable(varname, j, i)
+                }
+                _ => return Err(Error::Undefined),
+            },
+            _ => return Err(Error::Undefined),
+        }
+    }
 }
 
 #[allow(dead_code)]
