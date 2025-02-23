@@ -115,17 +115,16 @@ impl RegularGrid {
             //
         }
     */
-    fn open<P>(file: P) -> Self
+    #[allow(dead_code)]
+    fn open<P>(file: P, varname_x: &str, varname_y: &str) -> Self
     where
         P: AsRef<std::path::Path>,
     {
         // confirm it is linear
         // Define A & B coefficients
-        // get x_size and y_size
+        // get i_size and j_size
 
         let dataset = netcdf::open(&file).unwrap();
-        let varname_x = "ETOPO05_X";
-        let varname_y = "ETOPO05_Y";
 
         let x_size = dataset.dimension(varname_x).unwrap().len();
         let x = dataset
