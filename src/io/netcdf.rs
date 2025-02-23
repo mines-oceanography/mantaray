@@ -37,6 +37,24 @@ impl LinearFit<f64> {
     ///
     /// This procedure also validates if a linear relationship is a good
     /// approximation with a threshold of 0.5% of tolerance.
+    fn from_fit(x: ndarray::ArrayD<f64>) -> Result<LinearFit<f64>> {
+        let dx = &x.slice(ndarray::s![1..]) - &x.slice(ndarray::s![..-1]);
+        let slope = dx.mean().unwrap();
+        let criteria = ((dx - slope) / slope)
+            .abs()
+            .into_iter()
+            .map(|v| v > 0.005)
+            .any(|v| v);
+        if criteria {
+            return Err(Error::Undefined);
+        }
+        Ok(LinearFit {
+            slope,
+            intercept: x[0],
+        })
+    }
+
+    /*
     fn from_fit(x: Vec<f32>) -> Result<Self> {
         let delta: Vec<_> = x.windows(2).map(|v| v[1] - v[0]).collect();
         let slope = (delta.len() as f32 - 1.0) / delta.iter().sum::<f32>();
@@ -51,6 +69,7 @@ impl LinearFit<f64> {
         let intercept = x[0];
         Ok(LinearFit { slope, intercept })
     }
+    */
 }
 
 trait Dataset {
