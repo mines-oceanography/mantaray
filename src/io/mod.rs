@@ -84,3 +84,111 @@ impl LinearFit<f64> {
     }
     */
 }
+
+struct RegularGrid {
+    dataset: netcdf::File,
+    x_size: usize,
+    x_map: LinearFit<f64>,
+    y_size: usize,
+    y_map: LinearFit<f64>,
+    // Save the dimensions order: ij or ji
+    dimension_order: HashMap<String, String>,
+}
+
+impl RegularGrid {
+    /*
+        fn validate_as_regular_grid() {
+            // Open a full 1D array for x and another for y
+            // calculate delta and confirm that all are <0.01 diference (criteria for linear)
+            //
+        }
+    */
+    #[allow(dead_code)]
+    fn open<P>(file: P, varname_x: &str, varname_y: &str) -> Self
+    where
+        P: AsRef<std::path::Path>,
+    {
+        // confirm it is linear
+        // Define A & B coefficients
+        // get i_size and j_size
+
+        let dataset = netcdf::open(&file).unwrap();
+
+        // Identify the variables that have the user defined dimensions
+        // and create a map on the dimenson order
+        let varnames = &dataset
+            .variables()
+            .into_iter()
+            .filter(|v| {
+                v.dimensions()
+                    .into_iter()
+                    .map(|v| v.name() == varname_x)
+                    .any(|v| v)
+            })
+            .filter(|v| {
+                v.dimensions()
+                    .into_iter()
+                    .map(|v| v.name() == varname_y)
+                    .any(|v| v)
+            })
+            .filter_map(|v| {
+                match &v
+                    .dimensions()
+                    .into_iter()
+                    .map(|v| v.name())
+                    .collect::<Vec<_>>()[..]
+                {
+                    [varname_x, varname_y] => Some((v.name(), "xy".to_string())),
+                    [varname_y, varname_x] => Some((v.name(), "yx".to_string())),
+                    _ => None,
+                }
+            })
+            .collect::<Vec<_>>();
+
+        let dimension_order: HashMap<String, String> = HashMap::from_iter(varnames.iter().cloned());
+
+        let x_size = dataset.dimension_len(varname_x).unwrap();
+
+        let x_map = LinearFit::from_fit(dataset.values(varname_x).unwrap()).unwrap();
+
+        let y_size = dataset.dimension_len(varname_y).unwrap();
+        let y_map = LinearFit::from_fit(dataset.values(varname_x).unwrap()).unwrap();
+
+        Self {
+            dataset,
+            x_size,
+            x_map,
+            y_size,
+            y_map,
+            dimension_order,
+        }
+    }
+
+    #[allow(dead_code)]
+    /// Get the nearest `varname` value to the given `x` and `y` coordinates
+    fn nearest(&self, varname: &str, point: Point<f64>) -> Result<f32> {
+        let i = self.x_map.predict(*point.x()).round() as usize;
+        if i >= self.x_size {
+            return Err(Error::IndexOutOfBounds);
+        }
+        let j = self.y_map.predict(*point.y()).round() as usize;
+        if j >= self.y_size {
+            return Err(Error::IndexOutOfBounds);
+        }
+
+        match self.dimension_order.get(varname) {
+            Some(v) => match v.as_str() {
+                "xy" => {
+                    trace!("Assuming dimension order is 'xy'");
+                    self.dataset.get_variable(varname, i, j)
+                }
+                "yx" => {
+                    trace!("Assuming dimension order is 'yx'");
+                    self.dataset.get_variable(varname, j, i)
+                }
+                _ => return Err(Error::Undefined),
+            },
+            _ => return Err(Error::Undefined),
+        }
+    }
+}
