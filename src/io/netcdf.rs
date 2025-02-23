@@ -28,7 +28,7 @@ where
     }
 }
 
-impl LinearFit<f32> {
+impl LinearFit<f64> {
     /// Create a new LinearFit from a vector of values
     ///
     /// For a given vector of values, calculates the best linear relationship
