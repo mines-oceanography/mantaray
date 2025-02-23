@@ -99,10 +99,12 @@ impl Dataset for netcdf::File {
 
 struct RegularGrid {
     dataset: netcdf::File,
-    x: LinearFit<f32>,
     x_size: usize,
-    y: LinearFit<f32>,
+    x_map: LinearFit<f64>,
     y_size: usize,
+    y_map: LinearFit<f64>,
+    // Save the dimensions order: ij or ji
+    dimension_order: HashMap<String, String>,
 }
 
 impl RegularGrid {
