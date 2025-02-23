@@ -126,27 +126,53 @@ impl RegularGrid {
 
         let dataset = netcdf::open(&file).unwrap();
 
-        let x_size = dataset.dimension(varname_x).unwrap().len();
-        let x = dataset
-            .variable(varname_x)
-            .unwrap()
-            .get::<f64, _>(..)
-            .unwrap();
-        let map_i = LinearFit::from_fit(x.iter().map(|v| *v as f32).collect::<Vec<_>>()).unwrap();
-        let y_size = dataset.dimension(varname_y).unwrap().len();
-        let y = dataset
-            .variable(varname_y)
-            .unwrap()
-            .get::<f64, _>(..)
-            .unwrap();
-        let map_j = LinearFit::from_fit(y.iter().map(|v| *v as f32).collect::<Vec<_>>()).unwrap();
+        // Identify the variables that have the user defined dimensions
+        // and create a map on the dimenson order
+        let varnames = &dataset
+            .variables()
+            .into_iter()
+            .filter(|v| {
+                v.dimensions()
+                    .into_iter()
+                    .map(|v| v.name() == varname_x)
+                    .any(|v| v)
+            })
+            .filter(|v| {
+                v.dimensions()
+                    .into_iter()
+                    .map(|v| v.name() == varname_y)
+                    .any(|v| v)
+            })
+            .filter_map(|v| {
+                match &v
+                    .dimensions()
+                    .into_iter()
+                    .map(|v| v.name())
+                    .collect::<Vec<_>>()[..]
+                {
+                    [varname_x, varname_y] => Some((v.name(), "xy".to_string())),
+                    [varname_y, varname_x] => Some((v.name(), "yx".to_string())),
+                    _ => None,
+                }
+            })
+            .collect::<Vec<_>>();
+
+        let dimension_order: HashMap<String, String> = HashMap::from_iter(varnames.iter().cloned());
+
+        let x_size = dataset.dimension_len(varname_x).unwrap();
+
+        let x_map = LinearFit::from_fit(dataset.values(varname_x).unwrap()).unwrap();
+
+        let y_size = dataset.dimension_len(varname_y).unwrap();
+        let y_map = LinearFit::from_fit(dataset.values(varname_x).unwrap()).unwrap();
 
         Self {
             dataset,
-            x: map_i,
             x_size,
-            y: map_j,
+            x_map,
             y_size,
+            y_map,
+            dimension_order,
         }
     }
 
