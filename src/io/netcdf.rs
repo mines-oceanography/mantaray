@@ -7,7 +7,9 @@ use crate::error::{Error, Result};
 /// Holds and apply a linear relationship
 ///
 /// This was originally created to handle the dimensions of regular girds,
-/// such latitude and longitude in a regularly spaced bathymetry dataset.
+/// such latitude and longitude in a regularly spaced dataset, providing a
+/// cheap conversion between the dimension, such as latitute, to the
+/// correspondent index position.
 struct LinearFit<T> {
     slope: T,
     intercept: T,
