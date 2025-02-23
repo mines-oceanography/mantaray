@@ -23,8 +23,8 @@ where
 {
     #[allow(dead_code)]
     /// Predict the index position of a given value
-    fn predict(&self, y: T) -> T {
-        (y - self.intercept) * self.slope
+    fn predict(&self, x: T) -> T {
+        (x - self.intercept) * self.slope
     }
 }
 
