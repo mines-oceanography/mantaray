@@ -73,10 +73,21 @@ impl LinearFit<f64> {
 }
 
 trait Dataset {
+    fn dimension_len(&self, name: &str) -> Result<usize>;
+    fn values(&self, name: &str) -> Result<ndarray::ArrayD<f64>>;
     fn get_variable(&self, name: &str, i: usize, j: usize) -> Result<f32>;
 }
 
 impl Dataset for netcdf::File {
+    fn dimension_len(&self, name: &str) -> Result<usize> {
+        Ok(self.dimension_len(name).unwrap())
+    }
+
+    fn values(&self, name: &str) -> Result<ndarray::ArrayD<f64>> {
+        Ok(self.variable(name).unwrap().get::<f64, _>(..).unwrap())
+    }
+
+    // Missing get full variable (such as all x values), and get size.
     fn get_variable(&self, name: &str, i: usize, j: usize) -> Result<f32> {
         Ok(self
             .variable(name)
