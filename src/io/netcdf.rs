@@ -2,6 +2,7 @@ use std::collections::HashMap;
 
 use tracing::trace;
 
+use super::Dataset;
 use crate::bathymetry::BathymetryData;
 use crate::datatype::{Gradient, Point};
 use crate::error::{Error, Result};
@@ -74,12 +75,6 @@ impl LinearFit<f64> {
         Ok(LinearFit { slope, intercept })
     }
     */
-}
-
-trait Dataset {
-    fn dimension_len(&self, name: &str) -> Result<usize>;
-    fn values(&self, name: &str) -> Result<ndarray::ArrayD<f64>>;
-    fn get_variable(&self, name: &str, i: usize, j: usize) -> Result<f32>;
 }
 
 impl Dataset for netcdf::File {
