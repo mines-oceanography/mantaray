@@ -20,7 +20,6 @@ crate-type = ["cdylib", "lib"]
 [dependencies]
 derive_builder = "0.20.0"
 libc = { version = "0.2", optional = true }
-nalgebra = "0.33.0"
 netcdf3 = "0.5.2"
 netcdf = {version = "0.10.0", features = ["static"]}
 ode_solvers = "0.4.0"
