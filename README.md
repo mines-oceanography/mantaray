@@ -56,9 +56,9 @@ pixi run -e test pytest
 Licensed under either of
 
  * Apache License, Version 2.0
-   ([LICENSE-APACHE](LICENSE-APACHE) or http://www.apache.org/licenses/LICENSE-2.0)
+   ([LICENSE-APACHE](https://github.com/mines-oceanography/ray_tracing/blob/main/LICENSE-APACHE "Apache License 2.0") or http://www.apache.org/licenses/LICENSE-2.0)
  * MIT license
-   ([LICENSE-MIT](LICENSE-MIT) or http://opensource.org/licenses/MIT)
+   ([LICENSE-MIT](https://github.com/mines-oceanography/ray_tracing/blob/main/LICENSE-MIT "MIT License") or http://opensource.org/licenses/MIT)
 
 at your option.
 
