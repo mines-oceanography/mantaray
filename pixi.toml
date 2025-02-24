@@ -3,6 +3,7 @@ name = "ray_tracing"
 version = "0.1.0"
 description = "Add a short description here"
 authors = ["Gui Castelao <guilherme@castelao.net>"]
+license = "MIT OR Apache-2.0"
 channels = ["conda-forge", "conda", "main"]
 platforms = ["osx-arm64", "linux-64", "win-64"]
 

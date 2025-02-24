@@ -13,6 +13,7 @@ authors = [
   {email = "nicholas.pizzo@uri.edu",  name = "Nicholas Pizzo"},
   {email = "villasboas@mines.edu",  name = "Bia Villas Boas"}
 ]
+license = "MIT OR Apache-2.0"
 description = "Tracing rays"
 requires-python = ">=3.10"
 classifiers = [
