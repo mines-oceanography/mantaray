@@ -23,7 +23,7 @@
 // enforce documentation
 #![deny(missing_docs)]
 
-pub mod bathymetry;
+pub mod bathymetry; 
 pub mod current;
 pub mod datatype;
 mod error;
@@ -32,6 +32,8 @@ mod interpolator;
 pub mod io;
 pub mod ray;
 mod ray_result;
+#[cfg(test)]
+mod tests;
 /// cbindgen:ignore
 mod wave_ray_path;
 
