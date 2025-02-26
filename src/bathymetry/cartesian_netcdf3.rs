@@ -18,21 +18,10 @@ use crate::{
 /// values, interpolate, and return depth and gradient.
 ///
 /// # Example
-/// Create a new `CartesianNetcdf3` struct from a netcdf3 file path and names of
-/// the variables. This will be used as an argument for the various ray tracing
-/// functions.
-/// ```
-/// use tempfile::NamedTempFile;
-/// use mantaray::bathymetry::CartesianNetcdf3;
-/// use mantaray::io::utility::create_netcdf3_bathymetry;
-///
-/// // create a path to the file (in this example we need to create a temporary file)
-/// let path = NamedTempFile::new().unwrap().into_temp_path();
-/// create_netcdf3_bathymetry(&path, 10, 10, 100.0, 100.0, |_,_| 2000.0);
-///
-/// // open the file
+/// Open the cartesian NetCDF3 file located at `path` with dimension names "x"
+/// and "y" and variable "depth".
+/// 
 /// let data = CartesianNetcdf3::open(&path, "x", "y", "depth").unwrap();
-/// ```
 ///
 /// # Note
 /// Currently, the methods do not know the difference between an out of bounds

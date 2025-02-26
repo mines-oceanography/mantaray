@@ -23,14 +23,14 @@
 // enforce documentation
 #![deny(missing_docs)]
 
-pub mod bathymetry; 
-pub mod current;
-pub mod datatype;
+mod bathymetry; 
+mod current;
+mod datatype;
 mod error;
 mod ffi;
 mod interpolator;
-pub mod io;
-pub mod ray;
+mod io;
+mod ray;
 mod ray_result;
 #[cfg(test)]
 mod tests;
@@ -40,4 +40,4 @@ mod wave_ray_path;
 #[allow(unused_imports)]
 use datatype::{Coordinate, Current, Point};
 #[allow(unused_imports)]
-pub use wave_ray_path::State;
+pub(crate) use wave_ray_path::State;
