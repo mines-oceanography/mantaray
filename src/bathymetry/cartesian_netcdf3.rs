@@ -32,7 +32,7 @@ use crate::{
 /// In this struct, None is used when the function will not panic, but the value
 /// is not useful to the other structs. Error is used when the function would
 /// panic, so instead, it returns an error.
-pub struct CartesianNetcdf3 {
+pub(crate) struct CartesianNetcdf3 {
     /// a vector containing the x values from the netcdf3 file
     x: Vec<f32>,
     /// a vector containing the y values from the netcdf3 file
@@ -164,7 +164,7 @@ impl CartesianNetcdf3 {
     /// # Note
     /// in the future, be able to check attributes and verify that the file is
     /// correct.
-    pub fn open(path: &Path, xname: &str, yname: &str, depth_name: &str) -> Result<Self> {
+    pub(crate) fn open(path: &Path, xname: &str, yname: &str, depth_name: &str) -> Result<Self> {
         let mut data = FileReader::open(path)?;
 
         let x = data.read_var(xname)?;

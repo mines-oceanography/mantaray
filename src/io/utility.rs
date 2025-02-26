@@ -26,7 +26,7 @@ use std::path::Path;
 /// Create a bathymetry file with a constant depth of 100 m and save to `path`.
 ///
 /// create_netcdf3_bathymetry(&path, 10, 10, 100.0, 100.0, |_, _| 100.0)
-pub fn create_netcdf3_bathymetry(
+pub(crate) fn create_netcdf3_bathymetry(
     path: &Path,
     x_num: usize,
     y_num: usize,
