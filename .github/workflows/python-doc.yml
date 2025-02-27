@@ -2,11 +2,6 @@ name: Python documentation
 
 on:
   pull_request:
-    paths:
-      - python/**
-      - pyproject.toml
-      - pixi.toml
-      - .github/workflows/python-doc.yml
   push:
     branches: [ "main" ]
   workflow_dispatch:
@@ -24,6 +19,10 @@ jobs:
           pixi-version: v0.40.2
           cache: true
           frozen: true
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          save-if: ${{ github.ref == 'refs/heads/main' }}
 
       - name: Build HTML
         # Turn warning into errors

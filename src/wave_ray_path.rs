@@ -15,6 +15,7 @@ use crate::bathymetry::BathymetryData;
 use crate::bathymetry::DEFAULT_BATHYMETRY;
 use crate::current::CurrentData;
 use crate::current::DEFAULT_CURRENT;
+use crate::datatype::Point;
 use crate::error::Error;
 use crate::error::Result;
 
@@ -116,14 +117,13 @@ impl<'a> WaveRayPath<'a> {
     /// - If k is negative, group velocity will return this error.
     pub fn odes(&self, x: &f64, y: &f64, kx: &f64, ky: &f64) -> Result<(f64, f64, f64, f64)> {
         let point = crate::Point::new(*x, *y);
-        let (h, (dhdx, dhdy)) = self
+        let (h, dh) = self
             .bathymetry_data
-            .depth_and_gradient(&(*x as f32), &(*y as f32))?;
+            .depth_and_gradient(&Point::new(*x as f32, *y as f32))?;
 
-        // depth and depth gradient are retrieved as f32, but needs to be used as f64
         let h = h as f64;
-        let dhdx = dhdx as f64;
-        let dhdy = dhdy as f64;
+        let dhdx = *dh.dx() as f64;
+        let dhdy = *dh.dy() as f64;
 
         // get the current and gradient from the current data or use default.
         let (current, (du, dv)) = self.current_data.current_and_gradient(&point)?;
