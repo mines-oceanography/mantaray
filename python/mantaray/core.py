@@ -119,7 +119,8 @@ def ray_tracing(
     ]
     ds = xr.Dataset(
         data_vars={
-            name: (["time_step", "ray"], v) for (name, v) in zip(varnames, np.array(bundle).T)
+            name: (["time_step", "ray"], v)
+            for (name, v) in zip(varnames, np.array(bundle).T)
         }
     )
 
