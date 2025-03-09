@@ -8,6 +8,7 @@ authors = [
   "Bia Villas Boas <villasboas@mines.edu>",
 ]
 edition = "2021"
+repository = "https://github.com/mines-oceanography/ray_tracing"
 rust-version = "1.76.0"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
