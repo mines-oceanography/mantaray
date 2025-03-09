@@ -7,6 +7,10 @@
 mod netcdf;
 pub mod utility;
 
+use std::collections::HashMap;
+
+use tracing::trace;
+
 use crate::error::{Error, Result};
 
 trait Dataset {
