@@ -8,6 +8,7 @@ authors = [
   "Bia Villas Boas <villasboas@mines.edu>",
 ]
 edition = "2021"
+documentation = "https://docs.rs/mantaray"
 repository = "https://github.com/mines-oceanography/ray_tracing"
 rust-version = "1.76.0"
 
