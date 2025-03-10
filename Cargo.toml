@@ -24,7 +24,7 @@ derive_builder = "0.20.0"
 libc = { version = "0.2", optional = true }
 ndarray = { version = "0.16.1", features = ["rayon"] }
 netcdf3 = "0.5.2"
-netcdf = {version = "0.10.0", features = ["static"]}
+netcdf = {version = "0.10.0", features = ["static", "ndarray"]}
 ode_solvers = "0.4.0"
 pyo3 = { version = "0.23.4" }
 rayon = "1.8.1"
