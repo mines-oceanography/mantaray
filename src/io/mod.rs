@@ -15,6 +15,8 @@ use crate::error::{Error, Result};
 
 trait Dataset {
     fn dimension_len(&self, name: &str) -> Result<usize>;
+    // Better move this to an iterator instead of a vector
+    fn varnames(&self) -> Vec<String>;
     fn values(&self, name: &str) -> Result<ndarray::ArrayD<f64>>;
     fn get_variable(&self, name: &str, i: usize, j: usize) -> Result<f32>;
 }

@@ -46,6 +46,10 @@ impl Dataset for netcdf::File {
         HashMap::from_iter(varnames.iter().cloned())
     }
 
+    fn varnames(&self) -> Vec<String> {
+        self.variables().into_iter().map(|v| v.name()).collect()
+    }
+
     fn values(&self, name: &str) -> Result<ndarray::ArrayD<f64>> {
         Ok(self.variable(name).unwrap().get::<f64, _>(..).unwrap())
     }
