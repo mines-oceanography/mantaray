@@ -160,123 +160,6 @@ fn test_edges() {
     }
 }
 
-/*
-
-NetCDF3Dataset{
-    get_variable: fn(&str) -> Result<Variable>,
-}
-
-NetCDF4Dataset{
-
-    get_variable: fn(&str) -> Result<Variable>,
-}
-
-struct RegularGrid<T> {
-    dataset: Dataset,
-    x: LinearFit<T>,
-    x_size: usize,
-    y: LinearFit<T>,
-    y_size: usize,
-}
-
-impl<T: num_traits::float::Float> RegularGrid<T> {
-impl<T: num_traits::float::FloatCore> RegularGrid<T> {
-impl<T: num_traits::real::Real> RegularGrid<T> {
-
-
-impl<T> RegularGrid<T> {
-    fn nearest(&self, x: T, y: T) -> Result<(usize, usize)>
-    where
-        T: Clone,
-        T: std::ops::Mul<Output = T>,
-        T: std::ops::Add<Output = T>,
-        f64: From<T>,
-        // usize: From<T>,
-    {
-        let x = self.x.fit(x);
-        let y = self.y.fit(y);
-
-        /*
-        if x < 0).unwrap() || x >= T::from(self.x_size).unwrap() {
-            return Err(Error::InvalidArgument);
-        }
-
-        if y < T::from(0).unwrap() || y >= T::from(self.y_size).unwrap() {
-            return Err(Error::InvalidArgument);
-        }
-        */
-
-        let x = f64::round(x.into());
-        let y = f64::round(y.into());
-
-        Ok((x as usize, y as usize))
-    }
-    /*
-    impl<T: std::ops::Mul> RegularGrid<T> {
-        fn nearest(&self, x: T, y: T) -> Result<(usize, usize)>
-        where
-            <T as std::ops::Mul>::Output: std::ops::Add<T>,
-            usize: From<<<T as std::ops::Mul>::Output as std::ops::Add<T>>::Output>,
-        {
-            let x = self.x.slope * x + self.x.intercept;
-            let y = self.y.slope * y + self.y.intercept;
-
-            let x: usize = x.try_into().unwrap();
-            let y: usize = y.try_into().unwrap();
-
-            /*
-            if x < 0 | x >= self.x_size as T {
-                return Err(Error::InvalidArgument);
-            }
-            if y < 0 | y >= self.y_size as T {
-                return Err(Error::InvalidArgument);
-            }
-
-            let x = x.round();
-            let y = y.round();
-
-            if x < T::from(0).unwrap() || x >= T::from(self.x_size).unwrap() {
-                return Err(Error::InvalidArgument);
-            }
-
-            if y < T::from(0).unwrap() || y >= T::from(self.y_size).unwrap() {
-                return Err(Error::InvalidArgument);
-            }
-            */
-
-            Ok((x, y))
-        }
-    }
-    */
-}
-
-#[cfg(test)]
-mod test_regulargrid {
-    use super::*;
-
-    #[test]
-    fn test_nearest() {
-        let rg = RegularGrid {
-            x: LinearFit {
-                slope: 1.0,
-                intercept: 0.0,
-            },
-            x_size: 10,
-            y: LinearFit {
-                slope: 1.0,
-                intercept: 0.0,
-            },
-            y_size: 10,
-        };
-
-        assert_eq!(rg.nearest(3.0, 3.0).unwrap(), (3, 3));
-        assert_eq!(rg.nearest(3.1, 3.1).unwrap(), (3, 3));
-        assert_eq!(rg.nearest(3.5, 3.5).unwrap(), (4, 4));
-        assert_eq!(rg.nearest(3.9, 3.9).unwrap(), (4, 4));
-    }
-}
-*/
-
 #[derive(Debug)]
 /// Holds and apply a linear relationship
 ///
@@ -301,6 +184,31 @@ where
         (x - self.intercept) * self.slope
     }
 }
+
+/*
+#[cfg(test)]
+mod test_linearfit {
+    use super::*;
+
+    #[test]
+    fn test_fit_u64() {
+        let lf = LinearFit::<u64> {
+            slope: 2,
+            intercept: 1,
+        };
+        assert_eq!(lf.predict(3), 7);
+    }
+
+    #[test]
+    fn test_fit_f64() {
+        let lf = LinearFit::<f64> {
+            slope: 2.0,
+            intercept: 1.0,
+        };
+        assert_eq!(lf.predict(3.0), 7.0);
+    }
+}
+*/
 
 impl LinearFit<f64> {
     /// Create a new LinearFit from a vector of values
@@ -399,6 +307,7 @@ impl<'a> RegularGrid<'a> {
     #[allow(dead_code)]
     /// Get the nearest `varname` value to the given `x` and `y` coordinates
     fn nearest(&self, varname: &str, point: Point<f64>) -> Result<f32> {
+        // Error message if less than 0
         let i = self.x_map.predict(*point.x()).round() as usize;
         if i >= self.x_size {
             return Err(Error::IndexOutOfBounds);
@@ -424,3 +333,103 @@ impl<'a> RegularGrid<'a> {
         }
     }
 }
+
+/*
+
+impl<T: num_traits::float::Float> RegularGrid<T> {
+impl<T: num_traits::float::FloatCore> RegularGrid<T> {
+impl<T: num_traits::real::Real> RegularGrid<T> {
+
+
+impl<T> RegularGrid<T> {
+    fn nearest(&self, x: T, y: T) -> Result<(usize, usize)>
+    where
+        T: Clone,
+        T: std::ops::Mul<Output = T>,
+        T: std::ops::Add<Output = T>,
+        f64: From<T>,
+        // usize: From<T>,
+    {
+        let x = self.x.fit(x);
+        let y = self.y.fit(y);
+
+        /*
+        if x < 0).unwrap() || x >= T::from(self.x_size).unwrap() {
+            return Err(Error::InvalidArgument);
+        }
+
+        if y < T::from(0).unwrap() || y >= T::from(self.y_size).unwrap() {
+            return Err(Error::InvalidArgument);
+        }
+        */
+
+        let x = f64::round(x.into());
+        let y = f64::round(y.into());
+
+        Ok((x as usize, y as usize))
+    }
+    /*
+    impl<T: std::ops::Mul> RegularGrid<T> {
+        fn nearest(&self, x: T, y: T) -> Result<(usize, usize)>
+        where
+            <T as std::ops::Mul>::Output: std::ops::Add<T>,
+            usize: From<<<T as std::ops::Mul>::Output as std::ops::Add<T>>::Output>,
+        {
+            let x = self.x.slope * x + self.x.intercept;
+            let y = self.y.slope * y + self.y.intercept;
+
+            let x: usize = x.try_into().unwrap();
+            let y: usize = y.try_into().unwrap();
+
+            /*
+            if x < 0 | x >= self.x_size as T {
+                return Err(Error::InvalidArgument);
+            }
+            if y < 0 | y >= self.y_size as T {
+                return Err(Error::InvalidArgument);
+            }
+
+            let x = x.round();
+            let y = y.round();
+
+            if x < T::from(0).unwrap() || x >= T::from(self.x_size).unwrap() {
+                return Err(Error::InvalidArgument);
+            }
+
+            if y < T::from(0).unwrap() || y >= T::from(self.y_size).unwrap() {
+                return Err(Error::InvalidArgument);
+            }
+            */
+
+            Ok((x, y))
+        }
+    }
+    */
+}
+
+#[cfg(test)]
+mod test_regulargrid {
+    use super::*;
+
+    #[test]
+    fn test_nearest() {
+        let rg = RegularGrid {
+            x: LinearFit {
+                slope: 1.0,
+                intercept: 0.0,
+            },
+            x_size: 10,
+            y: LinearFit {
+                slope: 1.0,
+                intercept: 0.0,
+            },
+            y_size: 10,
+        };
+
+        assert_eq!(rg.nearest(3.0, 3.0).unwrap(), (3, 3));
+        assert_eq!(rg.nearest(3.1, 3.1).unwrap(), (3, 3));
+        assert_eq!(rg.nearest(3.5, 3.5).unwrap(), (4, 4));
+        assert_eq!(rg.nearest(3.9, 3.9).unwrap(), (4, 4));
+    }
+}
+*/
