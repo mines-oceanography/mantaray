@@ -19,6 +19,7 @@ trait Dataset {
     fn varnames(&self) -> Vec<String>;
     fn values(&self, name: &str) -> Result<ndarray::ArrayD<f64>>;
     fn get_variable(&self, name: &str, i: usize, j: usize) -> Result<f32>;
+    fn dimensions_order(&self, varname_x: &str, varname_y: &str) -> HashMap<String, String>;
 }
 
 #[allow(dead_code)]
@@ -122,36 +123,8 @@ impl RegularGrid {
 
         // Identify the variables that have the user defined dimensions
         // and create a map on the dimenson order
-        let varnames = &dataset
-            .variables()
-            .into_iter()
-            .filter(|v| {
-                v.dimensions()
-                    .into_iter()
-                    .map(|v| v.name() == varname_x)
-                    .any(|v| v)
-            })
-            .filter(|v| {
-                v.dimensions()
-                    .into_iter()
-                    .map(|v| v.name() == varname_y)
-                    .any(|v| v)
-            })
-            .filter_map(|v| {
-                match &v
-                    .dimensions()
-                    .into_iter()
-                    .map(|v| v.name())
-                    .collect::<Vec<_>>()[..]
-                {
-                    [varname_x, varname_y] => Some((v.name(), "xy".to_string())),
-                    [varname_y, varname_x] => Some((v.name(), "yx".to_string())),
-                    _ => None,
-                }
-            })
-            .collect::<Vec<_>>();
 
-        let dimension_order: HashMap<String, String> = HashMap::from_iter(varnames.iter().cloned());
+        let dimension_order = dataset.dimensions_order(varname_x, varname_y);
 
         let x_size = dataset.dimension_len(varname_x).unwrap();
 
