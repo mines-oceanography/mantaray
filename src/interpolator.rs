@@ -161,49 +161,6 @@ fn test_edges() {
 }
 
 /*
-#[allow(dead_code)]
-struct LinearFit<T> {
-    slope: T,
-    intercept: T,
-}
-
-#[allow(dead_code)]
-impl<T> LinearFit<T> {
-    fn fit(&self, x: T) -> T
-    where
-        T: Clone,
-        T: std::ops::Mul<Output = T>,
-        T: std::ops::Add<Output = T>,
-    {
-        self.slope.clone() * x + self.intercept.clone()
-    }
-}
-
-#[cfg(test)]
-mod test_linearfit {
-    use super::*;
-
-    #[test]
-    fn test_fit_u64() {
-        let lf = LinearFit::<u64> {
-            slope: 2,
-            intercept: 1,
-        };
-        assert_eq!(lf.fit(3), 7);
-    }
-
-    #[test]
-    fn test_fit_f64() {
-        let lf = LinearFit::<f64> {
-            slope: 2.0,
-            intercept: 1.0,
-        };
-        assert_eq!(lf.fit(3.0), 7.0);
-    }
-}
-*/
-
-/*
 
 NetCDF3Dataset{
     get_variable: fn(&str) -> Result<Variable>,
@@ -226,25 +183,6 @@ impl<T: num_traits::float::Float> RegularGrid<T> {
 impl<T: num_traits::float::FloatCore> RegularGrid<T> {
 impl<T: num_traits::real::Real> RegularGrid<T> {
 
-impl RegularGrid<f64> {
-    fn nearest(&self, x: f64, y: f64) -> Result<(usize, usize)> {
-        let x = self.x.fit(x);
-        let y = self.y.fit(y);
-
-        if x < 0.0 || x >= self.x_size as f64 {
-            return Err(Error::InvalidArgument);
-        }
-
-        if y < 0.0 || y >= self.y_size as f64 {
-            return Err(Error::InvalidArgument);
-        }
-
-        let x = x.round();
-        let y = y.round();
-
-        Ok((x as usize, y as usize))
-    }
-}
 
 impl<T> RegularGrid<T> {
     fn nearest(&self, x: T, y: T) -> Result<(usize, usize)>
@@ -339,7 +277,6 @@ mod test_regulargrid {
 }
 */
 
-#[allow(dead_code)]
 #[derive(Debug)]
 /// Holds and apply a linear relationship
 ///
