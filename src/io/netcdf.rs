@@ -1,11 +1,9 @@
 use std::collections::HashMap;
 
-use tracing::trace;
-
-use super::{Dataset, LinearFit};
+use super::Dataset;
 use crate::bathymetry::BathymetryData;
 use crate::datatype::{Gradient, Point};
-use crate::error::{Error, Result};
+use crate::error::Result;
 
 /// Implement the Dataset trait for the netcdf::File
 impl Dataset for netcdf::File {
