@@ -44,9 +44,11 @@ def test_single_ray(tmp_path):
     ds = zero_current_field()
     ds.to_netcdf(tmp_path / "current.nc", format="NETCDF3_CLASSIC")
 
-    ds = mantaray.single_ray(-1000, 0, 0.01, 0, 10, 2, tmp_path / "island.nc", tmp_path / "current.nc")
+    ds = mantaray.single_ray(
+        -1000, 0, 0.01, 0, 10, 2, tmp_path / "island.nc", tmp_path / "current.nc"
+    )
 
-    assert ds.sizes['time_step'] == 6
+    assert ds.sizes["time_step"] == 6
     assert (ds.kx == 0.01).all()
     assert (ds.ky == 0.0).all()
 
@@ -59,10 +61,19 @@ def test_multiple_rays(tmp_path):
     ds = zero_current_field()
     ds.to_netcdf(tmp_path / "current.nc", format="NETCDF3_CLASSIC")
 
-    ds = mantaray.ray_tracing(3*[-1000], 3*[0], 3*[0.01], 3*[0], 10, 2, str(tmp_path / "island.nc"), str(tmp_path / "current.nc"))
+    ds = mantaray.ray_tracing(
+        3 * [-1000],
+        3 * [0],
+        3 * [0.01],
+        3 * [0],
+        10,
+        2,
+        str(tmp_path / "island.nc"),
+        str(tmp_path / "current.nc"),
+    )
 
-    assert ds.sizes['time_step'] == 6
-    assert ds.sizes['ray'] == 3
+    assert ds.sizes["time_step"] == 6
+    assert ds.sizes["ray"] == 3
     assert (ds.kx == 0.01).all()
     assert (ds.ky == 0.0).all()
 
@@ -78,4 +89,13 @@ def test_rays_variable_length(tmp_path):
     ds = zero_current_field()
     ds.to_netcdf(tmp_path / "current.nc", format="NETCDF3_CLASSIC")
 
-    ds = mantaray.ray_tracing(2*[-1e3], 2 * [0], [-0.01, 0.01], 2*[0], 1e6, 20, str(tmp_path / "island.nc"), str(tmp_path / "current.nc"))
+    ds = mantaray.ray_tracing(
+        2 * [-1e3],
+        2 * [0],
+        [-0.01, 0.01],
+        2 * [0],
+        1e6,
+        20,
+        str(tmp_path / "island.nc"),
+        str(tmp_path / "current.nc"),
+    )
