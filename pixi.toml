@@ -60,6 +60,7 @@ myst-sphinx-gallery = ">=0.3.0,<0.4"
 [feature.test.dependencies]
 pytest = ">=7.0"
 netcdf4 = ">=1.5"
+jupyter = ">=1.0"
 
 [feature.jupyterlab.dependencies]
 jupyterlab = "*"
