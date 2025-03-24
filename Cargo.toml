@@ -9,6 +9,8 @@ authors = [
 ]
 license = "MIT OR Apache-2.0"
 edition = "2021"
+documentation = "https://docs.rs/mantaray"
+repository = "https://github.com/mines-oceanography/mantaray"
 rust-version = "1.76.0"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
