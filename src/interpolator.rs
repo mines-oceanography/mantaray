@@ -228,7 +228,9 @@ impl LinearFit<f64> {
             .map(|v| v > 0.005)
             .any(|v| v);
         if criteria {
-            return Err(Error::Undefined);
+            return Err(Error::Undefined(
+                "Linear is a bad approximation".to_string(),
+            ));
         }
         Ok(LinearFit {
             slope,
@@ -327,9 +329,9 @@ impl<'a> RegularGrid<'a> {
                     trace!("Assuming dimension order is 'yx'");
                     self.dataset.get_variable(varname, j, i)
                 }
-                _ => return Err(Error::Undefined),
+                _ => return Err(Error::Undefined("Dimension order not found".to_string())),
             },
-            _ => return Err(Error::Undefined),
+            _ => return Err(Error::Undefined("Variable not found".to_string())),
         }
     }
 }

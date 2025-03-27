@@ -18,10 +18,10 @@ pub enum Error {
     /// access array.
     IndexOutOfBounds,
 
-    #[error("Undefined error")]
+    #[error("Generic error: {0}")]
     /// Temporary error type. Any undefined error should be eventually
     /// replaced by a permanent type.
-    Undefined,
+    Undefined(String),
 
     #[error(transparent)]
     // IO error from std::io
