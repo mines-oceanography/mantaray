@@ -13,6 +13,8 @@ hide-toc: true
 :hidden:
 
 api
+
+gallery_header
 ```
 
 ```{toctree}
