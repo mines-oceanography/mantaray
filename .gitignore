@@ -10,3 +10,6 @@ docs/_build
 
 # vscode
 .vscode/*
+
+# data
+./support/canonical_examples/data/*
