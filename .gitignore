@@ -12,6 +12,6 @@ docs/_build
 .vscode/*
 
 # data
-support/canonical_examples/data/currents/*.nc
-support/canonical_examples/data/bathymetry/*.nc
+notebooks/canonical_examples/data/currents/*.nc
+notebooks/canonical_examples/data/bathymetry/*.nc
 
