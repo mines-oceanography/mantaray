@@ -14,14 +14,18 @@ use crate::error::Result;
 pub(crate) trait Dataset {
     /// Get the length of a dimension
     fn dimension_len(&self, name: &str) -> Result<usize>;
+
+    // Better move this to an iterator instead of a vector
+    #[allow(dead_code)]
     /// Get the names of the available variables
     fn varnames(&self) -> Vec<String>;
-    // Better move this to an iterator instead of a vector
 
     /// Get the values of a variable
     fn values(&self, name: &str) -> Result<ndarray::ArrayD<f64>>;
+
     /// Get the value of a variable at a specific index
     fn get_variable(&self, name: &str, i: usize, j: usize) -> Result<f32>;
+
     /// Get the order of the dimensions for a variable
     fn dimensions_order(&self, varname_x: &str, varname_y: &str) -> HashMap<String, String>;
 }
