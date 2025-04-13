@@ -233,7 +233,7 @@ impl LinearFit<f64> {
     /// approximation with a threshold of 0.5% of tolerance.
     fn from_fit(x: ndarray::ArrayD<f64>) -> Result<LinearFit<f64>> {
         let dx = &x.slice(ndarray::s![1..]) - &x.slice(ndarray::s![..-1]);
-        let slope = dx.mean().unwrap();
+        let slope = dx.mean().expect("Failed to calculate mean");
         let criteria = ((dx - slope) / slope)
             .abs()
             .into_iter()
