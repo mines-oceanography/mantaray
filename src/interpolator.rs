@@ -161,14 +161,16 @@ fn test_edges() {
 }
 
 #[derive(Debug)]
-/// Holds and apply a linear relationship
+/// Handles a linear relationship
 ///
 /// This was originally created to handle the dimensions of regular girds,
 /// such latitude and longitude in a regularly spaced dataset, providing a
 /// cheap conversion between the dimension, such as latitute, to the
 /// correspondent index position.
 struct LinearFit<T> {
+    /// Scale between the physical dimension and the index position.
     slope: T,
+    /// Offset where the grid starts.
     intercept: T,
 }
 
@@ -179,7 +181,11 @@ where
     T: std::ops::Mul<Output = T>,
 {
     #[allow(dead_code)]
-    /// Predict the index position of a given value
+    /// Convert to 'index' scale position
+    ///
+    /// Predict the index position of a given value. For instance, a result of
+    /// `1.5` meants that the given value is between the second and third
+    /// positions in the grid (first gridpoint is 0).
     fn predict(&self, x: T) -> T {
         (x - self.intercept) * self.slope
     }
