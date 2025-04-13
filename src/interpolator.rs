@@ -216,6 +216,12 @@ mod test_linearfit {
 }
 */
 
+/// Tolerance for linear relationship
+///
+/// If the ratio between the two dimensions deviate more than that, it will
+/// not be considered a linear relationship.
+const LINEAR_RELATION_TOLERANCE: f64 = 0.005;
+
 impl LinearFit<f64> {
     /// Create a new LinearFit from a vector of values
     ///
@@ -231,7 +237,7 @@ impl LinearFit<f64> {
         let criteria = ((dx - slope) / slope)
             .abs()
             .into_iter()
-            .map(|v| v > 0.005)
+            .map(|v| v > LINEAR_RELATION_TOLERANCE)
             .any(|v| v);
         if criteria {
             return Err(Error::Undefined(
