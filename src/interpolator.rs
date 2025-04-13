@@ -237,23 +237,6 @@ impl LinearFit<f64> {
             intercept: x[0],
         })
     }
-
-    /*
-    fn from_fit(x: Vec<f32>) -> Result<Self> {
-        let delta: Vec<_> = x.windows(2).map(|v| v[1] - v[0]).collect();
-        let slope = (delta.len() as f32 - 1.0) / delta.iter().sum::<f32>();
-        let threshold = delta
-            .iter()
-            .map(|v| (v - slope).abs() / slope)
-            .any(|v| v > 0.005);
-        if threshold {
-            return Err(Error::Undefined);
-        }
-
-        let intercept = x[0];
-        Ok(LinearFit { slope, intercept })
-    }
-    */
 }
 
 struct RegularGrid<'a> {
