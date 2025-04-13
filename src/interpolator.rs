@@ -271,7 +271,7 @@ impl<'a> RegularGrid<'a> {
         }
     */
     #[allow(dead_code)]
-    fn open(dataset: impl Dataset + 'a, varname_x: &str, varname_y: &str) -> Self {
+    fn open(dataset: impl Dataset + 'a, varname_x: &str, varname_y: &str) -> Result<Self> {
         // confirm it is linear
         // Define A & B coefficients
         // get i_size and j_size
@@ -285,12 +285,12 @@ impl<'a> RegularGrid<'a> {
 
         let x_size = dataset.dimension_len(varname_x).unwrap();
 
-        let x_map = LinearFit::from_fit(dataset.values(varname_x).unwrap()).unwrap();
+        let x_map = LinearFit::from_fit(dataset.values(varname_x).unwrap())?;
 
         let y_size = dataset.dimension_len(varname_y).unwrap();
-        let y_map = LinearFit::from_fit(dataset.values(varname_x).unwrap()).unwrap();
+        let y_map = LinearFit::from_fit(dataset.values(varname_x).unwrap())?;
 
-        Self {
+        Ok(Self {
             // dataset: dataset,
             dataset: Box::new(dataset),
             x_size,
@@ -298,7 +298,7 @@ impl<'a> RegularGrid<'a> {
             y_size,
             y_map,
             dimension_order,
-        }
+        })
     }
 
     #[allow(dead_code)]
