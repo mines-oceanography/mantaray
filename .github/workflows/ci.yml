@@ -67,10 +67,10 @@ jobs:
           save-if: ${{ github.ref == 'refs/heads/main' }}
 
       - name: Run tests
-         uses: actions-rs/cargo@v1
-         with:
-           command: test
-           args: --no-fail-fast
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --no-fail-fast
 
       # OSX fails to cargo test with pixi environment.
       # Let's postpone this for now.
