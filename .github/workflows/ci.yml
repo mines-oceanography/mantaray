@@ -51,6 +51,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: actions-rs/toolchain@v1
+         with:
+           toolchain: ${{ matrix.rust }}
+           override: true
+
       - uses: prefix-dev/setup-pixi@v0.8.1
         with:
           pixi-version: v0.45.0
@@ -62,8 +67,16 @@ jobs:
           save-if: ${{ github.ref == 'refs/heads/main' }}
 
       - name: Run tests
-        run: |
-          pixi run --frozen cargo test --no-fail-fast
+         uses: actions-rs/cargo@v1
+         with:
+           command: test
+           args: --no-fail-fast
+
+      # OSX fails to cargo test with pixi environment.
+      # Let's postpone this for now.
+      # - name: Run tests
+      #   run: |
+      #     pixi run --frozen cargo test --no-fail-fast
 
   publish:
     name: Publish (dry-run)
