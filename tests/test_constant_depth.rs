@@ -1,8 +1,8 @@
 use std::f64::consts::PI;
 
 use mantaray::bathymetry::ConstantDepth;
-use mantaray::datatype::{Point, RayState, WaveNumber};
 use mantaray::current::ConstantCurrent;
+use mantaray::datatype::{Point, RayState, WaveNumber};
 use mantaray::ray::ManyRays;
 
 // import the helper functions and types for integration testing
