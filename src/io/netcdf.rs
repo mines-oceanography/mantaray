@@ -1,6 +1,66 @@
+use std::collections::HashMap;
+
+use super::Dataset;
 use crate::bathymetry::BathymetryData;
 use crate::datatype::{Gradient, Point};
 use crate::error::Result;
+
+/// Implement the Dataset trait for the netcdf::File
+impl Dataset for netcdf::File {
+    fn dimension_len(&self, name: &str) -> Result<usize> {
+        Ok(self.dimension_len(name).unwrap())
+    }
+
+    fn dimensions_order(&self, varname_x: &str, varname_y: &str) -> HashMap<String, String> {
+        let varnames = &self
+            .variables()
+            .into_iter()
+            .filter(|v| {
+                v.dimensions()
+                    .into_iter()
+                    .map(|v| v.name() == varname_x)
+                    .any(|v| v)
+            })
+            .filter(|v| {
+                v.dimensions()
+                    .into_iter()
+                    .map(|v| v.name() == varname_y)
+                    .any(|v| v)
+            })
+            .filter_map(|v| {
+                match &v
+                    .dimensions()
+                    .into_iter()
+                    .map(|v| v.name())
+                    .collect::<Vec<_>>()[..]
+                {
+                    [varname_x, varname_y] => Some((v.name(), "xy".to_string())),
+                    [varname_y, varname_x] => Some((v.name(), "yx".to_string())),
+                    _ => None,
+                }
+            })
+            .collect::<Vec<_>>();
+
+        HashMap::from_iter(varnames.iter().cloned())
+    }
+
+    fn varnames(&self) -> Vec<String> {
+        self.variables().into_iter().map(|v| v.name()).collect()
+    }
+
+    fn values(&self, name: &str) -> Result<ndarray::ArrayD<f64>> {
+        Ok(self.variable(name).unwrap().get::<f64, _>(..).unwrap())
+    }
+
+    // Missing get full variable (such as all x values), and get size.
+    fn get_variable(&self, name: &str, i: usize, j: usize) -> Result<f32> {
+        Ok(self
+            .variable(name)
+            .unwrap()
+            .get_value::<f32, _>([i, j])
+            .unwrap())
+    }
+}
 
 pub(crate) struct BathymetryFromNetCDF {
     file: netcdf::File,
