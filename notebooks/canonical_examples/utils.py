@@ -146,3 +146,30 @@ def animate_rays(X, Y, background, bando, style, ray_sample=1, time_sample=10):
 
     plt.close(fig)
     return anim
+
+def plot_current_field(x_grid, y_grid, ds, skip=75, q_ref=0.5, q_scale=0.1):
+    speed = np.sqrt(ds.u**2 + ds.v**2)
+
+    fig, ax = plt.subplots(figsize=(12, 6))
+
+    # Convert x and y to km
+    x_km = x_grid / 1000
+    y_km = y_grid / 1000
+
+    c = ax.contourf(x_km, y_km, speed, cmap=cmocean.cm.speed, levels=50)
+    fig.colorbar(c, ax=ax, label='Speed [m/s]')
+
+    q = ax.quiver(x_km[::skip, ::skip], y_km[::skip, ::skip], 
+                  ds.u[::skip, ::skip], ds.v[::skip, ::skip], 
+                  color='black', scale=1/q_scale, width=0.0025)
+    ax.quiverkey(q, X=0.9, Y=-0.1, U=q_ref, label=f'{q_ref} [m/s]', labelpos='E')
+
+    ax.set_xlabel('X (km)')
+    ax.set_ylabel('Y (km)')
+    ax.set_title('Current Velocity Magnitude and Direction')
+
+    ax.set_aspect('equal')
+    ax.grid(linestyle='--')
+
+    plt.show()
+    return
