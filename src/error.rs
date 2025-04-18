@@ -4,7 +4,7 @@
 
 #[derive(Debug, thiserror::Error)]
 #[allow(clippy::enum_variant_names)] // tell clippy the name is ok
-pub enum Error {
+pub(crate) enum Error {
     #[error("Argument passed was out of bounds")]
     /// The value k = |(kx, ky)| can only be positive. If k <=0, the function will pass ArgumentOutOfBounds.
     ArgumentOutOfBounds,
@@ -36,4 +36,4 @@ pub enum Error {
     ReadError(#[from] netcdf3::error::ReadError),
 }
 
-pub type Result<T> = core::result::Result<T, Error>;
+pub(crate) type Result<T> = core::result::Result<T, Error>;

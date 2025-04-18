@@ -12,7 +12,7 @@ pub(crate) const DEFAULT_BATHYMETRY: ConstantDepth = ConstantDepth { h: 2000.0 }
 /// A bathymetry database with constant depth
 ///
 /// This might be only useful for development and tests.
-pub struct ConstantDepth {
+pub(crate) struct ConstantDepth {
     #[builder(default = "1000.0")]
     h: f32,
 }
@@ -56,7 +56,7 @@ impl ConstantDepth {
     ///
     /// # Arguments
     /// `h`: `f32` the depth [m]
-    pub fn new(h: f32) -> ConstantDepth {
+    pub(crate) fn new(h: f32) -> ConstantDepth {
         ConstantDepth { h }
     }
 }

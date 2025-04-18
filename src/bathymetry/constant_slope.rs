@@ -25,7 +25,7 @@ use derive_builder::Builder;
 /// let h100 = ConstantSlope::builder().h0(100).build().unwrap();
 ///
 /// This might be only useful for development and tests.
-pub struct ConstantSlope {
+pub(crate) struct ConstantSlope {
     /// initial depth
     #[builder(default = "50.0")]
     h0: f32,
@@ -84,7 +84,7 @@ impl ConstantSlope {
     /// `ConstantSlope::builder().h0(100.0).dhdx(-0.05).build().unwrap()` builds
     /// the default ConstantSlope, but sets the initial height to 100 m and the
     /// rate of change of depth in the x direction to -0.05.
-    pub fn builder() -> ConstantSlopeBuilder {
+    pub(crate) fn builder() -> ConstantSlopeBuilder {
         ConstantSlopeBuilder::default()
     }
 }
