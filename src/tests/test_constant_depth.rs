@@ -1,13 +1,14 @@
+//! Integration tests for constant depth
+
 use std::f64::consts::PI;
 
-use mantaray::bathymetry::ConstantDepth;
-use mantaray::current::ConstantCurrent;
-use mantaray::datatype::{Point, RayState, WaveNumber};
-use mantaray::ray::ManyRays;
+use crate::bathymetry::ConstantDepth;
+use crate::current::ConstantCurrent;
+use crate::datatype::{Point, RayState, WaveNumber};
+use crate::ray::ManyRays;
 
 // import the helper functions and types for integration testing
-mod helper;
-use helper::*;
+use crate::tests::helper::*;
 
 #[test]
 /// rays in deep water with constant depth

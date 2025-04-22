@@ -18,7 +18,7 @@ use crate::wave_ray_path::{State, Time};
 /// struct to hold the results of the ray tracing simulation as vectors. Note
 /// that the vectors are not indexed by time, but by the number of steps of the
 /// simulation.
-pub struct RayResult {
+pub(crate) struct RayResult {
     t_vec: Vec<f64>,
     x_vec: Vec<f64>,
     y_vec: Vec<f64>,
@@ -50,7 +50,7 @@ impl RayResult {
     /// # Returns
     ///
     /// constructed `RayResults` struct
-    pub fn new(
+    pub(crate) fn new(
         t_vec: Vec<f64>,
         x_vec: Vec<f64>,
         y_vec: Vec<f64>,
@@ -71,7 +71,7 @@ impl RayResult {
     /// # Returns
     ///
     /// JSON string of the `RayResults` struct
-    pub fn as_json(&self) -> String {
+    pub(crate) fn as_json(&self) -> String {
         serde_json::to_string(&self).unwrap()
     }
 
@@ -91,7 +91,7 @@ impl RayResult {
     /// # Note
     ///
     /// This method writes the `RayResults` struct as a JSON string.
-    pub fn write<W: Write>(&self, writer: &mut W) -> Result<usize> {
+    pub(crate) fn write<W: Write>(&self, writer: &mut W) -> Result<usize> {
         writer.write_all(self.as_json().as_bytes())?;
         writer.flush()?;
         Ok(self.as_json().as_bytes().len())
@@ -113,7 +113,7 @@ impl RayResult {
     /// # Note
     ///
     /// This method writes the `RayResults` struct as a JSON string at the given file path.
-    pub fn save_file(&self, path: &Path) -> Result<usize> {
+    pub(crate) fn save_file(&self, path: &Path) -> Result<usize> {
         let file = File::create(path)?;
         let mut writer = BufWriter::new(file);
         self.write(&mut writer)

@@ -6,7 +6,7 @@ use crate::wave_ray_path::State;
 /// A point in 2D cartesian space
 ///
 /// A `Point` is composed by `x` and `y`, expected to be in meters.
-pub struct Point<T> {
+pub(crate) struct Point<T> {
     x: T,
     y: T,
 }
@@ -15,7 +15,7 @@ pub struct Point<T> {
 impl<T> Point<T> {
     /// Create a new `Point` with the given `x` and `y` coordinates.
     ///
-    pub fn new(x: T, y: T) -> Self {
+    pub(crate) fn new(x: T, y: T) -> Self {
         Point { x, y }
     }
 
@@ -88,7 +88,7 @@ impl<T> Current<T> {
 #[allow(dead_code)]
 #[derive(Clone, Debug)]
 /// A wave number in 2D cartesian space
-pub struct WaveNumber<T> {
+pub(crate) struct WaveNumber<T> {
     kx: T,
     ky: T,
 }
@@ -96,17 +96,17 @@ pub struct WaveNumber<T> {
 #[allow(dead_code)]
 impl<T> WaveNumber<T> {
     /// create a new wave number from the given `kx` and `ky` values
-    pub fn new(kx: T, ky: T) -> Self {
+    pub(crate) fn new(kx: T, ky: T) -> Self {
         WaveNumber { kx, ky }
     }
 
     /// get the x component of the wave number
-    pub fn kx(&self) -> &T {
+    pub(crate) fn kx(&self) -> &T {
         &self.kx
     }
 
     /// get the y component of the wave number
-    pub fn ky(&self) -> &T {
+    pub(crate) fn ky(&self) -> &T {
         &self.ky
     }
 }
@@ -114,7 +114,7 @@ impl<T> WaveNumber<T> {
 #[allow(dead_code)]
 #[derive(Clone, Debug)]
 /// a ray state is the point and wave number of the ray
-pub struct RayState<T> {
+pub(crate) struct RayState<T> {
     // Position in 2D cartesian space.
     point: Point<T>,
     // Wave number in 2D cartesian space.
@@ -123,7 +123,7 @@ pub struct RayState<T> {
 
 impl<T> RayState<T> {
     /// create a new `RayState`
-    pub fn new(point: Point<T>, wave_number: WaveNumber<T>) -> Self {
+    pub(crate) fn new(point: Point<T>, wave_number: WaveNumber<T>) -> Self {
         RayState { point, wave_number }
     }
 
@@ -132,7 +132,7 @@ impl<T> RayState<T> {
     }
 
     /// get the wave number of the ray state
-    pub fn wave_number(&self) -> &WaveNumber<T> {
+    pub(crate) fn wave_number(&self) -> &WaveNumber<T> {
         &self.wave_number
     }
 }

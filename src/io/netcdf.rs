@@ -71,7 +71,7 @@ pub(crate) struct BathymetryFromNetCDF {
 
 #[allow(dead_code)]
 impl BathymetryFromNetCDF {
-    pub fn new<P>(file: P, x_name: &str, y_name: &str, depth_name: String) -> Self
+    pub(crate) fn new<P>(file: P, x_name: &str, y_name: &str, depth_name: String) -> Self
     where
         P: AsRef<std::path::Path>,
     {
