@@ -12,7 +12,11 @@ creator_name = 'g.marechal'
 
 g = 9.8
 def frequency_from_wavelength(lambda_p, depth):
-    ''' f from full dispersion relationship'''
+    """
+    Purpose: 
+    ---------
+    f from full dispersion relationship
+    """
     
     k = 2*np.pi/lambda_p # the wavenumber
     f = (g*k * np.tanh(g*depth))/(2*np.pi)
@@ -21,7 +25,11 @@ def frequency_from_wavelength(lambda_p, depth):
 
     
 def group_velocity(k, f, depth):
-    ''' Cg from full dispersion relationship'''
+    """
+    Purpose: 
+    ---------
+    Compute Cg from the full dispersion relationship
+    """
     sigma = 2*np.pi*f
     phase_velocity = sigma/k
     cg = phase_velocity * (1/2 + (k*depth)/(np.sinh(2*k*depth)))
@@ -29,7 +37,13 @@ def group_velocity(k, f, depth):
 
 
 def find_closest_pixel(x_line_param, y_line_param, X, Y):
-    ''' Function to find the closest grid point to a line point (x_line_param, y_line_param) '''
+    """
+    Purpose: 
+    ---------
+    Function to find the closest grid point to a line point (x_line_param, y_line_param) 
+    """
+
+
     distances = np.sqrt((X - x_line_param)**2 + (Y - y_line_param)**2)
     idx = np.unravel_index(np.argmin(distances), distances.shape)  # Find the index of the closest point
 
@@ -45,7 +59,11 @@ def find_closest_pixel_depth(x_line_param, y_line_param, X, Y, depth):
     
 def start_line_ray_tracing(x_line, y_line, x_grid, y_grid, num_points):
     
-    '''The starting line for ray tracing computation'''
+    """
+    Purpose: 
+    ---------
+    The starting line for ray tracing computation
+    """
     
     x_line_param = np.linspace(x_line[0], x_line[1], num_points)
     y_line_param = np.linspace(y_line[0], y_line[1], num_points)
@@ -73,8 +91,12 @@ def point_to_line_distance(x, y, x1, y1, x2, y2):
 
     
 def create_current_forcing(x, y, ucur, vcur, output_file_cur, output_file_depth, depth =  4e3):
-    '''Purpose: create Xarray DataArray forcing for Ray tracing.
-    Crate a Netcdf file with the zonal and meridional currents and constant depth'''
+    """
+    Purpose: 
+    ---------
+    create Xarray DataArray forcing for Ray tracing.
+    Crate a Netcdf file with the zonal and meridional currents and constant depth
+    """
     # --- Current
     ds = xr.Dataset(
     data_vars={
@@ -99,8 +121,11 @@ def create_current_forcing(x, y, ucur, vcur, output_file_cur, output_file_depth,
     ds.to_netcdf(output_file_depth, format="NETCDF3_CLASSIC")
     
 def create_depth_forcing(x, y, depth, output_file_cur, output_file_depth, ucur = 0, vcur = 0):
-    '''Purpose: create Xarray DataArray forcing for Ray tracing.
-     Crate a Netcdf file with the depth and constant currents (= 0)'''
+    """
+    Purpose:
+    ---------
+    create Xarray DataArray forcing for Ray tracing. Crate a Netcdf file with the depth and constant currents (= 0)
+    """
 
         # --- Depth
     ds = xr.Dataset(
