@@ -86,7 +86,7 @@ def compute_duration(x, k0):
     return round(x.max() / c_g)
 
 
-def animate_rays(X, Y, background, bando, style, ray_sample=1, time_sample=10):
+def animate_rays(X, Y, background, ray_bundle, style, ray_sample=1, time_sample=10):
     """
     Create an animation of ray paths over a background field.
 
@@ -98,7 +98,7 @@ def animate_rays(X, Y, background, bando, style, ray_sample=1, time_sample=10):
         2D array of y-coordinates for background field.
     background : np.ndarray
         2D array of background values (e.g., speed or depth).
-    bando : xr.Dataset
+    ray_bundle : xr.Dataset
         Dataset containing ray trajectory information with dimensions
         'ray', 'time_step', and variables 'x' and 'y'.
     style : str
@@ -113,7 +113,7 @@ def animate_rays(X, Y, background, bando, style, ray_sample=1, time_sample=10):
     anim : matplotlib.animation.FuncAnimation
         Animation object that can be saved or displayed.
     """
-    time_steps = bando.time_step.size
+    time_steps = ray_bundle.time_step.size
 
     fig, ax = plt.subplots(figsize=(12, 6), constrained_layout=True)
 
@@ -127,7 +127,7 @@ def animate_rays(X, Y, background, bando, style, ray_sample=1, time_sample=10):
         cbar.set_label("Depth [m]")
 
     ray_lines = []
-    for i in range(0, bando.ray.size, ray_sample):
+    for i in range(0, ray_bundle.ray.size, ray_sample):
         color = 'black' if style == 'currents' else 'white'
         ray, = ax.plot([], [], lw=0.78, color=color)
         ray_lines.append(ray)
@@ -138,7 +138,7 @@ def animate_rays(X, Y, background, bando, style, ray_sample=1, time_sample=10):
 
     def animate(frame):
         for i, ray_line in enumerate(ray_lines):
-            ray = bando.isel(ray=i * ray_sample).sel(time_step=slice(0, frame))
+            ray = ray_bundle.isel(ray=i * ray_sample).sel(time_step=slice(0, frame))
             ray_line.set_data(ray.x, ray.y)
         ax.set_title(f"Ray Tracing Animation - Time Step {frame}")
 
