@@ -12,6 +12,8 @@ docs/_build
 .vscode/*
 
 # data
-notebooks/canonical_examples/data/currents/*.nc
-notebooks/canonical_examples/data/bathymetry/*.nc
+notebooks/canonical_examples/forcing/*.nc
 
+# macOS
+.DS_store
+notebooks/.DS_Store
