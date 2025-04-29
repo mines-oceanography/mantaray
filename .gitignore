@@ -11,8 +11,8 @@ docs/_build
 # vscode
 .vscode/*
 
-# .DS_store
-.DS_store
+# .DS_Store
+.DS_Store
 
 # ipynb checkpoints
 .ipynb_checkpoints/
