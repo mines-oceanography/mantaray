@@ -148,6 +148,39 @@ def animate_rays(X, Y, background, bando, style, ray_sample=1, time_sample=10):
     return anim
 
 def plot_current_field(x_grid, y_grid, ds, skip=75, q_ref=0.5, q_scale=0.1):
+    """
+    Plot the magnitude and direction of a velocity field using contour and quiver plots.
+
+    Parameters
+    ----------
+    x_grid : ndarray
+        2D array of x-coordinates (meters).
+    y_grid : ndarray
+        2D array of y-coordinates (meters).
+    ds : xarray.Dataset
+        Dataset containing 2D velocity components `u` (zonal) and `v` (meridional), 
+        with the same shape as `x_grid` and `y_grid`.
+    skip : int, optional
+        Step size for downsampling vectors in the quiver plot to reduce clutter.
+        Default is 75 (i.e., plot every 75th vector in each direction).
+    q_ref : float, optional
+        Reference vector magnitude to display in the quiver key (in m/s).
+        Default is 0.5 m/s.
+    q_scale : float, optional
+        Scale factor for the quiver arrows. Smaller values produce longer arrows.
+        Default is 0.1.
+
+    Returns
+    -------
+    None
+        The function displays the plot and returns nothing.
+
+    Notes
+    -----
+    - Uses `cmocean.cm.speed` for the color map representing velocity magnitude.
+    - Quiver vectors are plotted in black and scaled by `q_scale`.
+    - Axes are labeled in kilometers, and the plot enforces equal aspect ratio.
+    """
     speed = np.sqrt(ds.u**2 + ds.v**2)
 
     fig, ax = plt.subplots(figsize=(12, 6))
@@ -173,3 +206,137 @@ def plot_current_field(x_grid, y_grid, ds, skip=75, q_ref=0.5, q_scale=0.1):
 
     plt.show()
     return
+
+def cart2polar(x, y):
+    """
+    Convert Cartesian coordinates to polar coordinates.
+
+    Parameters
+    ----------
+    x : array_like
+        x-coordinates (meters).
+    y : array_like
+        y-coordinates (meters).
+
+    Returns
+    -------
+    r : ndarray
+        Radial distance from origin (meters).
+    theta : ndarray
+        Angle from x-axis in radians (counter-clockwise).
+    """
+    r = np.hypot(x, y)
+    theta = np.arctan2(y, x)
+    return r, theta
+
+def polar2cart_vel(U_theta, theta):
+    """
+    Convert azimuthal velocity in polar coordinates to Cartesian velocity components.
+
+    Parameters
+    ----------
+    U_theta : array_like
+        Azimuthal (tangential) velocity in polar coordinates (m/s).
+    theta : array_like
+        Angular coordinate corresponding to each velocity component (radians).
+
+    Returns
+    -------
+    u : ndarray
+        Zonal (x-direction) velocity component (m/s).
+    v : ndarray
+        Meridional (y-direction) velocity component (m/s).
+    
+    Notes
+    -----
+    Assumes purely azimuthal flow (no radial component).
+    """
+    u = -U_theta * np.sin(theta)
+    v =  U_theta * np.cos(theta)
+    return u, v
+
+def parabolic_ring_profile(r, r_core, r_outer, U_max=1.0):
+    """
+    Azimuthal velocity profile for an idealized ring.
+
+    Parameters
+    ----------
+    r : ndarray
+        Radial distance from eddy center (meters).
+    r_core : float
+        Radius of zero-velocity core (meters).
+    r_outer : float
+        Outer radius of the eddy (meters).
+    U_max : float, optional
+        Desired maximum azimuthal velocity (m/s). Default is 1.0 m/s.
+
+    Returns
+    -------
+    U_theta : ndarray
+        Azimuthal velocity at each radial location.
+    """
+    r0 = 0.5 * (r_core + r_outer)
+    width = 0.5 * (r_outer - r_core)
+
+    U_theta = np.zeros_like(r)
+    mask = (r >= r0 - width) & (r <= r0 + width)
+    rt = r[mask] - r0
+
+    U_norm = (rt + width) * (rt - width)
+    U_theta[mask] = -U_max * (U_norm / width**2)
+
+    return U_theta
+
+def generate_parabolic_ring_eddy(L_eddy=160_000, U_max=1.0, xv=None, yv=None, core_ratio=0.25):
+    """
+
+    Generate a 2D velocity field representing a parabolic ring eddy.
+
+    Parameters
+    ----------
+    L : float, optional
+        Size of the square domain (meters). Default is 320,000 m.
+    dx : float, optional
+        Grid spacing (meters). Default is 1,000 m.
+    eddy_radius : float, optional
+        Outer radius of the eddy (meters), including both the core and the ring. 
+        Default is 160,000 m.
+    core_ratio : float, optional
+        Fraction of eddy_radius that defines the radius of the zero-velocity core.
+        Default is 0.25 (i.e., core radius = 0.25 * eddy_radius).
+
+    Returns
+    -------
+    xx : ndarray
+        2D array of x-coordinates (meters).
+    yy : ndarray
+        2D array of y-coordinates (meters).
+    u : ndarray
+        2D array of zonal velocity components (m/s).
+    v : ndarray
+        2D array of meridional velocity components (m/s).
+    speed : ndarray
+        2D array of speed (magnitude of velocity vector) (m/s).
+    r : ndarray
+        2D array of radial distances from eddy center (meters).
+    theta : ndarray
+        2D array of angular positions (radians).
+    U_theta : ndarray
+        2D array of azimuthal velocity magnitudes (m/s).
+
+    Notes
+    -----
+    The eddy has a zero-velocity core and a parabolic velocity ring, 
+    centered at r = 0, with azimuthal flow only (no radial velocity).
+    """
+    R_eddy = L_eddy/2
+    
+    r_outer = R_eddy
+    r_core = core_ratio * r_outer
+
+    r, theta = cart2polar(xv, yv)
+
+    U_theta = parabolic_ring_profile(r, r_core=r_core, r_outer=r_outer, U_max=U_max)
+    u, v = polar2cart_vel(U_theta, theta)
+
+    return u, v
