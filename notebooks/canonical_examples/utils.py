@@ -4,7 +4,8 @@ import cmocean
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 
-g = 9.81 # Acceleration due to gravity [m/s^2]
+g = 9.81  # Acceleration due to gravity [m/s^2]
+
 
 def period2wavenumber(T):
     """
@@ -20,7 +21,7 @@ def period2wavenumber(T):
     k : float
         Wavenumber in radians per meter.
     """
-    k = (2 * math.pi)**2 / (g * T**2)
+    k = (2 * math.pi) ** 2 / (g * T**2)
     return k
 
 
@@ -38,7 +39,7 @@ def group_velocity(k):
     c_g : float
         Group velocity in meters per second.
     """
-    c_g = (g / k)**0.5 / 2
+    c_g = (g / k) ** 0.5 / 2
     return c_g
 
 
@@ -117,19 +118,19 @@ def animate_rays(X, Y, background, ray_bundle, style, ray_sample=1, time_sample=
 
     fig, ax = plt.subplots(figsize=(12, 6), constrained_layout=True)
 
-    if style == 'currents':
+    if style == "currents":
         cf = ax.contourf(X, Y, background, cmap=cmocean.cm.speed, levels=50)
         cbar = fig.colorbar(cf)
         cbar.set_label("Speed [m/s]")
-    if style == 'bathymetry':
+    if style == "bathymetry":
         cf = ax.contourf(X, Y, background, cmap=cmocean.cm.deep, levels=50)
         cbar = fig.colorbar(cf)
         cbar.set_label("Depth [m]")
 
     ray_lines = []
     for i in range(0, ray_bundle.ray.size, ray_sample):
-        color = 'black' if style == 'currents' else 'white'
-        ray, = ax.plot([], [], lw=0.78, color=color)
+        color = "black" if style == "currents" else "white"
+        (ray,) = ax.plot([], [], lw=0.78, color=color)
         ray_lines.append(ray)
 
     ax.set_xlabel("X [m]")
@@ -142,10 +143,13 @@ def animate_rays(X, Y, background, ray_bundle, style, ray_sample=1, time_sample=
             ray_line.set_data(ray.x, ray.y)
         ax.set_title(f"Ray Tracing Animation - Time Step {frame}")
 
-    anim = animation.FuncAnimation(fig, animate, frames=range(0, time_steps, time_sample), interval=100)
+    anim = animation.FuncAnimation(
+        fig, animate, frames=range(0, time_steps, time_sample), interval=100
+    )
 
     plt.close(fig)
     return anim
+
 
 def plot_current_field(x_grid, y_grid, ds, skip=75, q_ref=0.5, q_scale=0.1):
     """
@@ -158,7 +162,7 @@ def plot_current_field(x_grid, y_grid, ds, skip=75, q_ref=0.5, q_scale=0.1):
     y_grid : ndarray
         2D array of y-coordinates (meters).
     ds : xarray.Dataset
-        Dataset containing 2D velocity components `u` (zonal) and `v` (meridional), 
+        Dataset containing 2D velocity components `u` (zonal) and `v` (meridional),
         with the same shape as `x_grid` and `y_grid`.
     skip : int, optional
         Step size for downsampling vectors in the quiver plot to reduce clutter.
@@ -190,22 +194,29 @@ def plot_current_field(x_grid, y_grid, ds, skip=75, q_ref=0.5, q_scale=0.1):
     y_km = y_grid / 1000
 
     c = ax.contourf(x_km, y_km, speed, cmap=cmocean.cm.speed, levels=50)
-    fig.colorbar(c, ax=ax, label='Speed [m/s]')
+    fig.colorbar(c, ax=ax, label="Speed [m/s]")
 
-    q = ax.quiver(x_km[::skip, ::skip], y_km[::skip, ::skip], 
-                  ds.u[::skip, ::skip], ds.v[::skip, ::skip], 
-                  color='black', scale=1/q_scale, width=0.0025)
-    ax.quiverkey(q, X=0.9, Y=-0.1, U=q_ref, label=f'{q_ref} [m/s]', labelpos='E')
+    q = ax.quiver(
+        x_km[::skip, ::skip],
+        y_km[::skip, ::skip],
+        ds.u[::skip, ::skip],
+        ds.v[::skip, ::skip],
+        color="black",
+        scale=1 / q_scale,
+        width=0.0025,
+    )
+    ax.quiverkey(q, X=0.9, Y=-0.1, U=q_ref, label=f"{q_ref} [m/s]", labelpos="E")
 
-    ax.set_xlabel('X (km)')
-    ax.set_ylabel('Y (km)')
-    ax.set_title('Current Velocity Magnitude and Direction')
+    ax.set_xlabel("X (km)")
+    ax.set_ylabel("Y (km)")
+    ax.set_title("Current Velocity Magnitude and Direction")
 
-    ax.set_aspect('equal')
-    ax.grid(linestyle='--')
+    ax.set_aspect("equal")
+    ax.grid(linestyle="--")
 
     plt.show()
     return
+
 
 def cart2polar(x, y):
     """
@@ -229,6 +240,7 @@ def cart2polar(x, y):
     theta = np.arctan2(y, x)
     return r, theta
 
+
 def polar2cart_vel(U_theta, theta):
     """
     Convert azimuthal velocity in polar coordinates to Cartesian velocity components.
@@ -246,14 +258,15 @@ def polar2cart_vel(U_theta, theta):
         Zonal (x-direction) velocity component (m/s).
     v : ndarray
         Meridional (y-direction) velocity component (m/s).
-    
+
     Notes
     -----
     Assumes purely azimuthal flow (no radial component).
     """
     u = -U_theta * np.sin(theta)
-    v =  U_theta * np.cos(theta)
+    v = U_theta * np.cos(theta)
     return u, v
+
 
 def parabolic_ring_profile(r, r_core, r_outer, U_max=1.0):
     """
@@ -287,7 +300,10 @@ def parabolic_ring_profile(r, r_core, r_outer, U_max=1.0):
 
     return U_theta
 
-def generate_parabolic_ring_eddy(L_eddy=320_000, U_max=1.0, xv=None, yv=None, core_ratio=0.25):
+
+def generate_parabolic_ring_eddy(
+    L_eddy=320_000, U_max=1.0, xv=None, yv=None, core_ratio=0.25
+):
     """
     Generate a 2D velocity field representing a parabolic ring eddy.
 
@@ -316,12 +332,12 @@ def generate_parabolic_ring_eddy(L_eddy=320_000, U_max=1.0, xv=None, yv=None, co
     -----
     This function models an idealized parabolic ring eddy with a circular velocity profile:
     - The velocity is purely azimuthal (no radial component).
-    - The eddy has a central core of zero velocity and a surrounding ring where 
+    - The eddy has a central core of zero velocity and a surrounding ring where
       velocity follows a parabolic profile.
     - If xv and yv are not provided, the function will throw an error.
     """
-    R_eddy = L_eddy/2
-    
+    R_eddy = L_eddy / 2
+
     r_outer = R_eddy
     r_core = core_ratio * r_outer
 
