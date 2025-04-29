@@ -25,7 +25,7 @@ const G: f64 = 9.8;
 /// state of the ray system for `ode_solvers`
 /// the values in the state are x, y, kx, ky
 /// for example: `State::new(x, y, kx, ky)`
-pub type State = Vector4<f64>;
+pub(crate) type State = Vector4<f64>;
 
 /// time in seconds for `ode_solvers` to use
 pub(crate) type Time = f64;
@@ -67,7 +67,7 @@ impl<'a> WaveRayPath<'a> {
     ///  set to 0 m/s.
     ///
     /// Returns: `Self` : the newly created `WaveRayPath`
-    pub fn new(bathymetry_data: &'a dyn BathymetryData, current_data: &'a dyn CurrentData) -> Self {
+    pub(crate) fn new(bathymetry_data: &'a dyn BathymetryData, current_data: &'a dyn CurrentData) -> Self {
         WaveRayPath {
             bathymetry_data,
             current_data,
@@ -82,7 +82,7 @@ impl<'a> WaveRayPath<'a> {
     ///
     /// # Returns
     /// `WaveRayPathBuilder<'a>` : the default WaveRayPathBuilder
-    pub fn builder() -> WaveRayPathBuilder<'a> {
+    pub(crate) fn builder() -> WaveRayPathBuilder<'a> {
         WaveRayPathBuilder::default()
     }
 
@@ -115,7 +115,7 @@ impl<'a> WaveRayPath<'a> {
     ///   `interpolator::bilinear` due to incorrect argument passed.
     /// `Error::ArgumentOutOfBounds`
     /// - If k is negative, group velocity will return this error.
-    pub fn odes(&self, x: &f64, y: &f64, kx: &f64, ky: &f64) -> Result<(f64, f64, f64, f64)> {
+    pub(crate) fn odes(&self, x: &f64, y: &f64, kx: &f64, ky: &f64) -> Result<(f64, f64, f64, f64)> {
         let point = crate::Point::new(*x, *y);
         let (h, dh) = self
             .bathymetry_data

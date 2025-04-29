@@ -21,7 +21,7 @@ use crate::{
 
 #[derive(Builder)]
 /// a struct that creates many rays
-pub struct ManyRays<'a> {
+pub(crate) struct ManyRays<'a> {
     #[builder(default = "&DEFAULT_BATHYMETRY")]
     /// a reference to the bathymetry dataset. Default is 2000 m.
     bathymetry_data: &'a dyn BathymetryData,
@@ -51,7 +51,7 @@ impl<'a> ManyRays<'a> {
     ///
     /// # Returns
     /// `Self`: a constructed `ManyRays` struct
-    pub fn new(
+    pub(crate) fn new(
         bathymetry_data: &'a dyn BathymetryData,
         current_data: &'a dyn CurrentData,
         initial_rays: &'a Vec<RayState<f64>>,
@@ -71,7 +71,7 @@ impl<'a> ManyRays<'a> {
     ///
     /// Note: There are default bathymetry and current, but no default initial
     /// rays, so it will panic if not supplied initial rays.
-    pub fn builder() -> ManyRaysBuilder<'a> {
+    pub(crate) fn builder() -> ManyRaysBuilder<'a> {
         ManyRaysBuilder::default()
     }
 
@@ -95,7 +95,7 @@ impl<'a> ManyRays<'a> {
     /// Returns: `Vec<Option<(XOut, YOut)>>`: A vector of optional values. Each
     /// value in the vector is either `None`, which represents an error during
     /// that ray's integration, or they are a tuple of (XOut, YOut).
-    pub fn trace_many(
+    pub(crate) fn trace_many(
         &self,
         start_time: f64,
         end_time: f64,
@@ -216,7 +216,7 @@ impl<'a> SingleRay<'a> {
 #[allow(dead_code)]
 /// Appends the result to the given file path or creates new file if it does not
 /// exist.
-pub fn output_or_append_to_tsv_file(
+pub(crate) fn output_or_append_to_tsv_file(
     file_path: &Path,
     result: &SolverResult<Time, State>,
 ) -> Result<()> {

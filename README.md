@@ -12,8 +12,8 @@ A library for surface gravity waves ray tracing.
 
 2. Clone the repo
 ```
-git clone git@github.com:mines-oceanography/ray_tracing.git
-cd ray_tracing
+git clone git@github.com:mines-oceanography/mantaray.git
+cd mantaray
 ```
 
 3. Build Python
@@ -56,9 +56,9 @@ pixi run -e test pytest
 Licensed under either of
 
  * Apache License, Version 2.0
-   ([LICENSE-APACHE](https://github.com/mines-oceanography/ray_tracing/blob/main/LICENSE-APACHE "Apache License 2.0") or http://www.apache.org/licenses/LICENSE-2.0)
+   ([LICENSE-APACHE](https://github.com/mines-oceanography/mantaray/blob/main/LICENSE-APACHE "Apache License 2.0") or http://www.apache.org/licenses/LICENSE-2.0)
  * MIT license
-   ([LICENSE-MIT](https://github.com/mines-oceanography/ray_tracing/blob/main/LICENSE-MIT "MIT License") or http://opensource.org/licenses/MIT)
+   ([LICENSE-MIT](https://github.com/mines-oceanography/mantaray/blob/main/LICENSE-MIT "MIT License") or http://opensource.org/licenses/MIT)
 
 at your option.
 
@@ -67,5 +67,29 @@ at your option.
 Unless you explicitly state otherwise, any contribution intentionally submitted
 for inclusion in the work by you, as defined in the Apache-2.0 license, shall be
 dual licensed as above, without any additional terms or conditions.
+
+We welcome contributions to this project!  Whether you're fixing a bug, adding a new feature, or improving the documentation, your help is greatly appreciated. All contributions should be made through GitHub, by forking the repository, creating a new branch, and submitting a pull request.
+
+### Ways to Contribute
+
+There are many ways to contribute to this project, including:
+
+*   **Reporting bugs:**  If you find a bug, please open an [issue](https://github.com/mines-oceanography/mantaray/issues) with the `bug` label and provide as much detail as possible, including steps to reproduce the issue.
+*   **Suggesting features:**  Have an idea for a new feature or improvement? Open an [issue](https://github.com/mines-oceanography/mantaray/issues) with the `enhancement` label and describe your suggestion.
+*   **Submitting code changes:**  We welcome code contributions!  Please follow the Pull Request Guidelines below.
+*   **Improving documentation:**  Clear and concise documentation is essential. If you find areas where the documentation can be improved, please submit an [issue](https://github.com/mines-oceanography/mantaray/issues) with the `documentation` label.
+
+### Pull Request Guidelines
+
+Before submitting a pull request, please make sure it meets these guidelines:
+
+1.  **Tests:**  All pull requests should include unit tests that cover the changes.
+2.  **Documentation:**  If your pull request adds or modifies functionality, please update the documentation accordingly.
+3.  **CI:**  Your pull request must pass all existing continuous integration checks.
+4.  **Single Functionality:**  Each pull request should ideally address a single, well-defined functionality.  If your changes are more extensive, please consider breaking them down into multiple, smaller pull requests.
+
+### Getting Help
+
+If you have questions or need help getting started, please open an issue with the `question` label.  We'll do our best to assist you.
 
 <!-- end elevator-pitch -->
