@@ -5,3 +5,6 @@ sphinx-design
 sphinx-inline-tabs
 sphinx-tabs
 sphinxcontrib-mermaid
+pandoc
+nbconvert
+myst-sphinx-gallery

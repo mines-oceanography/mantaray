@@ -16,7 +16,7 @@ pub(crate) const DEFAULT_CURRENT: ConstantCurrent = ConstantCurrent { u: 0.0, v:
 /// * `u`: `f64` value representing x component of the current.
 ///
 /// * `v`: `f64` value representing y component of the current.
-pub struct ConstantCurrent {
+pub(crate) struct ConstantCurrent {
     /// x component of the current
     u: f64,
     /// y component of the current
@@ -29,7 +29,7 @@ impl ConstantCurrent {
     ///
     /// # Returns
     /// returns the constructed ConstantCurrent
-    pub fn new(u: f64, v: f64) -> Self {
+    pub(crate) fn new(u: f64, v: f64) -> Self {
         ConstantCurrent { u, v }
     }
 }

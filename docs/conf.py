@@ -27,6 +27,7 @@ extensions = [
     "sphinx_design",
     "sphinx_inline_tabs",
     "sphinxcontrib.mermaid",
+    "myst_sphinx_gallery",
 ]
 
 templates_path = ["_templates"]

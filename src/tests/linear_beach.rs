@@ -1,16 +1,15 @@
-/// integration tests for linear beaches
+//! integration tests for linear beaches
+
 use std::f64::consts::PI;
 
-use mantaray::{
-    self,
+use crate::{
     bathymetry::ConstantSlope,
     current::ConstantCurrent,
     datatype::{Point, RayState, WaveNumber},
     ray::ManyRays,
 };
 
-mod helper;
-use helper::*;
+use crate::tests::helper::*;
 
 #[test]
 /// test a linear beach on the right side of domain starting in shallow water

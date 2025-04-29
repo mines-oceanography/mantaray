@@ -5,7 +5,7 @@
 //! - netcdf3: creating files
 
 mod netcdf;
-pub mod utility;
+pub(crate) mod utility;
 
 use std::collections::HashMap;
 

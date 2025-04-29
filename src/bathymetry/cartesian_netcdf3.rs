@@ -18,21 +18,10 @@ use crate::{
 /// values, interpolate, and return depth and gradient.
 ///
 /// # Example
-/// Create a new `CartesianNetcdf3` struct from a netcdf3 file path and names of
-/// the variables. This will be used as an argument for the various ray tracing
-/// functions.
-/// ```
-/// use tempfile::NamedTempFile;
-/// use mantaray::bathymetry::CartesianNetcdf3;
-/// use mantaray::io::utility::create_netcdf3_bathymetry;
-///
-/// // create a path to the file (in this example we need to create a temporary file)
-/// let path = NamedTempFile::new().unwrap().into_temp_path();
-/// create_netcdf3_bathymetry(&path, 10, 10, 100.0, 100.0, |_,_| 2000.0);
-///
-/// // open the file
+/// Open the cartesian NetCDF3 file located at `path` with dimension names "x"
+/// and "y" and variable "depth".
+/// 
 /// let data = CartesianNetcdf3::open(&path, "x", "y", "depth").unwrap();
-/// ```
 ///
 /// # Note
 /// Currently, the methods do not know the difference between an out of bounds
@@ -43,7 +32,7 @@ use crate::{
 /// In this struct, None is used when the function will not panic, but the value
 /// is not useful to the other structs. Error is used when the function would
 /// panic, so instead, it returns an error.
-pub struct CartesianNetcdf3 {
+pub(crate) struct CartesianNetcdf3 {
     /// a vector containing the x values from the netcdf3 file
     x: Vec<f32>,
     /// a vector containing the y values from the netcdf3 file
@@ -175,7 +164,7 @@ impl CartesianNetcdf3 {
     /// # Note
     /// in the future, be able to check attributes and verify that the file is
     /// correct.
-    pub fn open(path: &Path, xname: &str, yname: &str, depth_name: &str) -> Result<Self> {
+    pub(crate) fn open(path: &Path, xname: &str, yname: &str, depth_name: &str) -> Result<Self> {
         let mut data = FileReader::open(path)?;
 
         let x = data.read_var(xname)?;
