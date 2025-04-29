@@ -1,5 +1,6 @@
 import math
 import numpy as np
+import xarray as xr
 import cmocean
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
@@ -347,3 +348,43 @@ def generate_parabolic_ring_eddy(
     u, v = polar2cart_vel(U_theta, theta)
 
     return u, v
+
+def generate_zonal_jet(U_max, x, y, width):
+    """
+    Generate a 2D zonal jet velocity field on a regular grid.
+
+    Parameters
+    ----------
+    U_max : float
+        Maximum velocity of the zonal jet (in m/s).
+    x : array-like
+        1D array of x-coordinates (in meters).
+    y : array-like
+        1D array of y-coordinates (in meters).
+    width : float
+        Width (standard deviation) of the Gaussian jet profile (in normalized units).
+
+    Returns
+    -------
+    ds_jet : xarray.Dataset
+        Dataset containing zonal (`u`) and meridional (`v`) velocity components
+        defined on a 2D grid, along with coordinate variables `x` and `y`.
+    """
+    # Normalize y-range to create Gaussian profile across y-direction
+    x_profile = np.linspace(-1, 1, len(y))
+    U_profile = U_max * np.exp(-x_profile**2 / (2 * width**2))
+
+    # Create 2D velocity fields
+    U_jet = np.tile(U_profile[:, np.newaxis], (1, len(x)))
+    V_jet = np.zeros_like(U_jet)
+
+    # Build xarray Dataset
+    ds_jet = xr.Dataset(
+        {
+            "u": (["y", "x"], U_jet, {"long_name": "zonal current velocity", "units": "m/s"}),
+            "v": (["y", "x"], V_jet, {"long_name": "meridional current velocity", "units": "m/s"}),
+        },
+        coords={"x": x, "y": y}
+    )
+    
+    return ds_jet
