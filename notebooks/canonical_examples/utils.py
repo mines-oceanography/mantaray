@@ -287,47 +287,38 @@ def parabolic_ring_profile(r, r_core, r_outer, U_max=1.0):
 
     return U_theta
 
-def generate_parabolic_ring_eddy(L_eddy=160_000, U_max=1.0, xv=None, yv=None, core_ratio=0.25):
+def generate_parabolic_ring_eddy(L_eddy=320_000, U_max=1.0, xv=None, yv=None, core_ratio=0.25):
     """
-
     Generate a 2D velocity field representing a parabolic ring eddy.
 
     Parameters
     ----------
-    L : float, optional
-        Size of the square domain (meters). Default is 320,000 m.
-    dx : float, optional
-        Grid spacing (meters). Default is 1,000 m.
-    eddy_radius : float, optional
-        Outer radius of the eddy (meters), including both the core and the ring. 
-        Default is 160,000 m.
+    L_eddy : float, optional
+        Size of the square domain in meters (i.e., domain is L_eddy x L_eddy). Default is 320,000 m.
+    U_max : float, optional
+        Maximum azimuthal velocity in meters per second. Default is 1.0 m/s.
+    xv : ndarray, required
+        2D array of x-coordinates (meters). If None, a square grid will be generated.
+    yv : ndarray, required
+        2D array of y-coordinates (meters). Must be the same shape as xv.
     core_ratio : float, optional
-        Fraction of eddy_radius that defines the radius of the zero-velocity core.
-        Default is 0.25 (i.e., core radius = 0.25 * eddy_radius).
+        Fraction of the eddy radius used to define the radius of the zero-velocity core.
+        For example, core_ratio=0.25 with a 160 km eddy gives a 40 km core. Default is 0.25.
 
     Returns
     -------
-    xx : ndarray
-        2D array of x-coordinates (meters).
-    yy : ndarray
-        2D array of y-coordinates (meters).
     u : ndarray
-        2D array of zonal velocity components (m/s).
+        2D array of zonal (east-west) velocity components (m/s).
     v : ndarray
-        2D array of meridional velocity components (m/s).
-    speed : ndarray
-        2D array of speed (magnitude of velocity vector) (m/s).
-    r : ndarray
-        2D array of radial distances from eddy center (meters).
-    theta : ndarray
-        2D array of angular positions (radians).
-    U_theta : ndarray
-        2D array of azimuthal velocity magnitudes (m/s).
+        2D array of meridional (north-south) velocity components (m/s).
 
     Notes
     -----
-    The eddy has a zero-velocity core and a parabolic velocity ring, 
-    centered at r = 0, with azimuthal flow only (no radial velocity).
+    This function models an idealized parabolic ring eddy with a circular velocity profile:
+    - The velocity is purely azimuthal (no radial component).
+    - The eddy has a central core of zero velocity and a surrounding ring where 
+      velocity follows a parabolic profile.
+    - If xv and yv are not provided, the function will throw an error.
     """
     R_eddy = L_eddy/2
     
