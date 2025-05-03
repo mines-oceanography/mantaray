@@ -6,3 +6,6 @@ Notebook Gallery
     :tooltip:
 
     tutorial
+
+    agulhas_example
+    nazare_example
