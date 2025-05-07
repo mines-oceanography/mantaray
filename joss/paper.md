@@ -1,32 +1,69 @@
-TODO: update the joss required yaml section
-
 ---
-title: TODO
-tags: TODO
+title: 'Mantaray: A Rust Package for Ray Tracing Ocean Surface Gravity Waves'
+tags:
+  - Rust
+  - Ocean
+  - Waves
 authors:
-    - name: Bryce Irving
-      orcid: 0009-0004-2309-9522
-      affiliation: 1
-    - name: Guilherme P. Castelao
-      orcid: 0000-0002-6765-0708
-      affiliation: 2
-    - name: Bia Villas Boas
-      orcid: TODO
-      affiliation: 1
+  - name: Bryce Irving
+    orcid: 0009-0004-2309-9522
+    affiliation: 1
+  - name: Guilherme P. Castelao
+    orcid: 0000-0002-6765-0708
+    affiliation: 2
+  - name: Colin Beyers
+    orcid: 0009-0004-8312-6158
+    affiliation: 1
+  - name: James Clemson
+    orcid: 0009-0000-4329-6575
+    affiliation: 1
+  - name: Jackson Krieger
+    orcid: 0009-0006-3693-8887
+    affiliation: 1
+  - name: Gwendal Marechal
+    orcid: 0000-0003-0378-5694
+    affiliation: 1
+  - name: Nicholas Pizzo
+    orcid: 0000-0001-9570-4200
+    affiliation: 3
+  - name: Bia Villas Bôas
+    orcid: 0000-0001-6767-6556
+    affiliation: 1
 affiliations:
-    - name: Colorado School of Mines
-      index: 1
-    - name: TODO
-      index: 2
-date: 28 May 2024 (TODO this might need updating?)
+  - name: Colorado School of Mines, Golden, CO, USA
+    index: 1
+  - name: National Renewable Energy Laboratory, Golden, CO, USA
+    index: 2
+  - name:Graduate School of Oceanography, University of Rhode Island, Narragansett, RI, USA
+    index: 3
+date: 7 May 2025
 bibliography: paper.bib
 ---
-
 # Summary
-
-Ray-tracing is a powerful technique used in computer graphics and scientific simulations to model the propagation of waves. When it comes to ocean surface gravity waves, ray-tracing can provide valuable insights into wave propagation, including their interaction with ocean currents and the ocean bathymetry. Such insights are crucial for better understanding ocean wave physics and their role in climate, as waves are a major player in heat transfer and the exchange of gases between the ocean and the atmosphere.
-In the present work, we introduce a novel package to calculate the path of a wave propagating through the ocean. We developed the code in Rust for memory safety, high performance, robustness, and simple testing. The ray tracing uses the Runge-Kutta 4th order and bilinear interpolation methods to reduce integration error. The package includes supporting Python files to visualize the results. The components are tested individually, and the overall output is checked against known idealized cases. With these methods, our Rust crate can trace the propagation of a wave through a variable depth represented in cartesian coordinates and plot the results. These results are significant because accurately tracing the propagation of ocean waves with an efficient language will increase performance making it seamless to run large simulation ensembles. There are many reasonable opportunities for improvement in the future. The accuracy and realism of the program will improve by tracing bundles of multiple rays and accounting for the interactions with ocean currents. Additionally, the computational performance will improve by parallelizing the ray tracing.
+Ocean surface gravity waves are an important component of air-sea interaction, influencing energy, momentum, and gas exchanges across the ocean-atmosphere interface. In specific applications such as refraction by ocean currents or bathymetry, ray tracing provides a computationally efficient way to gain insight into wave propagation. In this paper, we introduce `Mantaray`, an open-source software package implemented in Rust, with a Python interface, that solves the ray equations for ocean surface gravity waves. Mantaray is designed for performance, robustness, and ease of use. The package is modular to facilitate further development and can currently be applied to both idealized and realistic wave propagation problems.
 
 # Statement of need
+Ray tracing is a long-standing method for approximating wave propagation across a wide range of disciplines, including optics, seismology, and oceanography, providing a simple framework for studying the evolution of waves  in spatially varying media.
+
+For ocean surface gravity waves, ray-based approaches have been used to study refraction by mesoscale currents, changes in bathymetry, and statistical effects such as directional diffusion of wave action. 
+
+Ray tracing has been widely used in surface wave studies, but the software implementations are often not shared or are written in low-level languages such as Fortran or C, which can be difficult to maintain and integrate into modern workflows. More recently, open-source Python tools—such as the one by Halsne et al. (2023)—have improved accessibility and reproducibility. Mantaray complements these efforts by providing a ray tracing solution built in Rust, a modern  programming language that combines memory safety with execution speed. This choice balances the ease-of-use associated with Python and the computational efficiency of Fortran or C, filling a gap for users who need robust, high-performance ray tracing within a user-friendly environment.
+
+While Rust is still relatively new in the scientific software ecosystem, especially in oceanography, the development of Mantaray illustrates its potential for broader adoption in geoscientific computing. Our package aims to help establish Rust as a top-of-mind language for developing efficient, modern scientific software.
+
+# Key Features
+Mantaray is composed of two primary layers:
+
+1. Core Engine (Rust): Implements the numerical integration of the ray equations considering stationary currents.
+
+$$\dot \mathbf{x} =  \mathbf{c_g} + \mathbf{U}$$
+$$\dot \mathbf{k} =  -\frac{\nabla \sigma(k)} - \frac{\mathbf{\nabla} \mathbf{k \cdot U}(x, y}}$$
+
+
+
+2. Python Interface: Provides a high-level API for initializing simulations, supplying input fields, and running ray integrations. 
+
+# Acknowledgements
+ABVB 
 
 # References
