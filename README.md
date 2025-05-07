@@ -36,13 +36,13 @@ pixi run python path_to_file.py
 ```
 
 ### Using Jupyter Lab
-1. Develop the code for the `jupyterlab` environment
+1. Develop the code for the `examples` environment
 ```
-pixi run -e jupyterlab develop
+pixi run -e examples develop
 ```
-2. Open Jupyter Lab using the `jupyterlab` environment
+2. Open Jupyter Lab using the `examples` environment
 ```
-pixi run -e jupyterlab jupyter lab
+pixi run -e examples jupyter lab
 ```
 
 ### To test Python library run:
