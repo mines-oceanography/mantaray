@@ -10,3 +10,14 @@ docs/_build
 
 # vscode
 .vscode/*
+
+# data
+notebooks/canonical_examples/forcing/*.nc
+notebooks/canonical_examples/output/*.nc
+
+# macOS
+.DS_store
+notebooks/.DS_Store
+
+# documentation
+docs/*.png
