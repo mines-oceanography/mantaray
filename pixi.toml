@@ -38,7 +38,7 @@ default = { solve-group = "default" }
 dev = { features = ["dev", "docs", "test"], solve-group = "default" }
 docs = { features = ["docs"], solve-group = "default" }
 test = { features = ["test"], solve-group = "default" }
-jupyterlab = { features = ["jupyterlab"], solve-group = "default" }
+examples = { features = ["dev", "docs", "examples"], solve-group = "default" }
 
 [feature.dev.dependencies]
 ruff = ">=0.4"
@@ -61,5 +61,6 @@ myst-sphinx-gallery = ">=0.3.0,<0.4"
 pytest = ">=7.0"
 netcdf4 = ">=1.5"
 
-[feature.jupyterlab.dependencies]
+[feature.examples.dependencies]
 jupyterlab = "*"
+cmocean = ">=4.0.3,<5"
