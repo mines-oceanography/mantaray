@@ -54,14 +54,85 @@ While Rust is still relatively new in the scientific software ecosystem, especia
 # Key Features
 Mantaray is composed of two primary layers:
 
-1. Core Engine (Rust): Implements the numerical integration of the ray equations considering stationary currents.
+1. Core Engine (Rust): Implements the numerical integration of the ray equations considering stationary (no time dependence) currents ${\mathbf U}(x, y)$ in a Cartesian domain.  
 
-$$\dot \mathbf{x} =  \mathbf{c_g} + \mathbf{U}$$
-$$\dot \mathbf{k} =  -\frac{\nabla \sigma(k)} - \frac{\mathbf{\nabla} \mathbf{k \cdot U}(x, y}}$$
+	For linear surface gravity waves, with dispersion relationship given by:
+	
+	$$\sigma = [gk\tanh{(kH(x, y))}]^{1/2},$$
+	
+	where $\sigma$ is the intrinsic frequency of the waves, $g$ is the gravitational acceleration, $k$ is the wavenumber magnitude, and $H$ is the water depth, the ray equations can be written as:
+	
+	$${\mathbf {c_g}} = \frac{\partial \sigma}{\partial \mathbf k},$$
+	
+	$$\dot {\mathbf x} =  {\mathbf {c_g}} + {\mathbf U}(x, y),$$
+	
+	$$\dot {\mathbf k} =  -{\mathbf \nabla} \sigma -{\mathbf \nabla} \left ( {\mathbf k} \cdot {\mathbf U}\right),$$
+	
+	where  ${\mathbf c_g}$ is the group velocity,  ${\mathbf k} = (k_x, k_y)$ is the wavenumber vector, and ${\mathbf x} = (x, y)$ is the wave position vector.
+	
+	`Mantaray` integrates the ray equations using a 4th-order Runge-Kutta scheme from the `ode_solvers` crate, with bilinear interpolation for spatial fields such as bathymetry and surface currents.
 
 
+2. Python Interface: Provides a high-level API for initializing simulations, supplying input fields, and running ray integrations. The current version of the package supports:
 
-2. Python Interface: Provides a high-level API for initializing simulations, supplying input fields, and running ray integrations. 
+	- Cartesian domains with arbitrary bathymetry and current fields input as NetCDF3 files
+	    
+	- Configurable integration parameters (step size, duration of the integration)
+	    
+	- Output of ray paths as Xarray Datasets for easy visualization and diagnostics
+
+`Mantaray` has two main functionalities: `single_ray`, for tracing an individual ray, and `ray_tracing`, for tracing a collection of rays.
+
+*Example:* The following example illustrates the use of the `single_ray` functionality for tracing a wave that is initially propagating from left to right with a wavelength of 100 m. Note that `bathymetry` and `current` are strings with the path to the respective forcing fields.
+
+ ```python
+ import numpy as np
+ import mantaray
+
+# Define initial conditions 
+k0 = 2*np.pi/100 # initial wavenumber magnitude
+theta0 = 0 # initial direction
+# Calculates wavenumber components
+kx0 = k0*np.cos(phi0)
+ky0 = k0*np.sin(phi0)
+
+# Define initial position
+x0 = 0
+y0 = 500
+
+# Define integration parameters
+duration = 1000 # duration in seconds
+timestep = 0.1 #timestep in seconds
+
+# Performs integration
+ray_path = mantaray.single_ray(x0, y0, kx0, ky0, duration, timestep, bathymetry, current)
+ ```
+
+Example:* The  `ray_tracing` functionality works similarly, but it takes a collection of initial conditions as `numpy` arrays. In the case below, we are propagating four identical rays, with different initial positions.
+
+ ```python
+ import numpy as np
+ import mantaray
+
+# Define initial conditions 
+k0 = 2*np.pi/100 # initial wavenumber magnitude
+theta0 = 0 # initial direction
+# Calculates wavenumber components
+kx0 = k0*np.cos(phi0)*np.ones(4)
+ky0 = k0*np.sin(phi0)*np.ones(4)
+
+# Define initial position
+x0 = np.array([0, 0, 0, 0])
+y0 = np.array([100, 300, 500, 700])
+
+# Define integration parameters
+duration = 1000 # duration in seconds
+timestep = 0.1 #timestep in seconds
+
+# Performs integration
+ray_path = mantaray.ray_tracing(x0, y0, kx0, ky0, duration, timestep, bathymetry, current)
+ ```
+
 
 # Acknowledgements
 ABVB 
