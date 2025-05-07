@@ -26,7 +26,7 @@ ndarray = { version = "0.16.1", features = ["rayon"] }
 netcdf3 = "0.5.2"
 netcdf = {version = "0.11.0", features = ["static", "ndarray"]}
 ode_solvers = "0.4.0"
-pyo3 = { version = "0.24.1" }
+pyo3 = { version = "0.24.2" }
 rayon = "1.10.0"
 serde_json = "1.0.119"
 serde = {version="1.0", features=["derive"]}
