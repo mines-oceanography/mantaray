@@ -34,7 +34,7 @@ affiliations:
     index: 1
   - name: National Renewable Energy Laboratory, Golden, CO, USA
     index: 2
-  - name:Graduate School of Oceanography, University of Rhode Island, Narragansett, RI, USA
+  - name: Graduate School of Oceanography, University of Rhode Island, Narragansett, RI, USA
     index: 3
 date: 7 May 2025
 bibliography: paper.bib
