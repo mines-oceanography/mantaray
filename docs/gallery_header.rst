@@ -14,3 +14,4 @@ Notebook Gallery
 
     agulhas_example
     nazare_example
+    wavewatch_case
