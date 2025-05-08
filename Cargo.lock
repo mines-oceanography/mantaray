@@ -460,7 +460,7 @@ checksum = "13dc2df351e3202783a1fe0d44375f7295ffb4049267b0f3018346dc122a1d94"
 
 [[package]]
 name = "mantaray"
-version = "0.0.7"
+version = "0.1.0"
 dependencies = [
  "cbindgen",
  "derive_builder",

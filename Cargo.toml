@@ -1,17 +1,22 @@
 [package]
 name = "mantaray"
-version = "0.0.7"
+version = "0.1.0"
 authors = [
   "Bryce Irving <bryceirving@mines.edu>",
   "Guilherme Castelao <guilherme@castelao.net>",
   "Nicholas Pizzo <nicholas.pizzo@uri.edu>",
   "Bia Villas Boas <villasboas@mines.edu>",
 ]
-license = "MIT OR Apache-2.0"
 edition = "2021"
-documentation = "https://docs.rs/mantaray"
-repository = "https://github.com/mines-oceanography/mantaray"
 rust-version = "1.76.0"
+description = "Ray-tracing solver for ocean surface gravity waves that integrates the wave ray equations over spatially varying currents and bathymetry."
+documentation = "https://docs.rs/mantaray"
+readme = "README.md"
+homepage = "https://github.com/mines-oceanography/mantaray"
+repository = "https://github.com/mines-oceanography/mantaray"
+license = "MIT OR Apache-2.0"
+keywords = ["oceanography", "ray-tracing", "waves", "ocean"]
+categories = ["science", "simulation", "mathematics"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
