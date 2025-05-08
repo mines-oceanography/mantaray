@@ -220,11 +220,11 @@ mod test_ray {
     }
 }
 
-#[allow(dead_code)]
 pub(crate) struct Bundle<T> {
     rays: Vec<Ray<T>>,
 }
 
+#[allow(dead_code)]
 impl<T> Bundle<T> {
     fn new() -> Self {
         Bundle { rays: Vec::new() }
