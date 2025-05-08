@@ -19,6 +19,7 @@ pub(super) use constant_current::DEFAULT_CURRENT;
 
 /// A trait implementing methods to get current and gradient
 pub(crate) trait CurrentData: Sync {
+    #[allow(dead_code)]
     /// Current (u, v) at the given (x, y)
     fn current(&self, point: &Point<f64>) -> Result<Current<f64>>;
 

@@ -11,13 +11,15 @@ docs/_build
 # vscode
 .vscode/*
 
+# Ignore Jupyter notebook checkpoints
+.ipynb_checkpoints/
+
 # data
 notebooks/canonical_examples/forcing/*.nc
 notebooks/canonical_examples/output/*.nc
 
 # macOS
 .DS_store
-notebooks/.DS_Store
 
 # documentation
 docs/*.png

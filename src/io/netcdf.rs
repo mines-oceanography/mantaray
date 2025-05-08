@@ -1,3 +1,8 @@
+//! NetCDF dataset
+//!
+//! TODO: this functionality is under development and unstable.
+//! See `bathymetry/` or `current/` for working netcdf3 implementation.
+
 use std::collections::HashMap;
 
 use super::Dataset;
@@ -11,6 +16,7 @@ impl Dataset for netcdf::File {
         Ok(self.dimension_len(name).unwrap())
     }
 
+    #[allow(unreachable_patterns, unused_variables)]
     fn dimensions_order(&self, varname_x: &str, varname_y: &str) -> HashMap<String, String> {
         let varnames = &self
             .variables()
@@ -69,7 +75,7 @@ pub(crate) struct BathymetryFromNetCDF {
     depth_name: String,
 }
 
-#[allow(dead_code)]
+#[allow(dead_code, deprecated)]
 impl BathymetryFromNetCDF {
     pub(crate) fn new<P>(file: P, x_name: &str, y_name: &str, depth_name: String) -> Self
     where
