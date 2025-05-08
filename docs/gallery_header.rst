@@ -8,7 +8,6 @@ Notebook Gallery
     tutorial
     canonical_ray_tracing
     idealized_fields
-    idealized_fields
     snells_law_verification
     data_generation
     homepage_animation
