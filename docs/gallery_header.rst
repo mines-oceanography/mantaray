@@ -10,3 +10,7 @@ Notebook Gallery
     idealized_fields
     snells_law_verification
     data_generation
+
+
+    agulhas_example
+    nazare_example
