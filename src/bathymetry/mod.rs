@@ -33,6 +33,7 @@ pub(super) use constant_slope::ConstantSlope;
 
 /// A trait defining ability to return depth and gradient
 pub(crate) trait BathymetryData: Sync {
+    #[allow(dead_code)]
     /// Returns the nearest depth for the given (x, y) point.
     fn depth(&self, point: &Point<f32>) -> Result<f32>;
     /// Returns the nearest depth and depth gradient for the given (x, y) coordinates
