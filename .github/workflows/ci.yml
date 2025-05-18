@@ -58,7 +58,7 @@ jobs:
 
       - uses: prefix-dev/setup-pixi@v0.8.8
         with:
-          pixi-version: v0.45.0
+          pixi-version: v0.47.0
           cache: true
           frozen: true
 
@@ -67,16 +67,8 @@ jobs:
           save-if: ${{ github.ref == 'refs/heads/main' }}
 
       - name: Run tests
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --no-fail-fast
-
-      # OSX fails to cargo test with pixi environment.
-      # Let's postpone this for now.
-      # - name: Run tests
-      #   run: |
-      #     pixi run --frozen cargo test --no-fail-fast
+        run: |
+          pixi run --frozen cargo test --no-fail-fast
 
   publish:
     name: Publish (dry-run)
