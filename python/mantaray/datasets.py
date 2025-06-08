@@ -32,12 +32,62 @@ Maverick = pooch.create(
     },
 )
 
+
 def fetch_bathy_agulhas():
     """Download agulhas bathymetry file"""
-    file_path = pooch.retrieve(
-        # URL to one of Pooch's test files
-        url=f"{DATA_URL}swot_wave_current/refs/heads/main/data/Mawar_typhon2.csv",
-        known_hash="sha256:647c3809026f6c253af8e079d808dc52ecccd4b333846786895eca93d2268dca",
-        progressbar=True,
-    )
-    return file_path
+    fname = Maverick.fetch("bathy_agulhas.nc")
+    return fname
+
+
+def fetch_bathy_nazare():
+    """Download nazare bathymetry file"""
+    fname = Maverick.fetch("bathy_nazare_edited_bis.nc")
+    return fname
+
+
+def fetch_current_agulhas():
+    """Download agulhas current file"""
+    fname = Maverick.fetch("current_agulhas.nc")
+    return fname
+
+
+def fetch_current_nazare():
+    """Download nazare current file"""
+    fname = Maverick.fetch("current_nazare.nc")
+    return fname
+
+
+def fetch_globcurrent():
+    """Download global current file"""
+    fname = Maverick.fetch("globcurrent.nc")
+    return fname
+
+
+def fetch_nazare_bathy():
+    """Download nazare bathymetry file"""
+    fname = Maverick.fetch("nazare_bathy.nc")
+    return fname
+
+
+def fetch_s2_image():
+    """Download  file"""
+    fname = Maverick.fetch("s2_image.nc")
+    return fname
+
+
+def fetch_spec_s2():
+    """Download spec s2 file"""
+    fname = Maverick.fetch("spec_s2.nc")
+    return fname
+
+
+def fetch_wavewatch_bathy():
+    """Download wavewatch bathymetry file"""
+    fname = Maverick.fetch("wavewatch_bathy.nc")
+    return fname
+
+
+def fetch_wavewatch_currents():
+    """Download wavewatch currents file"""
+    fname = Maverick.fetch("wavewatch_currents.nc")
+    return fname
