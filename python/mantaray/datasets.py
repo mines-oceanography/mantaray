@@ -6,15 +6,6 @@ Work in progress skeleton functions.
 
 import pooch
 
-DATA_URL = "https://raw.githubusercontent.com/mines-oceanography/"
-
-# file_path = pooch.retrieve(
-#     # URL to one of Pooch's test files
-#     url="https://github.com/mines-oceanography/ray_tracing/raw/refs/heads/gwen_dev/data/bathy_agulhas.nc",
-#     known_hash=None,
-# )
-
-
 Maverick = pooch.create(
     path=pooch.os_cache("mantaray"),
     base_url="https://github.com/mines-oceanography/ray_tracing/releases/download/d0.0.7/",
