@@ -20,7 +20,7 @@ Maverick = pooch.create(
     base_url="https://github.com/mines-oceanography/ray_tracing/releases/download/d0.0.7/",
     registry={
         "bathy_agulhas.nc": "sha256:706500b740f5212176b7598e8f7dddabcff3d9d2c21eae744a492236b8ba2df8",
-        "bathy_nazare_edited_bis.nc": "ha256:d48a47263f90a8fd40c2ea4e51ed289b1c5bf7b57ae410fdbfff0e97cb5d9402",
+        "bathy_nazare_edited_bis.nc": "sha256:d48a47263f90a8fd40c2ea4e51ed289b1c5bf7b57ae410fdbfff0e97cb5d9402",
         "current_agulhas.nc": "sha256:13bad7ec6be48a1ebf0c11e1f1a5f3c2ce0bbb5110598276d9859117c80aeec6",
         "current_nazare.nc": "sha256:4471d887fbee0a851f060bbd95342a57194b9dae4f17434ea4b1ce3aef469c84",
         "globcurrent.nc": "sha256:8631c7c8f74f7d460557105f79daf86a8130ce4617747aac159be9743c48c194",
