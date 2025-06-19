@@ -43,6 +43,71 @@ test = [
 #[tool.cibuildwheel]
 #build = "cp310-*"
 
+
+[tool.pixi.project]
+channels = ["conda-forge"]
+platforms = ["osx-arm64", "linux-64", "win-64"]
+
+[tool.pixi.tasks]
+build = "cargo build"
+develop = "maturin develop"
+test = "cargo test"
+fmt = "cargo fmt"
+lint = { cmd = "cargo clippy", depends-on = ["fmt"], env = {} }
+wheel = "maturin build"
+pytest = { cmd = "pytest python/tests", depends-on = ["develop"], env = {} }
+python-docs = { cmd = "make html", cwd = "docs", depends-on = ["develop"] }
+
+
+[tool.pixi.dependencies]
+maturin = ">=1.5.1,<1.6"
+rust = ">=1.84.0,<1.85"
+python = ">=3.11"
+cffi = ">=1.16.0,<1.17"
+pip = ">=24.0,<25"
+xarray = ">=2023"
+netcdf4 = ">=1.6.5,<1.7"
+ruff = ">=0.4.9,<0.5"
+matplotlib = ">=3.9.1,<3.10"
+cmake = ">=3.30.5,<4"
+pooch = ">=1.8.2,<2"
+tqdm = ">=4.67.1,<5"
+
+[tool.pixi.target.osx-arm64.build-dependencies]
+m4 = ">=1.4.18,<1.5"
+
+[tool.pixi.environments]
+default = { solve-group = "default" }
+dev = { features = ["dev", "docs", "test"], solve-group = "default" }
+docs = { features = ["docs"], solve-group = "default" }
+test = { features = ["test"], solve-group = "default" }
+examples = { features = ["dev", "docs", "examples"], solve-group = "default" }
+
+[tool.pixi.feature.dev.dependencies]
+ruff = ">=0.4"
+ipython = ">=8.0"
+
+[tool.pixi.feature.docs.dependencies]
+furo = ">=2024.8.6,<2025"
+myst-parser = ">=4.0.0,<5"
+sphinx-copybutton = ">=0.5.2,<0.6"
+sphinx-design = ">=0.6.1,<0.7"
+sphinx-inline-tabs = ">=2023.4.21,<2024"
+sphinx-tabs = ">=3.4.1,<4"
+sphinxcontrib-mermaid = ">=1.0.0,<2"
+make = ">=4.4.1,<5"
+pandoc = ">=3.6.4,<4"
+nbconvert = ">=7.16.6,<8"
+myst-sphinx-gallery = ">=0.3.0,<0.4"
+
+[tool.pixi.feature.test.dependencies]
+pytest = ">=7.0"
+netcdf4 = ">=1.5"
+
+[tool.pixi.feature.examples.dependencies]
+jupyterlab = "*"
+cmocean = ">=4.0.3,<5"
+
 [tool.maturin]
 #bindings = "cffi"
 #compatibility = "linux"
@@ -63,4 +128,3 @@ python-source = "python"
 #  { path = "include/ray_tracing.h", format = ["sdist","wheel"] },
 #  { path = "Cargo.*", format = ["sdist"] },
 #]
-
