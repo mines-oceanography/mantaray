@@ -81,7 +81,7 @@ Mantaray is composed of two primary layers:
 	    
 	- Output of ray paths as Xarray Datasets for easy visualization and diagnostics
 
-`Mantaray` has two main functionalities: `single_ray`, for tracing an individual ray, and `ray_tracing`, for tracing a collection of rays.
+Note that input is curently limited to NetCDF-3 classic format, but work is ongoing to enable full NetCDF4 compatibility in future releases. `Mantaray` has two main functionalities: `single_ray`, for tracing an individual ray, and `ray_tracing`, for tracing a collection of rays.
 
 *Example:* The following example illustrates the use of the `single_ray` functionality for tracing a wave that is initially propagating from left to right with a wavelength of 100 m. Note that `bathymetry` and `current` are strings with the path to the respective forcing fields.
 
