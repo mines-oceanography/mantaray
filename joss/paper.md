@@ -68,7 +68,7 @@ Mantaray is composed of two primary layers:
 	
 	$$\dot {\mathbf k} =  -{\boldsymbol \nabla} \sigma -{\boldsymbol \nabla} \left ( {\mathbf k} \cdot {\mathbf U}\right),$$
 	
-	where  ${\mathbf c_g}$ is the group velocity,  ${\mathbf k} = (k_x, k_y)$ is the wavenumber vector, ${\mathbf x} = (x, y)$ is the wave position vector, and the dot notation $(\dot\ )$ represents the total time derivative following the wave.
+	where  ${\mathbf c_g}$ is the group velocity,  ${\mathbf k} = (k_x, k_y)$ is the wavenumber vector, ${\mathbf x} = (x, y)$ is the wave position vector, and the dot notation represents the total time derivative following the wave.
 	
 	`Mantaray` integrates the ray equations using a 4th-order Runge-Kutta scheme from the `ode_solvers` crate, with bilinear interpolation for spatial fields such as bathymetry and surface currents.
 
