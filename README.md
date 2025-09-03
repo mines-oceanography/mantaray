@@ -6,6 +6,8 @@
 
 A library for surface gravity waves ray tracing.
 
+![Demo](https://github.com/mines-oceanography/ray_tracing/blob/demo-animation/notebooks/canonical_examples/demo_animation.gif)
+
 ## Development
 ### Installation
 1. Install [Pixi](https://pixi.sh/latest/)
