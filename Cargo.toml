@@ -1,17 +1,22 @@
 [package]
 name = "mantaray"
-version = "0.0.7"
+version = "0.1.0"
 authors = [
   "Bryce Irving <bryceirving@mines.edu>",
   "Guilherme Castelao <guilherme@castelao.net>",
   "Nicholas Pizzo <nicholas.pizzo@uri.edu>",
   "Bia Villas Boas <villasboas@mines.edu>",
 ]
-license = "MIT OR Apache-2.0"
 edition = "2021"
-documentation = "https://docs.rs/mantaray"
-repository = "https://github.com/mines-oceanography/mantaray"
 rust-version = "1.76.0"
+description = "Ray-tracing solver for ocean surface gravity waves that integrates the wave ray equations over spatially varying currents and bathymetry."
+documentation = "https://docs.rs/mantaray"
+readme = "README.md"
+homepage = "https://github.com/mines-oceanography/mantaray"
+repository = "https://github.com/mines-oceanography/mantaray"
+license = "MIT OR Apache-2.0"
+keywords = ["oceanography", "ray-tracing", "waves", "ocean"]
+categories = ["science", "simulation", "mathematics"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -21,24 +26,24 @@ crate-type = ["cdylib", "lib"]
 
 [dependencies]
 derive_builder = "0.20.0"
-libc = { version = "0.2.172", optional = true }
+libc = { version = "0.2.174", optional = true }
 ndarray = { version = "0.16.1", features = ["rayon"] }
 netcdf3 = "0.5.2"
 netcdf = {version = "0.11.0", features = ["static", "ndarray"]}
-ode_solvers = "0.4.0"
-pyo3 = { version = "0.24.2" }
+ode_solvers = "0.6.1"
+pyo3 = { version = "0.25.1", features = ["extension-module"] }
 rayon = "1.10.0"
-serde_json = "1.0.119"
+serde_json = "1.0.141"
 serde = {version="1.0", features=["derive"]}
 thiserror = "2.0.12"
 tracing = "0.1.41"
 
 [dev-dependencies]
-lockfile = "0.4.0"
-tempfile = "3.19.1"
+tempfile = "3.20.0"
 
 [build-dependencies]
 cbindgen = { version = "0.28.0", optional = true }
+pyo3-build-config = "0.25.0"
 
 [features]
 capi = ["libc"]

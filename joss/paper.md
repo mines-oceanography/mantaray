@@ -40,14 +40,14 @@ date: 7 May 2025
 bibliography: paper.bib
 ---
 # Summary
-Ocean surface gravity waves are an important component of air-sea interaction, influencing energy, momentum, and gas exchanges across the ocean-atmosphere interface. In specific applications such as refraction by ocean currents or bathymetry, ray tracing provides a computationally efficient way to gain insight into wave propagation. In this paper, we introduce `Mantaray`, an open-source software package implemented in Rust, with a Python interface, that solves the ray equations for ocean surface gravity waves. Mantaray is designed for performance, robustness, and ease of use. The package is modular to facilitate further development and can currently be applied to both idealized and realistic wave propagation problems \ref{fig:examples}.
+Ocean surface gravity waves are an important component of air-sea interaction, influencing energy, momentum, and gas exchanges across the ocean-atmosphere interface. In specific applications such as refraction by ocean currents or bathymetry, ray tracing provides a computationally efficient way to gain insight into wave propagation. In this paper, we introduce `Mantaray`, an open-source software package implemented in Rust, with a Python interface, that solves the ray equations for ocean surface gravity waves. Mantaray is designed for performance, robustness, and ease of use. The package is modular to facilitate further development and can currently be applied to both idealized and realistic wave propagation problems (Fig. \ref{fig:examples}).
 
-![Examples of ray tracing performed using `Mantaray` for waves in deep water interacting with a zonal jet (top left) and a mesoscale eddy (bottom left), and for waves encountaring varyring bathymethy on a linear beach (tipo right) and Gaussian island (bottom right) \label{fig:examples}](idealized_showcase.png){ width=100% }
+![Examples of ray tracing performed using `Mantaray`. Top left: waves in deep water interacting with a zonal jet. Bottom left: waves in deep water interacting with a mesoscale eddy. Top right: waves encountaring varyring bathymethy approaching a linear beach. Bottom right: waves approaching a Gaussian island. \label{fig:examples}](idealized_showcase.png){ width=100% }
 
 # Statement of need
-Ray tracing is a long-standing method for approximating wave propagation across a wide range of disciplines, including optics, seismology, and oceanography, providing a simple framework for studying the evolution of waves  in spatially varying media. For ocean surface gravity waves, ray-based approaches have been used to study refraction by mesoscale currents (e.g., @mapp1985wave, @romero2017observations, @marechal2022variability), changes in bathymetry (e.g., @munk1947refraction, @kukulka2017surface), and statistical effects such as directional diffusion of wave action (e.g., @smit2019swell, @VBY2023). 
+Ray tracing is a long-standing method for investigating wave propagation across a wide range of disciplines, including optics, seismology, and oceanography, providing a simple framework for studying the evolution of waves in spatially varying media. For ocean surface gravity waves, ray-based approaches have been used to study refraction by mesoscale currents (e.g., @mapp1985wave, @romero2017observations, @marechal2022variability), changes in bathymetry (e.g., @munk1947refraction, @kukulka2017surface), and statistical effects such as directional diffusion of wave action (e.g., @smit2019swell, @VBY2023). 
 
-Ray tracing has been widely used in surface wave studies, but the software implementations are often not shared or are written in low-level languages such as Fortran or C (e.g., @oreilly2016california), which can be difficult to maintain and integrate into modern workflows. More recently, open-source Python tools—such as the one by @halsne2023ocean—have improved accessibility and reproducibility. Mantaray complements these efforts by providing a ray tracing solution built in Rust, a modern  programming language that combines memory safety and execution speed with tool for seamless Python integration. This choice balances the ease-of-use associated with Python and the computational efficiency of languages like Fortran or C/C++, filling a gap for users who need robust, high-performance ray tracing within a user-friendly environment.
+Although ray tracing has been widely used in surface wave studies, the software implementations are often not shared or are written in low-level languages such as Fortran or C/C++ (e.g., @oreilly2016california), which can be difficult to maintain and integrate into modern workflows. More recently, open-source Python tools—such as the one by @halsne2023ocean—have improved accessibility and reproducibility. Mantaray complements these efforts by providing a ray tracing solution built in Rust, a modern  programming language that combines memory safety and execution speed with tools for seamless Python integration. This choice balances the ease-of-use associated with Python and the computational efficiency of languages like Fortran or C/C++, filling a gap for users who need robust, high-performance ray tracing within a user-friendly environment.
 
 While Rust is still relatively new in the scientific software ecosystem, especially in oceanography, the development of Mantaray illustrates its potential for broader adoption in geoscientific computing. Our package aims to help establish Rust as a top-of-mind language for developing efficient, modern scientific software.
 
@@ -56,17 +56,17 @@ Mantaray is composed of two primary layers:
 
 1. Core Engine (Rust): Implements the numerical integration of the ray equations considering stationary (no time dependence) currents ${\mathbf U}(x, y)$ in a Cartesian domain.  
 
-	For linear surface gravity waves, with dispersion relationship given by:
+	The dispersion relationship for linear surface gravity waves is given by:
 	
 	$$\sigma = [gk\tanh{(kH(x, y))}]^{1/2},$$
 	
-	where $\sigma$ is the intrinsic frequency of the waves, $g$ is the gravitational acceleration, $k$ is the wavenumber magnitude, and $H$ is the water depth, the ray equations can be written as:
+	where $\sigma$ is the intrinsic frequency of the waves, $g$ is the gravitational acceleration, $k$ is the wavenumber magnitude, and $H$ is the water depth. The  ray equations describing wave propagation can be written as (@phillips1966):
 	
 	$${\mathbf {c_g}} = \frac{\partial \sigma}{\partial \mathbf k},$$
 	
 	$$\dot {\mathbf x} =  {\mathbf {c_g}} + {\mathbf U}(x, y),$$
 	
-	$$\dot {\mathbf k} =  -{\mathbf \nabla} \sigma -{\mathbf \nabla} \left ( {\mathbf k} \cdot {\mathbf U}\right),$$
+	$$\dot {\mathbf k} =  -{\boldsymbol \nabla} \sigma -{\boldsymbol \nabla} \left ( {\mathbf k} \cdot {\mathbf U}\right),$$
 	
 	where  ${\mathbf c_g}$ is the group velocity,  ${\mathbf k} = (k_x, k_y)$ is the wavenumber vector, and ${\mathbf x} = (x, y)$ is the wave position vector.
 	
@@ -105,10 +105,11 @@ duration = 1000 # duration in seconds
 timestep = 0.1 #timestep in seconds
 
 # Performs integration
-ray_path = mantaray.single_ray(x0, y0, kx0, ky0, duration, timestep, bathymetry, current)
+ray_path = mantaray.single_ray(x0, y0, kx0, ky0,
+                               duration, timestep, bathymetry, current)
  ```
 
-Example:* The  `ray_tracing` functionality works similarly, but it takes a collection of initial conditions as `numpy` arrays. In the case below, we are propagating four identical rays, with different initial positions.
+*Example:* The  `ray_tracing` functionality works similarly, but it takes a collection of initial conditions as `numpy` arrays. In the case below, we are propagating four identical rays, with different initial positions.
 
  ```python
  import numpy as np
@@ -130,7 +131,8 @@ duration = 1000 # duration in seconds
 timestep = 0.1 #timestep in seconds
 
 # Performs integration
-ray_path = mantaray.ray_tracing(x0, y0, kx0, ky0, duration, timestep, bathymetry, current)
+ray_path = mantaray.ray_tracing(x0, y0, kx0, ky0,
+                                duration, timestep, bathymetry, current)
  ```
 
 
