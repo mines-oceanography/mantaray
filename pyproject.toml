@@ -109,7 +109,7 @@ pytest = ">=7.0"
 netcdf4 = ">=1.7.2,<2"
 
 [tool.pixi.feature.examples.dependencies]
-jupyterlab = "*"
+jupyterlab = ">=4.4.7,<5"
 cmocean = ">=4.0.3,<5"
 
 [tool.maturin]
