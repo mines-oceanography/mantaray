@@ -6,7 +6,7 @@ build-backend = "maturin"
 
 [project]
 name = "mantaray"
-version = "0.1.0"
+version = "0.1.2"
 authors = [
   {email = "bryceirving@mines.edu",  name = "Bryce Irving"},
   {email = "guilherme@castelao.net",  name = "Guilherme Castelao"},
@@ -60,7 +60,7 @@ python-docs = { cmd = "make html", cwd = "docs", depends-on = ["develop"] }
 
 
 [tool.pixi.dependencies]
-maturin = ">=1.5.1,<1.6"
+maturin = ">=1.9.4,<2"
 rust = ">=1.84.0,<1.85"
 python = ">=3.12"
 cffi = ">=1.16.0,<1.17"
