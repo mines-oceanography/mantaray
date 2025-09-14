@@ -6,7 +6,19 @@
 
 A library for surface gravity waves ray tracing.
 
-![Demo](https://github.com/mines-oceanography/ray_tracing/blob/demo-animation/notebooks/canonical_examples/demo_animation.gif)
+![Demo](https://github.com/mines-oceanography/mantaray/blob/main/notebooks/canonical_examples/demo_animation.gif)
+
+## Examples
+The examples are located in the `notebooks` directory, and each scenario is inside its own subfolder.
+
+To run the example notebooks, follow [installation](#installation) instructions to install pixi and clone the repo. Then, install the examples environment using `pixi run -e examples develop`. 
+
+After that there are multiple options:
+- Follow our development [instructions](#using-jupyter-lab) for using jupyter lab.
+- Start a shell with the environment using the command `pixi shell -e examples`.
+- Find the installation inside the `.pixi` folder and run the examples your own way.
+
+If there are additional instructions, such as needing data files, they will be located in the readme of that example's folder.
 
 ## Development
 ### Installation
