@@ -1,6 +1,14 @@
-<!-- start elevator-pitch -->
 
+[![Pixi Badge](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/prefix-dev/pixi/main/assets/badge/v0.json)](https://pixi.sh)
 [![Rust checks](https://github.com/mines-oceanography/ray_tracing/actions/workflows/ci.yml/badge.svg)](https://github.com/mines-oceanography/ray_tracing/actions/workflows/ci.yml)
+
+[![Docs](https://img.shields.io/badge/docs-examples-orange)](https://mines-oceanography.github.io/mantaray)
+[![Crates.io](https://img.shields.io/crates/v/mantaray)](https://crates.io/crates/mantaray)
+[![PyPI version](https://img.shields.io/pypi/v/mantaray)](https://pypi.org/project/mantaray/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+
+
+
 
 # Ray Tracing
 
