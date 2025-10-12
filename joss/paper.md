@@ -45,11 +45,11 @@ Ocean surface gravity waves are an important component of air-sea interaction, i
 ![Examples of ray tracing performed using `Mantaray`. Top left: waves in deep water interacting with a zonal jet. Bottom left: waves in deep water interacting with a mesoscale eddy. Top right: waves encountaring varyring bathymethy approaching a linear beach. Bottom right: waves approaching a Gaussian island. \label{fig:examples}](idealized_showcase.png){ width=100% }
 
 # Statement of need
-Ray tracing is a long-standing method for investigating wave propagation across a wide range of disciplines, including optics, seismology, and oceanography, providing a simple framework for studying the evolution of waves in spatially varying media. For ocean surface gravity waves, ray-based approaches have been used to study refraction by mesoscale currents (e.g., @mapp1985wave, @romero2017observations, @marechal2022variability), changes in bathymetry (e.g., @munk1947refraction, @kukulka2017surface), and statistical effects such as directional diffusion of wave action (e.g., @smit2019swell, @VBY2023). 
+Ray tracing is a long-standing method for investigating wave propagation across a wide range of disciplines, including optics, seismology, and oceanography, providing a simple framework for studying the evolution of waves in spatially varying media. For ocean surface gravity waves, ray-based approaches have been used to study refraction by mesoscale currents [e.g., @mapp1985wave; @romero2017observations; @marechal2022variability], changes in bathymetry [e.g., @munk1947refraction; @kukulka2017surface], and statistical effects such as directional diffusion of wave action [e.g., @smit2019swell; @VBY2023]. 
 
-Although ray tracing has been widely used in surface wave studies, the software implementations are often not shared or are written in low-level languages such as Fortran or C/C++ (e.g., @oreilly2016california), which can be difficult to maintain and integrate into modern workflows. More recently, open-source Python tools—such as the one by @halsne2023ocean—have improved accessibility and reproducibility. Mantaray complements these efforts by providing a ray tracing solution built in Rust, a modern  programming language that combines memory safety and execution speed with tools for seamless Python integration. This choice balances the ease-of-use associated with Python and the computational efficiency of languages like Fortran or C/C++, filling a gap for users who need robust, high-performance ray tracing within a user-friendly environment.
+Although ray tracing has been widely used in surface wave studies, the software implementations are often written in Fortran or C/C++ [e.g., @oreilly2016california] and are not always openly available or actively maintained. More recently, open-source Python tools—such as the one by @halsne2023ocean—have improved accessibility and reproducibility. Mantaray complements these efforts by providing a ray tracing solution built in Rust, a modern  programming language that combines memory safety and execution speed with tools for seamless Python integration. This choice balances the ease-of-use associated with Python and the computational efficiency of compiled languages, filling a gap for users who need robust, high-performance ray tracing within a user-friendly environment.
 
-While Rust is still relatively new in the scientific software ecosystem, especially in oceanography, the development of Mantaray illustrates its potential for broader adoption in geoscientific computing. Our package aims to help establish Rust as a top-of-mind language for developing efficient, modern scientific software.
+While Rust is still relatively new in the scientific software ecosystem, especially in oceanography, the development of Mantaray illustrates its potential for broader adoption in geoscientific computing and demonstrates the maturity and capability of Rust for physics solvers. Our package aims to contribute to language diversity in Earth sciences and establish Rust as a top-of-mind language for developing efficient, modern scientific software.
 
 # Key Features
 Mantaray is composed of two primary layers:
@@ -60,7 +60,7 @@ Mantaray is composed of two primary layers:
 	
 	$$\sigma = [gk\tanh{(kH(x, y))}]^{1/2},$$
 	
-	where $\sigma$ is the intrinsic frequency of the waves, $g$ is the gravitational acceleration, $k$ is the wavenumber magnitude, and $H$ is the water depth. The  ray equations describing wave propagation can be written as (@phillips1966):
+	where $\sigma$ is the intrinsic frequency of the waves, $g$ is the gravitational acceleration, $k$ is the wavenumber magnitude, and $H$ is the water depth. The ray equations describing wave propagation can be written as [@phillips1966]:
 	
 	$${\mathbf {c_g}} = \frac{\partial \sigma}{\partial \mathbf k},$$
 	
@@ -68,7 +68,7 @@ Mantaray is composed of two primary layers:
 	
 	$$\dot {\mathbf k} =  -{\boldsymbol \nabla} \sigma -{\boldsymbol \nabla} \left ( {\mathbf k} \cdot {\mathbf U}\right),$$
 	
-	where  ${\mathbf c_g}$ is the group velocity,  ${\mathbf k} = (k_x, k_y)$ is the wavenumber vector, and ${\mathbf x} = (x, y)$ is the wave position vector.
+	where  ${\mathbf c_g}$ is the group velocity,  ${\mathbf k} = (k_x, k_y)$ is the wavenumber vector, ${\mathbf x} = (x, y)$ is the wave position vector, and the dot notation represents the total time derivative following the wave.
 	
 	`Mantaray` integrates the ray equations using a 4th-order Runge-Kutta scheme from the `ode_solvers` crate, with bilinear interpolation for spatial fields such as bathymetry and surface currents.
 
@@ -81,7 +81,7 @@ Mantaray is composed of two primary layers:
 	    
 	- Output of ray paths as Xarray Datasets for easy visualization and diagnostics
 
-`Mantaray` has two main functionalities: `single_ray`, for tracing an individual ray, and `ray_tracing`, for tracing a collection of rays.
+Note that input is curently limited to NetCDF-3 classic format, but work is ongoing to enable full NetCDF4 compatibility in future releases. `Mantaray` has two main functionalities: `single_ray`, for tracing an individual ray, and `ray_tracing`, for tracing a collection of rays.
 
 *Example:* The following example illustrates the use of the `single_ray` functionality for tracing a wave that is initially propagating from left to right with a wavelength of 100 m. Note that `bathymetry` and `current` are strings with the path to the respective forcing fields.
 
@@ -137,6 +137,8 @@ ray_path = mantaray.ray_tracing(x0, y0, kx0, ky0,
 
 
 # Acknowledgements
+This work was authored in part by NREL for the U.S. Department of Energy (DOE), operated under Contract No. DE-AC36-08GO28308.
 We thank the Colorado School of Mines Summer Undergraduate Research Fellowship (SURF) and the Mines Undergraduate Research Fellowship (MURF) for partially supporting undergraduate students BI, JC, and JK. BVB was supported by the ONR MURI award N00014-24-1-2554, and NASA award 80NSSC24K1640 through the SWOT Science Team. CB was supported by NASA awards 80NSSC23K0979 through the International Ocean Vector Winds Science Team and 80GSFC24CA067 through the ODYSEA science team as part of the Earth System Explorer program. JK and GM were supported by NASA award 80NSSC24K0411 through the S-MODE Science Team. All co-authors are thankful to Luiz Irber for helpful recommendations throughout the development of this package.
+The views expressed in the article do not necessarily represent the views of the DOE or the U.S. Government.
 
 # References

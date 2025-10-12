@@ -12,7 +12,7 @@ jobs:
     name: Ruff
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: chartboost/ruff-action@v1
         with:
           version: 0.7.3
@@ -44,14 +44,14 @@ jobs:
             os: ubuntu-latest
             rust: stable
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
       - name: Setup Pixi
-        uses: prefix-dev/setup-pixi@v0.8.8
+        uses: prefix-dev/setup-pixi@v0.9.1
         with:
-          pixi-version: v0.45.0
+          pixi-version: v0.50.1
           frozen: true
           cache: true
 
@@ -60,3 +60,24 @@ jobs:
           save-if: ${{ github.ref == 'refs/heads/main' }}
 
       - run: pixi run -e test pytest
+
+  doc:
+    name: Check documentation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v5
+
+      - uses: prefix-dev/setup-pixi@v0.9.1
+        with:
+          pixi-version: v0.50.1
+          cache: true
+          frozen: true
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          save-if: ${{ github.ref == 'refs/heads/main' }}
+
+      - name: Build HTML
+        # Turn warning into errors
+        run: SPHINXOPTS="-W --keep-going -n" pixi run -e docs python-docs
