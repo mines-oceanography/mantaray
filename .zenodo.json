@@ -1,0 +1,45 @@
+{
+  "title": "Mantaray: A Rust Package for Ray Tracing Ocean Surface Gravity Waves",
+  "license": "MIT OR Apache-2.0",
+  "creators": [
+    {
+      "name": "Irving, Bryce",
+      "affiliation": "Colorado School of Mines",
+      "orcid": "0009-0004-2309-9522"
+    },
+    {
+      "name": "Castelao, Guilherme",
+      "affiliation": "National Renewable Energy Laboratory",
+      "orcid": "0000-0002-6765-0708"
+    },
+    {
+      "name": "Beyers, Colin",
+      "affiliation": "Colorado School of Mines",
+      "orcid": "0009-0004-8312-6158"
+    },
+    {
+      "name": "Clemson, James",
+      "affiliation": "Colorado School of Mines",
+      "orcid": "0009-0000-4329-6575"
+    },
+    {
+      "name": "Krieger, Jackson ",
+      "affiliation": "Colorado School of Mines",
+      "orcid": "0009-0006-3693-8887"
+    },
+    {
+      "name": "Marechal, Gwendal ",
+      "affiliation": "Colorado School of Mines",
+      "orcid": "0000-0003-0378-5694"
+    },
+    {
+      "name": "Pizzo, Nicholas",
+      "affiliation": "Graduate School of Oceanography, University of Rhode Island",
+      "orcid": "0000-0001-9570-4200"
+    },
+    {
+      "name": "Bia Villas Bôas",
+      "affiliation": "Colorado School of Mines",
+      "orcid": "0000-0001-6767-6556"
+    }
+}
