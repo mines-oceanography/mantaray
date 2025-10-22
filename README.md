@@ -49,7 +49,7 @@ At the top of your python file, you will need to include the following import li
 ```python
 from mantaray.core import single_ray, ray_tracing
 ```
-Documentation for these functions are located in [core.py](#api).
+Documentation for these functions are located in [core.py](https://mines-oceanography.github.io/mantaray/api.html).
 
 #### Run Python file
 
