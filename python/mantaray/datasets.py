@@ -1,7 +1,5 @@
 """
 Support datasets for testing and examples.
-
-Work in progress skeleton functions.
 """
 
 import pooch
