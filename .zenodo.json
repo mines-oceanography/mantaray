@@ -42,4 +42,25 @@
       "affiliation": "Colorado School of Mines",
       "orcid": "0000-0001-6767-6556"
     }
+  ],
+  "contributors": [
+    {
+      "type": "Other",
+      "name": "Pinchuk, Pavlo",
+      "affiliation": "National Renewable Energy Laboratory",
+      "orcid": "0000-0003-4736-4728"
+    },
+    {
+      "type": "Sponsor",
+      "name": "Colorado School of Mines"
+    },
+    {
+      "type": "Sponsor",
+      "name": "National Aeronautics and Space Administration"
+    },
+    {
+      "type": "Sponsor",
+      "name": "Office of Naval Research"
+    }
+  ]
 }
