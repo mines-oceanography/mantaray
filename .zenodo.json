@@ -1,0 +1,104 @@
+{
+  "title": "Mantaray: A Rust Package for Ray Tracing Ocean Surface Gravity Waves",
+  "license": "MIT OR Apache-2.0",
+  "creators": [
+    {
+      "name": "Irving, Bryce",
+      "affiliation": "Colorado School of Mines",
+      "orcid": "0009-0004-2309-9522"
+    },
+    {
+      "name": "Castelao, Guilherme",
+      "affiliation": "National Renewable Energy Laboratory",
+      "orcid": "0000-0002-6765-0708"
+    },
+    {
+      "name": "Beyers, Colin",
+      "affiliation": "Colorado School of Mines",
+      "orcid": "0009-0004-8312-6158"
+    },
+    {
+      "name": "Clemson, James",
+      "affiliation": "Colorado School of Mines",
+      "orcid": "0009-0000-4329-6575"
+    },
+    {
+      "name": "Krieger, Jackson ",
+      "affiliation": "Colorado School of Mines",
+      "orcid": "0009-0006-3693-8887"
+    },
+    {
+      "name": "Marechal, Gwendal ",
+      "affiliation": "Colorado School of Mines",
+      "orcid": "0000-0003-0378-5694"
+    },
+    {
+      "name": "Pizzo, Nicholas",
+      "affiliation": "Graduate School of Oceanography, University of Rhode Island",
+      "orcid": "0000-0001-9570-4200"
+    },
+    {
+      "name": "Villas Bôas, Bia",
+      "affiliation": "Colorado School of Mines",
+      "orcid": "0000-0001-6767-6556"
+    }
+  ],
+  "contributors": [
+    {
+      "type": "Other",
+      "name": "Pinchuk, Pavlo",
+      "affiliation": "National Renewable Energy Laboratory",
+      "orcid": "0000-0003-4736-4728"
+    },
+    {
+      "type": "Sponsor",
+      "name": "Colorado School of Mines"
+    },
+    {
+      "type": "Sponsor",
+      "name": "National Aeronautics and Space Administration"
+    },
+    {
+      "type": "Sponsor",
+      "name": "Office of Naval Research"
+    }
+  ],
+  "related_identifiers": [
+     {
+       "scheme": "doi",
+       "identifier": "10.1038/s41586-020-2649-2",
+       "relation": "cites",
+       "resource_type": {
+         "type": "publication",
+         "subtype": "article"
+       }
+     },
+     {
+       "scheme": "doi",
+       "identifier": "10.1109/MCSE.2021.3059263",
+       "relation": "cites",
+       "resource_type": {
+         "type": "publication",
+         "subtype": "article"
+       }
+     },
+     {
+       "scheme": "doi",
+       "identifier": "10.5281/zenodo.5130718",
+       "relation": "cites",
+       "resource_type": "software"
+     },
+     {
+       "scheme": "doi",
+       "identifier": "10.1109/MCSE.2007.55",
+       "relation": "cites",
+       "resource_type": "software"
+     },
+     {
+       "scheme": "doi",
+       "identifier": "10.5194/gmd-16-6515-2023",
+       "relation": "cites",
+       "resource_type": "software"
+     }
+  ]
+}
