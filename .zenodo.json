@@ -62,5 +62,43 @@
       "type": "Sponsor",
       "name": "Office of Naval Research"
     }
+  ],
+  "related_identifiers": [
+     {
+       "scheme": "doi",
+       "identifier": "10.1038/s41586-020-2649-2",
+       "relation": "cites",
+       "resource_type": {
+         "type": "publication",
+         "subtype": "article"
+       }
+     },
+     {
+       "scheme": "doi",
+       "identifier": "10.1109/MCSE.2021.3059263",
+       "relation": "cites",
+       "resource_type": {
+         "type": "publication",
+         "subtype": "article"
+       }
+     },
+     {
+       "scheme": "doi",
+       "identifier": "10.5281/zenodo.5130718",
+       "relation": "cites",
+       "resource_type": "software"
+     },
+     {
+       "scheme": "doi",
+       "identifier": "10.1109/MCSE.2007.55",
+       "relation": "cites",
+       "resource_type": "software"
+     },
+     {
+       "scheme": "doi",
+       "identifier": "10.5194/gmd-16-6515-2023",
+       "relation": "cites",
+       "resource_type": "software"
+     }
   ]
 }
