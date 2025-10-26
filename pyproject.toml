@@ -61,9 +61,12 @@ test = "cargo test"
 fmt = "cargo fmt"
 lint = { cmd = "cargo clippy", depends-on = ["fmt"], env = {} }
 wheel = "maturin build"
-pytest = { cmd = "pytest python/tests", depends-on = ["develop"], env = {} }
+
+[tool.pixi.feature.docs.tasks]
 python-docs = { cmd = "make html", cwd = "docs", depends-on = ["develop"] }
 
+[tool.pixi.feature.ptest.tasks]
+pytest = { cmd = "pytest python/tests", depends-on = ["develop"], env = {} }
 
 [tool.pixi.dependencies]
 maturin = ">=1.9.4,<2"
@@ -83,10 +86,10 @@ m4 = ">=1.4.18,<1.5"
 
 [tool.pixi.environments]
 default = { solve-group = "default" }
-dev = { features = ["dev", "docs", "test"], solve-group = "default" }
-docs = { features = ["docs"], solve-group = "default" }
-test = { features = ["test"], solve-group = "default" }
-examples = { features = ["dev", "docs", "examples"], solve-group = "default" }
+dev = { features = ["dev", "docs", "examples", "ptest"], solve-group = "default" }
+docs = { features = ["docs", "examples"], solve-group = "default" }
+test = { features = ["ptest"], solve-group = "default" }
+examples = { features = ["examples"], solve-group = "default" }
 
 [tool.pixi.feature.dev.dependencies]
 ruff = ">=0.12.5,<0.13"
@@ -106,9 +109,11 @@ pandoc = ">=3.6.4,<4"
 nbconvert = ">=7.16.6,<8"
 myst-sphinx-gallery = ">=0.3.0,<0.4"
 
-[tool.pixi.feature.test.dependencies]
+[tool.pixi.feature.ptest.dependencies]
 pytest = ">=7.0"
 netcdf4 = ">=1.7.2,<2"
+pytest-cov = ">=7.0.0,<8"
+pytest-xdist = ">=3.8.0,<4"
 
 [tool.pixi.feature.examples.dependencies]
 jupyterlab = ">=4.4.7,<5"

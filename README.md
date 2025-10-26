@@ -16,6 +16,8 @@ A library for surface gravity waves ray tracing.
 
 ![Demo](https://github.com/mines-oceanography/mantaray/blob/main/notebooks/canonical_examples/demo_animation.gif)
 
+<!-- examples -->
+
 ## Examples
 The examples are located in the `notebooks` directory, and each scenario is inside its own subfolder.
 
