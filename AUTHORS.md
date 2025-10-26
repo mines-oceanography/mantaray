@@ -17,7 +17,7 @@
 ## Contributors
 
 * @luizirber: Several software design recommendations.
-* @ppinchukk: PR #185 - Improved PYO3 setup.
+* @ppinchuk: PR #185 - Improved PYO3 setup.
 * @iuryt: Tested and reviwed earlier versions of the package.
 * @milancurcic: Several recommendations in the JOSS review process.
 * @gauteh: Several recommendations in the JOSS review process.
