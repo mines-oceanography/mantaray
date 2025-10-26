@@ -20,4 +20,5 @@ help:
 	rm -rf _build
 	jupyter nbconvert --config nbconvert_config_options.py
 	python fix_nbconvert.py
+	cp ../notebooks/canonical_examples/demo_animation.gif .
 	@$(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
