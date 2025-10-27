@@ -90,7 +90,7 @@ ray_path = mantaray.ray_tracing(x0, y0, kx0, ky0,
                                 duration, timestep, bathymetry, current)
  ```
 
-These functions are located in [core.py](https://mines-oceanography.github.io/mantaray/api.html), and core functionality is documented in the [api documentation](https://mines-oceanography.github.io/mantaray/api.html).
+These functions are documented in the [Core Functionality](https://mines-oceanography.github.io/mantaray/api.html#module-mantaray) section of the API reference.
 
 ## Examples
 The examples are located in the [`notebooks`](https://github.com/mines-oceanography/mantaray/tree/main/notebooks) directory, and each scenario is inside its own subfolder.
