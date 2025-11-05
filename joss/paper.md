@@ -58,7 +58,7 @@ Mantaray is composed of two primary layers:
 
 	The dispersion relationship for linear surface gravity waves is given by:
 	
-	$$\sigma = [gk\tanh{(kH(x, y))}]^{1/2},$$
+	$$\sigma^2 = gk \tanh{(kH(x, y))},$$
 	
 	where $\sigma$ is the intrinsic frequency of the waves, $g$ is the gravitational acceleration, $k$ is the wavenumber magnitude, and $H$ is the water depth. The ray equations describing wave propagation can be written as [@phillips1966]:
 	
