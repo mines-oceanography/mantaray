@@ -93,8 +93,8 @@ Note that input is curently limited to NetCDF-3 classic format, but work is ongo
 k0 = 2*np.pi/100 # initial wavenumber magnitude
 theta0 = 0 # initial direction
 # Calculates wavenumber components
-kx0 = k0*np.cos(phi0)
-ky0 = k0*np.sin(phi0)
+kx0 = k0*np.cos(theta0)
+ky0 = k0*np.sin(theta0)
 
 # Define initial position
 x0 = 0
@@ -119,8 +119,8 @@ ray_path = mantaray.single_ray(x0, y0, kx0, ky0,
 k0 = 2*np.pi/100 # initial wavenumber magnitude
 theta0 = 0 # initial direction
 # Calculates wavenumber components
-kx0 = k0*np.cos(phi0)*np.ones(4)
-ky0 = k0*np.sin(phi0)*np.ones(4)
+kx0 = k0*np.cos(theta0)*np.ones(4)
+ky0 = k0*np.sin(theta0)*np.ones(4)
 
 # Define initial position
 x0 = np.array([0, 0, 0, 0])
