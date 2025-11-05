@@ -98,10 +98,12 @@ We welcome contributions to this project!  Whether you're fixing a bug, adding a
 
 There are many ways to contribute to this project, including:
 
-*   **Reporting bugs:**  If you find a bug, please open an [issue](https://github.com/mines-oceanography/mantaray/issues) with the `bug` label and provide as much detail as possible, including steps to reproduce the issue.
-*   **Suggesting features:**  Have an idea for a new feature or improvement? Open an [issue](https://github.com/mines-oceanography/mantaray/issues) with the `enhancement` label and describe your suggestion.
-*   **Submitting code changes:**  We welcome code contributions!  Please follow the Pull Request Guidelines below.
-*   **Improving documentation:**  Clear and concise documentation is essential. If you find areas where the documentation can be improved, please submit an [issue](https://github.com/mines-oceanography/mantaray/issues) with the `documentation` label.
+*   **Reporting bugs:**  If you find a bug, please open an [issue](https://github.com/mines-oceanography/mantaray/issues) and provide as much detail as possible, including steps to reproduce the issue.
+*   **Suggesting features:**  Have an idea for a new feature or improvement? Open an [issue](https://github.com/mines-oceanography/mantaray/issues) and describe your suggestion.
+*   **Submitting code changes:**  We welcome code contributions! If your change is based on an existing issue, please comment on that issue and let us know you are working on it. Otherwise, if it is something new, create an issue and let us know what you are working on. When ready to submit, please follow the Pull Request Guidelines below.
+*   **Improving documentation:**  Clear and concise documentation is essential. If you find areas where the documentation can be improved, please submit an [issue](https://github.com/mines-oceanography/mantaray/issues).
+
+> When you create an issue, we may label it (`bug`, `enhancement`, etc). If we are unsure about what you are requesting, we will ask to clarify, and if you believe another label fits it better, let us know.
 
 ### Pull Request Guidelines
 
@@ -114,6 +116,6 @@ Before submitting a pull request, please make sure it meets these guidelines:
 
 ### Getting Help
 
-If you have questions or need help getting started, please open an issue with the `question` label.  We'll do our best to assist you.
+If you have questions or need help getting started, please open an issue and ask.  We'll do our best to assist you.
 
 <!-- end elevator-pitch -->
