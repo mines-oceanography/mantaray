@@ -58,7 +58,7 @@ Mantaray is composed of two primary layers:
 
 	The dispersion relationship for linear surface gravity waves is given by:
 	
-	$$\sigma = [gk\tanh{(kH(x, y))}]^{1/2},$$
+	$$\sigma^2 = gk \tanh{(kH(x, y))},$$
 	
 	where $\sigma$ is the intrinsic frequency of the waves, $g$ is the gravitational acceleration, $k$ is the wavenumber magnitude, and $H$ is the water depth. The ray equations describing wave propagation can be written as [@phillips1966]:
 	
@@ -93,8 +93,8 @@ Note that input is curently limited to NetCDF-3 classic format, but work is ongo
 k0 = 2*np.pi/100 # initial wavenumber magnitude
 theta0 = 0 # initial direction
 # Calculates wavenumber components
-kx0 = k0*np.cos(phi0)
-ky0 = k0*np.sin(phi0)
+kx0 = k0*np.cos(theta0)
+ky0 = k0*np.sin(theta0)
 
 # Define initial position
 x0 = 0
@@ -119,8 +119,8 @@ ray_path = mantaray.single_ray(x0, y0, kx0, ky0,
 k0 = 2*np.pi/100 # initial wavenumber magnitude
 theta0 = 0 # initial direction
 # Calculates wavenumber components
-kx0 = k0*np.cos(phi0)*np.ones(4)
-ky0 = k0*np.sin(phi0)*np.ones(4)
+kx0 = k0*np.cos(theta0)*np.ones(4)
+ky0 = k0*np.sin(theta0)*np.ones(4)
 
 # Define initial position
 x0 = np.array([0, 0, 0, 0])
@@ -138,7 +138,6 @@ ray_path = mantaray.ray_tracing(x0, y0, kx0, ky0,
 
 # Acknowledgements
 This work was authored in part by NREL for the U.S. Department of Energy (DOE), operated under Contract No. DE-AC36-08GO28308.
-We thank the Colorado School of Mines Summer Undergraduate Research Fellowship (SURF) and the Mines Undergraduate Research Fellowship (MURF) for partially supporting undergraduate students BI, JC, and JK. BVB was supported by the ONR MURI award N00014-24-1-2554, and NASA award 80NSSC24K1640 through the SWOT Science Team. CB was supported by NASA awards 80NSSC23K0979 through the International Ocean Vector Winds Science Team and 80GSFC24CA067 through the ODYSEA science team as part of the Earth System Explorer program. JK and GM were supported by NASA award 80NSSC24K0411 through the S-MODE Science Team. All co-authors are thankful to Luiz Irber for helpful recommendations throughout the development of this package.
-The views expressed in the article do not necessarily represent the views of the DOE or the U.S. Government.
+We thank the Colorado School of Mines Summer Undergraduate Research Fellowship (SURF) and the Mines Undergraduate Research Fellowship (MURF) for partially supporting undergraduate students BI, JC, and JK. BVB was supported by the ONR award N00014-24-1-2554 through the SASCWATCH MURI, and NASA award 80NSSC24K1640 through the SWOT Science Team. CB was supported by NASA awards 80NSSC23K0979 through the International Ocean Vector Winds Science Team and 80GSFC24CA067 through the ODYSEA science team as part of the Earth System Explorer program. JK and GM were supported by NASA award 80NSSC24K0411 through the S-MODE Science Team. All co-authors are thankful to Luiz Irber for helpful recommendations throughout the development of this package. The authors also thank Milan Curcic and Gaute Hope for reviewing this paper, and Gabriele Bozzola for serving as editor. The views expressed in the article do not necessarily represent the views of the DOE or the U.S. Government.
 
 # References
