@@ -87,9 +87,6 @@ def point_to_line_distance(x, y, x1, y1, x2, y2):
     denom = np.sqrt((y2 - y1)**2 + (x2 - x1)**2)
     return num / denom
 
-
-
-    
 def create_current_forcing(x, y, ucur, vcur, output_file_cur, output_file_depth, depth =  4e3):
     """
     Purpose: 
@@ -175,5 +172,3 @@ def decimal_coords_to_meters(delta_lon, delta_lat, mean_latitude):
     meters_x = delta_lon * meters_per_degree_lon
     
     return meters_x, meters_y
-
-
