@@ -31,20 +31,25 @@ After that there are multiple options:
 If there are additional instructions, such as needing data files, they will be located in the readme of that example's folder.
 
 ## Development
+
 ### Installation
 1. Install [Pixi](https://pixi.sh/latest/)
 
-2. Clone the repo
+
+2. [Fork Mantaray](https://github.com/mines-oceanography/mantaray/fork)'s repository, by clicking in the 'Fork' button in the top-right corner.
+
+3. Clone your forked repository. Check the green button and choose a protocol.
+For instance, if you use SSH you'll see something similar to:
 ```
-git clone git@github.com:mines-oceanography/mantaray.git
+git clone git@github.com:<your-username>/mantaray.git
 cd mantaray
 ```
 
-3. Build Python
+4. Build Python
 ```
 pixi run develop
 ```
-This will take about 20 to 30 minutes (at least for first time compiling on windows 10).
+This can take a few minutes the very first time.
 
 ### Usage
 At the top of your python file, you will need to include the following import line:
