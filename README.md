@@ -38,7 +38,7 @@ If there are additional instructions, such as needing data files, they will be l
 
 2. [Fork Mantaray](https://github.com/mines-oceanography/mantaray/fork)'s repository, by clicking in the 'Fork' button in the top-right corner.
 
-3. Clone your forked repository. Check the green button and chose a protocol.
+3. Clone your forked repository. Check the green button and choose a protocol.
 For instance, if you use SSH you'll see something similar to:
 ```
 git clone git@github.com:<your-username>/mantaray.git
