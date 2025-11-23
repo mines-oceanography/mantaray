@@ -49,7 +49,7 @@ cd mantaray
 ```
 pixi run develop
 ```
-This will take can take a few minutes on the very first time.
+This can take a few minutes the very first time.
 
 ### Usage
 At the top of your python file, you will need to include the following import line:
