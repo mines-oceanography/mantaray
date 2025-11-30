@@ -347,9 +347,9 @@ dependencies = [
 
 [[package]]
 name = "hdf5-metno-sys"
-version = "0.10.1"
+version = "0.9.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "de20d5ba22c244493bdfefb91d8e9de08e3e58d96a792532da5e0df545aed279"
+checksum = "1e7be8ee30e5034ee48dd30bc85a2fdde6e1ec0e5e19598409e8e9955eab14af"
 dependencies = [
  "hdf5-metno-src",
  "libc",
@@ -464,6 +464,8 @@ dependencies = [
  "libc",
  "ndarray",
  "netcdf",
+ "netcdf-src",
+ "netcdf-sys",
  "netcdf3",
  "ode_solvers",
  "pyo3",
@@ -565,9 +567,9 @@ dependencies = [
 
 [[package]]
 name = "netcdf-src"
-version = "0.4.3"
+version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7055e22df9f87c2931ac0e845028637fdab77ac8098b5dc5d4768e52932c7cd0"
+checksum = "db385e065fef89907fbc08858dddadf7a0e219b654333e7ce31260641a2238b3"
 dependencies = [
  "cmake",
  "hdf5-metno-sys",
@@ -576,9 +578,9 @@ dependencies = [
 
 [[package]]
 name = "netcdf-sys"
-version = "0.8.3"
+version = "0.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6fb81047c7e146ae97620a1523e5fd136d53efb2c4aaaf34222fdacad8a5913c"
+checksum = "e848a01eaee33a1c3f0b2b2e92f03c7fcface4384c0f7cef00024954f19c7868"
 dependencies = [
  "curl-sys",
  "hdf5-metno-sys",
