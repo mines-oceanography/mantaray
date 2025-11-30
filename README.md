@@ -3,7 +3,7 @@
 [![Crates.io](https://img.shields.io/crates/v/mantaray)](https://crates.io/crates/mantaray)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.17133200.svg)](https://doi.org/10.5281/zenodo.17133200)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
-
+[![License: Apache-2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://www.apache.org/licenses/LICENSE-2.0)
 
 [![Docs](https://img.shields.io/badge/docs-examples-orange)](https://mines-oceanography.github.io/mantaray)
 [![Rust checks](https://github.com/mines-oceanography/ray_tracing/actions/workflows/ci.yml/badge.svg)](https://github.com/mines-oceanography/ray_tracing/actions/workflows/ci.yml)
