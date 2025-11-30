@@ -42,7 +42,7 @@ bibliography: paper.bib
 # Summary
 Ocean surface gravity waves are an important component of air-sea interaction, influencing energy, momentum, and gas exchanges across the ocean-atmosphere interface. In specific applications such as refraction by ocean currents or bathymetry, ray tracing provides a computationally efficient way to gain insight into wave propagation. In this paper, we introduce `Mantaray`, an open-source software package implemented in Rust, with a Python interface, that solves the ray equations for ocean surface gravity waves. Mantaray is designed for performance, robustness, and ease of use. The package is modular to facilitate further development and can currently be applied to both idealized and realistic wave propagation problems (Fig. \ref{fig:examples}).
 
-![Examples of ray tracing performed using `Mantaray`. Top left: waves in deep water interacting with a zonal jet. Bottom left: waves in deep water interacting with a mesoscale eddy. Top right: waves encountaring varyring bathymethy approaching a linear beach. Bottom right: waves approaching a Gaussian island. \label{fig:examples}](idealized_showcase.png){ width=100% }
+![Examples of ray tracing performed using `Mantaray`. Top left: waves in deep water interacting with a zonal jet. Bottom left: waves in deep water interacting with a mesoscale eddy. Top right: waves encountering varying bathymetry approaching a linear beach. Bottom right: waves approaching a Gaussian island. \label{fig:examples}](idealized_showcase.png){ width=100% }
 
 # Statement of need
 Ray tracing is a long-standing method for investigating wave propagation across a wide range of disciplines, including optics, seismology, and oceanography, providing a simple framework for studying the evolution of waves in spatially varying media. For ocean surface gravity waves, ray-based approaches have been used to study refraction by mesoscale currents [e.g., @mapp1985wave; @romero2017observations; @marechal2022variability], changes in bathymetry [e.g., @munk1947refraction; @kukulka2017surface], and statistical effects such as directional diffusion of wave action [e.g., @smit2019swell; @VBY2023]. 
@@ -109,7 +109,7 @@ ray_path = mantaray.single_ray(x0, y0, kx0, ky0,
                                duration, timestep, bathymetry, current)
  ```
 
-*Example:* The  `ray_tracing` functionality works similarly, but it takes a collection of initial conditions as `numpy` arrays. In the case below, we are propagating four identical rays, with different initial positions.
+*Example:* The  `ray_tracing` functionality works similarly, but it takes a collection of initial conditions as `numpy` arrays. In the case below, we are propagating four identical rays with different initial positions.
 
  ```python
  import numpy as np
