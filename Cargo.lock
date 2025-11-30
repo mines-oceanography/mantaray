@@ -467,7 +467,7 @@ dependencies = [
  "netcdf3",
  "ode_solvers",
  "pyo3",
- "pyo3-build-config 0.25.1",
+ "pyo3-build-config",
  "rayon",
  "serde",
  "serde_json",
@@ -779,20 +779,10 @@ dependencies = [
  "memoffset",
  "once_cell",
  "portable-atomic",
- "pyo3-build-config 0.27.2",
+ "pyo3-build-config",
  "pyo3-ffi",
  "pyo3-macros",
  "unindent",
-]
-
-[[package]]
-name = "pyo3-build-config"
-version = "0.25.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "458eb0c55e7ece017adeba38f2248ff3ac615e53660d7c71a238d7d2a01c7598"
-dependencies = [
- "once_cell",
- "target-lexicon",
 ]
 
 [[package]]
@@ -811,7 +801,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1c85c9cbfaddf651b1221594209aed57e9e5cff63c4d11d1feead529b872a089"
 dependencies = [
  "libc",
- "pyo3-build-config 0.27.2",
+ "pyo3-build-config",
 ]
 
 [[package]]
@@ -834,7 +824,7 @@ checksum = "03b51720d314836e53327f5871d4c0cfb4fb37cc2c4a11cc71907a86342c40f9"
 dependencies = [
  "heck",
  "proc-macro2",
- "pyo3-build-config 0.27.2",
+ "pyo3-build-config",
  "quote",
  "syn",
 ]
