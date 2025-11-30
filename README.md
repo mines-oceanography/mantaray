@@ -1,13 +1,14 @@
 
-[![Pixi Badge](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/prefix-dev/pixi/main/assets/badge/v0.json)](https://pixi.sh)
-[![Rust checks](https://github.com/mines-oceanography/ray_tracing/actions/workflows/ci.yml/badge.svg)](https://github.com/mines-oceanography/ray_tracing/actions/workflows/ci.yml)
-
-[![Docs](https://img.shields.io/badge/docs-examples-orange)](https://mines-oceanography.github.io/mantaray)
-[![Crates.io](https://img.shields.io/crates/v/mantaray)](https://crates.io/crates/mantaray)
 [![PyPI version](https://img.shields.io/pypi/v/mantaray)](https://pypi.org/project/mantaray/)
+[![Crates.io](https://img.shields.io/crates/v/mantaray)](https://crates.io/crates/mantaray)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.17133200.svg)](https://doi.org/10.5281/zenodo.17133200)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
 
+[![Docs](https://img.shields.io/badge/docs-examples-orange)](https://mines-oceanography.github.io/mantaray)
+[![Rust checks](https://github.com/mines-oceanography/ray_tracing/actions/workflows/ci.yml/badge.svg)](https://github.com/mines-oceanography/ray_tracing/actions/workflows/ci.yml)
+[![Pixi Badge](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/prefix-dev/pixi/main/assets/badge/v0.json)](https://pixi.sh)
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 
 
 # Ray Tracing
