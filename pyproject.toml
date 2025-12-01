@@ -94,7 +94,7 @@ examples = { features = ["examples"], solve-group = "default" }
 [tool.pixi.feature.dev.dependencies]
 ruff = ">=0.12.5,<0.13"
 ipython = ">=8.0"
-uv = ">=0.8.3,<0.9"
+uv = ">=0.9.13,<0.10"
 
 [tool.pixi.feature.docs.dependencies]
 furo = ">=2024.8.6,<2025"
