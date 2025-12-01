@@ -92,7 +92,7 @@ test = { features = ["ptest"], solve-group = "default" }
 examples = { features = ["examples"], solve-group = "default" }
 
 [tool.pixi.feature.dev.dependencies]
-ruff = ">=0.12.5,<0.13"
+ruff = ">=0.14.7,<0.15"
 ipython = ">=8.0"
 uv = ">=0.9.13,<0.10"
 
