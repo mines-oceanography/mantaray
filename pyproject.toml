@@ -6,7 +6,7 @@ build-backend = "maturin"
 
 [project]
 name = "mantaray"
-version = "0.1.2"
+version = "0.2.1"
 authors = [
   {email = "bryceirving@mines.edu",  name = "Bryce Irving"},
   {email = "guilherme@castelao.net",  name = "Guilherme Castelao"},
