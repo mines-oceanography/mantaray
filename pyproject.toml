@@ -1,12 +1,12 @@
 [build-system]
 requires = [
-  "maturin>=1.5,<2.0",
+  "maturin>=1.10,<2.0",
   ]
 build-backend = "maturin"
 
 [project]
 name = "mantaray"
-version = "0.1.2"
+version = "0.2.1"
 authors = [
   {email = "bryceirving@mines.edu",  name = "Bryce Irving"},
   {email = "guilherme@castelao.net",  name = "Guilherme Castelao"},
@@ -69,8 +69,8 @@ python-docs = { cmd = "make html", cwd = "docs", depends-on = ["develop"] }
 pytest = { cmd = "pytest python/tests", depends-on = ["develop"], env = {} }
 
 [tool.pixi.dependencies]
-maturin = ">=1.9.4,<2"
-rust = ">=1.84.0,<1.85"
+maturin = ">=1.10.2,<2"
+rust = ">=1.91.1,<1.92"
 python = ">=3.12"
 cffi = ">=1.16.0,<1.17"
 pip = ">=24.0,<25"
@@ -92,9 +92,9 @@ test = { features = ["ptest"], solve-group = "default" }
 examples = { features = ["examples"], solve-group = "default" }
 
 [tool.pixi.feature.dev.dependencies]
-ruff = ">=0.12.5,<0.13"
+ruff = ">=0.14.7,<0.15"
 ipython = ">=8.0"
-uv = ">=0.8.3,<0.9"
+uv = ">=0.9.13,<0.10"
 
 [tool.pixi.feature.docs.dependencies]
 furo = ">=2024.8.6,<2025"
