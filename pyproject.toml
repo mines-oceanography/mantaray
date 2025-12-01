@@ -1,6 +1,6 @@
 [build-system]
 requires = [
-  "maturin>=1.5,<2.0",
+  "maturin>=1.10,<2.0",
   ]
 build-backend = "maturin"
 
@@ -69,7 +69,7 @@ python-docs = { cmd = "make html", cwd = "docs", depends-on = ["develop"] }
 pytest = { cmd = "pytest python/tests", depends-on = ["develop"], env = {} }
 
 [tool.pixi.dependencies]
-maturin = ">=1.9.4,<2"
+maturin = ">=1.10.2,<2"
 rust = ">=1.91.1,<1.92"
 python = ">=3.12"
 cffi = ">=1.16.0,<1.17"
