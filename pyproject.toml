@@ -70,7 +70,7 @@ pytest = { cmd = "pytest python/tests", depends-on = ["develop"], env = {} }
 
 [tool.pixi.dependencies]
 maturin = ">=1.9.4,<2"
-rust = ">=1.84.0,<1.85"
+rust = ">=1.91.1,<1.92"
 python = ">=3.12"
 cffi = ">=1.16.0,<1.17"
 pip = ">=24.0,<25"
