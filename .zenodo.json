@@ -1,6 +1,4 @@
 {
-  "title": "Mantaray: A Rust Package for Ray Tracing Ocean Surface Gravity Waves",
-  "license": "MIT OR Apache-2.0",
   "creators": [
     {
       "name": "Irving, Bryce",
