@@ -34,11 +34,11 @@ def single_ray(
         Time step for the simulation
     bathymetry : str
         Path to a netCDF file containing the bathymetry file. It is expected
-        to have x and y dimensions as floats and depth (x, y) as a float,
+        to have x and y dimensions as floats and depth (y, x) as a float,
         where depth is zero at surface and positive downwards.
     current : str
         Paths to a netCDF file containing the current field. It is expected
-        to have x and y dimensions as floats and u(x,y) and v(x,y) as floats.
+        to have x and y dimensions as floats and u(y,x) and v(y,x) as floats.
 
     Return
     ------
@@ -96,11 +96,11 @@ def ray_tracing(
         Time step for the simulation
     bathymetry : str
         Path to a netCDF file containing the bathymetry file. It is expected
-        x and y dimensions as floats and depth (x, y) as a float, where
+        x and y dimensions as floats and depth (y, x) as a float, where
         depth is zero at surface and positive downwards.
     current : str
         Paths to a netCDF file containing the current field. It is expected
-        to have x and y dimensions as floats and u(x,y) and v(x,y) as floats.
+        to have x and y dimensions as floats and u(y,x) and v(y,x) as floats.
 
     Returns
     -------
