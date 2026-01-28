@@ -18,24 +18,32 @@ A library for surface gravity waves ray tracing.
 ![Demo](https://github.com/mines-oceanography/mantaray/blob/main/notebooks/canonical_examples/demo_animation.gif)
 
 <!-- examples -->
+## Setup
+`mantaray` can be installed using `pip` for Python versions >= 3.10 on Windows, Mac, and Linux
+```
+# PyPI
+pip install mantaray
+```
 
 ## Examples
-The examples are located in the `notebooks` directory, and each scenario is inside its own subfolder.
+The examples are located in the [`notebooks`](https://github.com/mines-oceanography/mantaray/tree/main/notebooks) directory, and each scenario is inside its own subfolder.
 
-To run the example notebooks, follow [installation](#installation) instructions to install pixi and clone the repo. Then, install the examples environment using `pixi run -e examples develop`. 
+First, clone the repository to get all example files
+```
+git clone https://github.com/mines-oceanography/mantaray.git
+```
 
-After that there are multiple options:
-- Follow our development [instructions](#using-jupyter-lab) for using jupyter lab.
-- Start a shell with the environment using the command `pixi shell -e examples`.
-- Find the installation inside the `.pixi` folder and run the examples your own way.
+Then install the examples dependencies from PyPI
+```
+pip install mantaray[examples]
+```
 
-If there are additional instructions, such as needing data files, they will be located in the readme of that example's folder.
+Any additional instructions specific to an example will be located in the readme of that example's folder.
 
 ## Development
 
 ### Installation
-1. Install [Pixi](https://pixi.sh/latest/)
-
+1. Install [Pixi](https://pixi.sh/latest/) and familiarize yourself with basic functionality provided on that page.
 
 2. [Fork Mantaray](https://github.com/mines-oceanography/mantaray/fork)'s repository, by clicking in the 'Fork' button in the top-right corner.
 
@@ -52,31 +60,26 @@ pixi run develop
 ```
 This can take a few minutes the very first time.
 
-### Usage
-At the top of your python file, you will need to include the following import line:
-```python
-from mantaray.core import single_ray, ray_tracing
-```
-Documentation for these functions are located in [core.py](https://mines-oceanography.github.io/mantaray/api.html).
-
-#### Run Python file
+5. How to Run a Python File
 
 ```
 pixi run python path_to_file.py
 ```
 
-### Using Jupyter Lab
-1. Develop the code for the `examples` environment
+6. Examples
+  
+First, develop the code for the `examples` environment
 ```
 pixi run -e examples develop
 ```
-2. Open Jupyter Lab using the `examples` environment
+Then, open Jupyter Lab using the `examples` environment
 ```
 pixi run -e examples jupyter lab
 ```
 
-### To test Python library run:
+7. Testing:
 
+To test the Python library run
 ```
 pixi run -e test pytest
 ```
