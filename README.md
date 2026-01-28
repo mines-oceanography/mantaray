@@ -18,24 +18,99 @@ A library for surface gravity waves ray tracing.
 ![Demo](https://github.com/mines-oceanography/mantaray/blob/main/notebooks/canonical_examples/demo_animation.gif)
 
 <!-- examples -->
+## Setup
+`mantaray` can be installed using `pip` for Python versions >= 3.10 on Windows, Mac, and Linux
+```
+# PyPI
+pip install mantaray
+```
+
+## Usage
+`mantaray` has two main functionalities: `single_ray`, for tracing an individual ray, and `ray_tracing`, for tracing a collection of rays.
+
+*Example:* The following example illustrates the use of the `single_ray` functionality for tracing a wave that is initially propagating from left to right with a wavelength of 100 m. Note that bathymetry and current paths need to be provided for the example to run.
+
+ ```python
+import numpy as np
+import mantaray
+
+# Define initial conditions 
+k0 = 2*np.pi/100 # initial wavenumber magnitude
+theta0 = 0 # initial direction
+
+# Calculates wavenumber components
+kx0 = k0*np.cos(theta0)
+ky0 = k0*np.sin(theta0)
+
+# Define initial position
+x0 = 0
+y0 = 500
+
+# Define integration parameters
+duration = 1000 # duration in seconds
+timestep = 0.1 #timestep in seconds
+
+# Define paths to forcing fields
+bathymetry = "path_to_bathymetry.nc"
+current = "path_to_current.nc"
+
+# Performs integration
+ray_path = mantaray.single_ray(x0, y0, kx0, ky0,
+                               duration, timestep, bathymetry, current)
+ ```
+
+*Example:* The  `ray_tracing` functionality works similarly, but it takes a collection of initial conditions as `numpy` arrays. In the case below, we are propagating four identical rays, with different initial positions. Note that bathymetry and current paths need to be provided for the example to run.
+
+ ```python
+import numpy as np
+import mantaray
+
+# Define initial conditions 
+k0 = 2*np.pi/100 # initial wavenumber magnitude
+theta0 = 0 # initial direction
+
+# Calculates wavenumber components
+kx0 = k0*np.cos(theta0)*np.ones(4)
+ky0 = k0*np.sin(theta0)*np.ones(4)
+
+# Define initial position
+x0 = np.array([0, 0, 0, 0])
+y0 = np.array([100, 300, 500, 700])
+
+# Define integration parameters
+duration = 1000 # duration in seconds
+timestep = 0.1 #timestep in seconds
+
+# Define paths to forcing fields
+bathymetry = "path_to_bathymetry.nc"
+current = "path_to_current.nc"
+
+# Performs integration
+ray_path = mantaray.ray_tracing(x0, y0, kx0, ky0,
+                                duration, timestep, bathymetry, current)
+ ```
+
+These functions are located in [core.py](https://mines-oceanography.github.io/mantaray/api.html), and core functionality is documented in the [api documentation](https://mines-oceanography.github.io/mantaray/api.html).
 
 ## Examples
-The examples are located in the `notebooks` directory, and each scenario is inside its own subfolder.
+The examples are located in the [`notebooks`](https://github.com/mines-oceanography/mantaray/tree/main/notebooks) directory, and each scenario is inside its own subfolder.
 
-To run the example notebooks, follow [installation](#installation) instructions to install pixi and clone the repo. Then, install the examples environment using `pixi run -e examples develop`. 
+First, clone the repository to get all example files
+```
+git clone https://github.com/mines-oceanography/mantaray.git
+```
 
-After that there are multiple options:
-- Follow our development [instructions](#using-jupyter-lab) for using jupyter lab.
-- Start a shell with the environment using the command `pixi shell -e examples`.
-- Find the installation inside the `.pixi` folder and run the examples your own way.
+Then install the examples dependencies from PyPI
+```
+pip install mantaray[examples]
+```
 
-If there are additional instructions, such as needing data files, they will be located in the readme of that example's folder.
+Any additional instructions specific to an example will be located in the readme of that example's folder.
 
 ## Development
 
 ### Installation
-1. Install [Pixi](https://pixi.sh/latest/)
-
+1. Install [Pixi](https://pixi.sh/latest/) and familiarize yourself with basic functionality provided on that page.
 
 2. [Fork Mantaray](https://github.com/mines-oceanography/mantaray/fork)'s repository, by clicking in the 'Fork' button in the top-right corner.
 
@@ -52,31 +127,26 @@ pixi run develop
 ```
 This can take a few minutes the very first time.
 
-### Usage
-At the top of your python file, you will need to include the following import line:
-```python
-from mantaray.core import single_ray, ray_tracing
-```
-Documentation for these functions are located in [core.py](https://mines-oceanography.github.io/mantaray/api.html).
-
-#### Run Python file
+1. How to Run a Python File
 
 ```
 pixi run python path_to_file.py
 ```
 
-### Using Jupyter Lab
-1. Develop the code for the `examples` environment
+4. Examples
+  
+First, develop the code for the `examples` environment
 ```
 pixi run -e examples develop
 ```
-2. Open Jupyter Lab using the `examples` environment
+Then, open Jupyter Lab using the `examples` environment
 ```
 pixi run -e examples jupyter lab
 ```
 
-### To test Python library run:
+5. Testing:
 
+To test the Python library run
 ```
 pixi run -e test pytest
 ```
