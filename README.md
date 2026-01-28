@@ -25,73 +25,6 @@ A library for surface gravity waves ray tracing.
 pip install mantaray
 ```
 
-## Usage
-`mantaray` has two main functionalities: `single_ray`, for tracing an individual ray, and `ray_tracing`, for tracing a collection of rays.
-
-*Example:* The following example illustrates the use of the `single_ray` functionality for tracing a wave that is initially propagating from left to right with a wavelength of 100 m. Note that bathymetry and current paths need to be provided for the example to run.
-
- ```python
-import numpy as np
-import mantaray
-
-# Define initial conditions 
-k0 = 2*np.pi/100 # initial wavenumber magnitude
-theta0 = 0 # initial direction
-
-# Calculates wavenumber components
-kx0 = k0*np.cos(theta0)
-ky0 = k0*np.sin(theta0)
-
-# Define initial position
-x0 = 0
-y0 = 500
-
-# Define integration parameters
-duration = 1000 # duration in seconds
-timestep = 0.1 #timestep in seconds
-
-# Define paths to forcing fields
-bathymetry = "path_to_bathymetry.nc"
-current = "path_to_current.nc"
-
-# Performs integration
-ray_path = mantaray.single_ray(x0, y0, kx0, ky0,
-                               duration, timestep, bathymetry, current)
- ```
-
-*Example:* The  `ray_tracing` functionality works similarly, but it takes a collection of initial conditions as `numpy` arrays. In the case below, we are propagating four identical rays, with different initial positions. Note that bathymetry and current paths need to be provided for the example to run.
-
- ```python
-import numpy as np
-import mantaray
-
-# Define initial conditions 
-k0 = 2*np.pi/100 # initial wavenumber magnitude
-theta0 = 0 # initial direction
-
-# Calculates wavenumber components
-kx0 = k0*np.cos(theta0)*np.ones(4)
-ky0 = k0*np.sin(theta0)*np.ones(4)
-
-# Define initial position
-x0 = np.array([0, 0, 0, 0])
-y0 = np.array([100, 300, 500, 700])
-
-# Define integration parameters
-duration = 1000 # duration in seconds
-timestep = 0.1 #timestep in seconds
-
-# Define paths to forcing fields
-bathymetry = "path_to_bathymetry.nc"
-current = "path_to_current.nc"
-
-# Performs integration
-ray_path = mantaray.ray_tracing(x0, y0, kx0, ky0,
-                                duration, timestep, bathymetry, current)
- ```
-
-These functions are documented in the [Core Functionality](https://mines-oceanography.github.io/mantaray/api.html#module-mantaray) section of the API reference.
-
 ## Examples
 The examples are located in the [`notebooks`](https://github.com/mines-oceanography/mantaray/tree/main/notebooks) directory, and each scenario is inside its own subfolder.
 
@@ -127,13 +60,13 @@ pixi run develop
 ```
 This can take a few minutes the very first time.
 
-1. How to Run a Python File
+5. How to Run a Python File
 
 ```
 pixi run python path_to_file.py
 ```
 
-4. Examples
+6. Examples
   
 First, develop the code for the `examples` environment
 ```
@@ -144,7 +77,7 @@ Then, open Jupyter Lab using the `examples` environment
 pixi run -e examples jupyter lab
 ```
 
-5. Testing:
+7. Testing:
 
 To test the Python library run
 ```
