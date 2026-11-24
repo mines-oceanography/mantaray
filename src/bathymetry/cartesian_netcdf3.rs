@@ -110,28 +110,30 @@ impl BathymetryData for CartesianNetcdf3 {
         // interpolate the depth
         let depth = self.interpolate(&corner_points, &(*x, *y))?;
 
-        // get the gradient
+        // The gradient of the bilinear interpolant at the point. It varies
+        // linearly across the cell and is continuous across cell edges (a
+        // one-sided cell difference would jump at every edge and be biased by
+        // half a cell).
+        let x_space = self.x[1] - self.x[0];
+        let y_space = self.y[1] - self.y[0];
 
-        // Note: the gradient assumes that the depth is linear in both the x
-        // and y directions, and since bilinear interpolation is used to
-        // interpolate the depth at any given point, this is a good
-        // approximation.
-        let x_space = self.x[1] as f64 - self.x[0] as f64;
-        let y_space = self.y[1] as f64 - self.y[0] as f64;
+        let sw = &corner_points[0];
+        let nw = &corner_points[1];
+        let ne = &corner_points[2];
+        let se = &corner_points[3];
 
-        let sw_point = &corner_points[0];
-        let nw_point = &corner_points[1];
-        let se_point = &corner_points[3];
+        let h_sw = self.depth_at_indexes(&sw.0, &sw.1)?;
+        let h_nw = self.depth_at_indexes(&nw.0, &nw.1)?;
+        let h_ne = self.depth_at_indexes(&ne.0, &ne.1)?;
+        let h_se = self.depth_at_indexes(&se.0, &se.1)?;
 
-        let x_gradient = (self.depth_at_indexes(&se_point.0, &se_point.1)?
-            - self.depth_at_indexes(&sw_point.0, &sw_point.1)?)
-            / x_space;
+        let tx = ((x - self.x[sw.0]) / x_space).clamp(0.0, 1.0);
+        let ty = ((y - self.y[sw.1]) / y_space).clamp(0.0, 1.0);
 
-        let y_gradient = (self.depth_at_indexes(&nw_point.0, &nw_point.1)?
-            - self.depth_at_indexes(&sw_point.0, &sw_point.1)?)
-            / y_space;
+        let x_gradient = ((1.0 - ty) * (h_se - h_sw) + ty * (h_ne - h_nw)) / x_space;
+        let y_gradient = ((1.0 - tx) * (h_nw - h_sw) + tx * (h_ne - h_se)) / y_space;
 
-        Ok((depth, Gradient::new(x_gradient as f64, y_gradient as f64)))
+        Ok((depth, Gradient::new(x_gradient, y_gradient)))
     }
 }
 
@@ -843,5 +845,32 @@ mod test_cartesian_file {
                 );
             }
         }
+    }
+
+    #[test]
+    // the gradient is that of the bilinear interpolant, so it is exact for
+    // h = 10 + x y and continuous across cell edges
+    fn test_gradient_bilinear_field() {
+        let temp_file = NamedTempFile::new().unwrap();
+        let temp_path = temp_file.into_temp_path();
+
+        fn depth_fn(x: f64, y: f64) -> f64 {
+            10.0 + x * y * 1e-4
+        }
+
+        create_netcdf3_bathymetry(&temp_path, 11, 11, 100.0, 100.0, depth_fn);
+        let data = CartesianNetcdf3::open(&temp_path, "x", "y", "depth").unwrap();
+
+        for (x, y) in [(130.0, 270.0), (250.0, 640.0), (799.0, 101.0)] {
+            let (h, g) = data.depth_and_gradient(&Point::new(x, y)).unwrap();
+            assert!((h - depth_fn(x, y)).abs() < 1e-9);
+            assert!((g.dx() - y * 1e-4).abs() < 1e-9, "dx {} at ({x}, {y})", g.dx());
+            assert!((g.dy() - x * 1e-4).abs() < 1e-9, "dy {} at ({x}, {y})", g.dy());
+        }
+
+        // continuous across the cell edge at x = 200
+        let (_, a) = data.depth_and_gradient(&Point::new(199.999, 450.0)).unwrap();
+        let (_, b) = data.depth_and_gradient(&Point::new(200.001, 450.0)).unwrap();
+        assert!((a.dx() - b.dx()).abs() < 1e-6 && (a.dy() - b.dy()).abs() < 1e-6);
     }
 }
