@@ -15,11 +15,11 @@ use std::path::Path;
 ///
 /// `y_num` : `usize` the number of points in the y direction
 ///
-/// `x_step` : `f32` the step size distance between points in the x direction
+/// `x_step` : `f64` the step size distance between points in the x direction
 ///
-/// `y_step` : `f32` the step size distance between points in the y direction
+/// `y_step` : `f64` the step size distance between points in the y direction
 ///
-/// `depth_fn` : `fn(f32,f32) -> f64` a function that maps each (x,y) input to
+/// `depth_fn` : `fn(f64,f64) -> f64` a function that maps each (x,y) input to
 /// the depth, h, at that point.
 /// 
 /// # Example
@@ -30,12 +30,12 @@ pub(crate) fn create_netcdf3_bathymetry(
     path: &Path,
     x_num: usize,
     y_num: usize,
-    x_step: f32,
-    y_step: f32,
-    depth_fn: fn(f32, f32) -> f64,
+    x_step: f64,
+    y_step: f64,
+    depth_fn: fn(f64, f64) -> f64,
 ) {
-    let x_data: Vec<f32> = (0..x_num).map(|x| x as f32 * x_step).collect();
-    let y_data: Vec<f32> = (0..y_num).map(|y| y as f32 * y_step).collect();
+    let x_data: Vec<f64> = (0..x_num).map(|x| x as f64 * x_step).collect();
+    let y_data: Vec<f64> = (0..y_num).map(|y| y as f64 * y_step).collect();
 
     let mut depth_data: Vec<f64> = Vec::new();
     for y in &y_data {
@@ -65,8 +65,8 @@ pub(crate) fn create_netcdf3_bathymetry(
         data_set.add_fixed_dim(y_dim_name, y_var_len).unwrap();
         data_set.add_fixed_dim(x_dim_name, x_var_len).unwrap();
         // Define the variable
-        data_set.add_var_f32(y_var_name, &[y_dim_name]).unwrap();
-        data_set.add_var_f32(x_var_name, &[x_var_name]).unwrap();
+        data_set.add_var_f64(y_var_name, &[y_dim_name]).unwrap();
+        data_set.add_var_f64(x_var_name, &[x_var_name]).unwrap();
         data_set
             .add_var_f64(depth_var_name, &[y_dim_name, x_var_name])
             .unwrap();
@@ -80,8 +80,8 @@ pub(crate) fn create_netcdf3_bathymetry(
     // Set the NetCDF-3 definition
     file_writer.set_def(&data_set, Version::Classic, 0).unwrap();
     assert_eq!(depth_var_len, x_var_len * y_var_len);
-    file_writer.write_var_f32(y_var_name, &y_data[..]).unwrap();
-    file_writer.write_var_f32(x_var_name, &x_data[..]).unwrap();
+    file_writer.write_var_f64(y_var_name, &y_data[..]).unwrap();
+    file_writer.write_var_f64(x_var_name, &x_data[..]).unwrap();
     file_writer
         .write_var_f64(depth_var_name, &depth_data[..])
         .unwrap();

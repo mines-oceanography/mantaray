@@ -24,8 +24,8 @@ use crate::io::Dataset;
 /// - the target point must be contained within the square of the points.
 ///
 /// # Returns
-/// `Result<f32, Error>`
-/// - `Ok(f32)` : interpolated depth
+/// `Result<f64, Error>`
+/// - `Ok(f64)` : interpolated depth
 /// - `Err(Error)` : argument passed `points` is invalid
 ///
 /// # Errors
@@ -36,7 +36,7 @@ use crate::io::Dataset;
 /// The points must be in correct order since the function assumes they are. It
 /// will not give any error, but will return a value that is incorrect. In the
 /// future, this function will enforce order of the points.
-pub(crate) fn bilinear(points: &Vec<(f32, f32, f32)>, target: &(f32, f32)) -> Result<f32> {
+pub(crate) fn bilinear(points: &Vec<(f64, f64, f64)>, target: &(f64, f64)) -> Result<f64> {
     // verify quadrilateral input
     if points.len() != 4 {
         return Err(Error::InvalidArgument);
@@ -114,7 +114,7 @@ fn test_interp() {
         let target = (x + t, y + t);
         let ans = bilinear(&points, &target).unwrap();
         assert!(
-            (ans - val).abs() < f32::EPSILON,
+            (ans - val).abs() < f64::EPSILON,
             "expected: {}. actual value: {}",
             val,
             ans
@@ -152,7 +152,7 @@ fn test_edges() {
         let target = (x + t, y + t);
         let ans = bilinear(&points, &target).unwrap();
         assert!(
-            (ans - val).abs() < f32::EPSILON,
+            (ans - val).abs() < f64::EPSILON,
             "expected: {}. actual value: {}",
             val,
             ans

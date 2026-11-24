@@ -14,7 +14,7 @@ pub(crate) const DEFAULT_BATHYMETRY: ConstantDepth = ConstantDepth { h: 2000.0 }
 /// This might be only useful for development and tests.
 pub(crate) struct ConstantDepth {
     #[builder(default = "1000.0")]
-    h: f32,
+    h: f64,
 }
 
 impl BathymetryData for ConstantDepth {
@@ -23,9 +23,9 @@ impl BathymetryData for ConstantDepth {
     /// Returns NaN when any input is NaN. Since it is a constant depth,
     /// there is no concept of boundaries, thus it can't fail as out of
     /// bounds.
-    fn depth(&self, point: &Point<f32>) -> Result<f32> {
+    fn depth(&self, point: &Point<f64>) -> Result<f64> {
         if point.x().is_nan() || point.y().is_nan() {
-            Ok(f32::NAN)
+            Ok(f64::NAN)
         } else {
             Ok(self.h)
         }
@@ -36,9 +36,9 @@ impl BathymetryData for ConstantDepth {
     /// Returns NaN when any input is NaN. Since it is a constant depth,
     /// there is no concept of boundaries, thus it can't fail as out of
     /// bounds.
-    fn depth_and_gradient(&self, point: &Point<f32>) -> Result<(f32, Gradient<f32>)> {
+    fn depth_and_gradient(&self, point: &Point<f64>) -> Result<(f64, Gradient<f64>)> {
         if point.x().is_nan() || point.y().is_nan() {
-            Ok((f32::NAN, Gradient::new(f32::NAN, f32::NAN)))
+            Ok((f64::NAN, Gradient::new(f64::NAN, f64::NAN)))
         } else {
             Ok((self.h, Gradient::new(0.0, 0.0)))
         }
@@ -55,8 +55,8 @@ impl ConstantDepth {
     /// construct a bathymetry dataset with constant depth
     ///
     /// # Arguments
-    /// `h`: `f32` the depth [m]
-    pub(crate) fn new(h: f32) -> ConstantDepth {
+    /// `h`: `f64` the depth [m]
+    pub(crate) fn new(h: f64) -> ConstantDepth {
         ConstantDepth { h }
     }
 }
@@ -75,9 +75,9 @@ mod test_constant_depth {
     fn nan_input() {
         let c = ConstantDepth { h: 100.0 };
 
-        assert!(c.depth(&Point::new(f32::NAN, 0.0)).unwrap().is_nan());
-        assert!(c.depth(&Point::new(0.0, f32::NAN)).unwrap().is_nan());
-        assert!(c.depth(&Point::new(f32::NAN, f32::NAN)).unwrap().is_nan());
+        assert!(c.depth(&Point::new(f64::NAN, 0.0)).unwrap().is_nan());
+        assert!(c.depth(&Point::new(0.0, f64::NAN)).unwrap().is_nan());
+        assert!(c.depth(&Point::new(f64::NAN, f64::NAN)).unwrap().is_nan());
     }
 }
 

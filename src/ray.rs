@@ -257,7 +257,7 @@ mod test_single_wave {
     use super::SingleRay;
 
     /// Create a test file with depths split down the middle
-    fn two_depth_fn(x: f32, _y: f32) -> f64 {
+    fn two_depth_fn(x: f64, _y: f64) -> f64 {
         if x >= 50.0 {
             20.0
         } else {

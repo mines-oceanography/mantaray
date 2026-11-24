@@ -212,6 +212,29 @@ impl CartesianCurrent {
         }
     }
 
+    /// Create the current from arrays instead of a file.
+    ///
+    /// `x` and `y` must be equally-spaced and ascending, and `u` and `v` are
+    /// the flattened `(y, x)` arrays (`x` varies fastest), so their lengths
+    /// must be `x.len() * y.len()`.
+    pub(crate) fn from_arrays(
+        x: Vec<f64>,
+        y: Vec<f64>,
+        u: Vec<f64>,
+        v: Vec<f64>,
+    ) -> Result<Self> {
+        let n = x.len() * y.len();
+        if x.len() < 2 || y.len() < 2 || u.len() != n || v.len() != n {
+            return Err(Error::InvalidArgument);
+        }
+        Ok(CartesianCurrent {
+            x_vec: x,
+            y_vec: y,
+            u_vec: u,
+            v_vec: v,
+        })
+    }
+
     /// Find the index of the closest value to the target in the array
     ///
     /// # Arguments
@@ -348,12 +371,12 @@ impl CartesianCurrent {
     /// `points`: `&[(usize, usize)]`
     /// - a vector of defined points in the depth grid
     ///
-    /// `target`: `&(f32, f32)`
+    /// `target`: `&(f64, f64)`
     /// - interpolate the depth at this point
     ///
     /// # Returns
-    /// `Result<f32, Error>`
-    /// - `Ok(f32)` : the depth at the target point
+    /// `Result<f64, Error>`
+    /// - `Ok(f64)` : the depth at the target point
     /// - `Err(Error)` : cannot read depths from at coordinates in the
     ///   `points` vector.
     ///
@@ -365,33 +388,33 @@ impl CartesianCurrent {
     fn interpolate(
         &self,
         points: &[(usize, usize)], // 4 points
-        target: &(f32, f32),
+        target: &(f64, f64),
         value_arr: &[f64],
-    ) -> Result<f32> {
+    ) -> Result<f64> {
         if points.len() != 4 {
             return Err(Error::InvalidArgument);
         }
 
         let pts = vec![
             (
-                self.x_vec[points[0].0] as f32,                                   // x1
-                self.y_vec[points[0].1] as f32,                                   // y1
-                self.val_from_arr(&points[0].0, &points[0].1, value_arr)? as f32, // z1
+                self.x_vec[points[0].0] as f64,                                   // x1
+                self.y_vec[points[0].1] as f64,                                   // y1
+                self.val_from_arr(&points[0].0, &points[0].1, value_arr)? as f64, // z1
             ),
             (
-                self.x_vec[points[1].0] as f32,
-                self.y_vec[points[1].1] as f32,
-                self.val_from_arr(&points[1].0, &points[1].1, value_arr)? as f32,
+                self.x_vec[points[1].0] as f64,
+                self.y_vec[points[1].1] as f64,
+                self.val_from_arr(&points[1].0, &points[1].1, value_arr)? as f64,
             ),
             (
-                self.x_vec[points[2].0] as f32,
-                self.y_vec[points[2].1] as f32,
-                self.val_from_arr(&points[2].0, &points[2].1, value_arr)? as f32,
+                self.x_vec[points[2].0] as f64,
+                self.y_vec[points[2].1] as f64,
+                self.val_from_arr(&points[2].0, &points[2].1, value_arr)? as f64,
             ),
             (
-                self.x_vec[points[3].0] as f32,
-                self.y_vec[points[3].1] as f32,
-                self.val_from_arr(&points[3].0, &points[3].1, value_arr)? as f32,
+                self.x_vec[points[3].0] as f64,
+                self.y_vec[points[3].1] as f64,
+                self.val_from_arr(&points[3].0, &points[3].1, value_arr)? as f64,
             ),
         ];
         interpolator::bilinear(&pts, target)
@@ -455,12 +478,12 @@ impl CurrentData for CartesianCurrent {
         // interpolate the u and v values
         let u = self.interpolate(
             &corners,
-            &(*point.x() as f32, *point.y() as f32),
+            &(*point.x() as f64, *point.y() as f64),
             &self.u_vec,
         )?;
         let v = self.interpolate(
             &corners,
-            &(*point.x() as f32, *point.y() as f32),
+            &(*point.x() as f64, *point.y() as f64),
             &self.v_vec,
         )?;
 
@@ -497,12 +520,12 @@ impl CurrentData for CartesianCurrent {
         // interpolate the u and v values
         let u = self.interpolate(
             &corners,
-            &(*point.x() as f32, *point.y() as f32),
+            &(*point.x() as f64, *point.y() as f64),
             &self.u_vec,
         )?;
         let v = self.interpolate(
             &corners,
-            &(*point.x() as f32, *point.y() as f32),
+            &(*point.x() as f64, *point.y() as f64),
             &self.v_vec,
         )?;
 
