@@ -7,10 +7,12 @@ use std::path::Path;
 use std::str;
 
 use ode_solvers::dop_shared::SolverResult;
+use numpy::{PyArrayMethods, PyReadonlyArray1, PyReadonlyArray2, PyUntypedArrayMethods};
+use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 
 use crate::bathymetry::CartesianNetcdf3;
-use crate::current::CartesianCurrent;
+use crate::current::{CartesianCurrent, ConstantCurrent, CurrentData};
 use crate::datatype::{Point, Ray, RayState, WaveNumber};
 use crate::ray::{ManyRays, SingleRay};
 
@@ -19,6 +21,7 @@ use crate::ray::{ManyRays, SingleRay};
 fn _mantaray(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(single_ray, m)?)?;
     m.add_function(wrap_pyfunction!(ray_tracing, m)?)?;
+    m.add_function(wrap_pyfunction!(ray_tracing_arrays, m)?)?;
     Ok(())
 }
 
@@ -82,6 +85,85 @@ fn ray_tracing(
         })
         .collect();
     Ok(rays)
+}
+
+/// Ray tracing where bathymetry (and optionally current) are given as arrays,
+/// with no files involved. `depth`, `u` and `v` have shape `(len(y), len(x))`.
+/// Rays that fail during integration are returned as a single NaN row so that
+/// the ray index is preserved.
+#[pyfunction]
+#[pyo3(signature = (x0, y0, kx0, ky0, duration, step_size, x, y, depth, u=None, v=None))]
+#[allow(clippy::too_many_arguments)]
+fn ray_tracing_arrays(
+    py: Python<'_>,
+    x0: Vec<f64>,
+    y0: Vec<f64>,
+    kx0: Vec<f64>,
+    ky0: Vec<f64>,
+    duration: f64,
+    step_size: f64,
+    x: PyReadonlyArray1<'_, f64>,
+    y: PyReadonlyArray1<'_, f64>,
+    depth: PyReadonlyArray2<'_, f64>,
+    u: Option<PyReadonlyArray2<'_, f64>>,
+    v: Option<PyReadonlyArray2<'_, f64>>,
+) -> PyResult<Vec<Vec<(f64, f64, f64, f64, f64)>>> {
+    let err = |e: crate::error::Error| PyValueError::new_err(e.to_string());
+    if [y0.len(), kx0.len(), ky0.len()].iter().any(|n| *n != x0.len()) {
+        return Err(PyValueError::new_err("x0, y0, kx0 and ky0 must have the same length"));
+    }
+    let (nx, ny) = (x.len(), y.len());
+    if depth.shape() != [ny, nx] {
+        return Err(PyValueError::new_err("depth must have shape (len(y), len(x))"));
+    }
+    let xs = x.as_array().to_vec();
+    let ys = y.as_array().to_vec();
+    let bathymetry =
+        CartesianNetcdf3::from_arrays(xs.clone(), ys.clone(), depth.as_array().iter().copied().collect())
+            .map_err(err)?;
+
+    let current: Box<dyn CurrentData> = match (u, v) {
+        (Some(u), Some(v)) => {
+            if u.shape() != [ny, nx] || v.shape() != [ny, nx] {
+                return Err(PyValueError::new_err("u and v must have shape (len(y), len(x))"));
+            }
+            Box::new(
+                CartesianCurrent::from_arrays(
+                    xs,
+                    ys,
+                    u.as_array().iter().copied().collect(),
+                    v.as_array().iter().copied().collect(),
+                )
+                .map_err(err)?,
+            )
+        }
+        (None, None) => Box::new(ConstantCurrent::new(0.0, 0.0)),
+        _ => return Err(PyValueError::new_err("u and v must be given together")),
+    };
+
+    let init_cond = x0
+        .iter()
+        .zip(y0.iter())
+        .zip(kx0.iter().zip(ky0.iter()))
+        .map(|((x, y), (kx, ky))| RayState::new(Point::new(*x, *y), WaveNumber::new(*kx, *ky)))
+        .collect::<Vec<RayState<f64>>>();
+
+    let res = py.detach(|| {
+        ManyRays::new(&bathymetry, current.as_ref(), &init_cond).trace_many(0.0, duration, step_size)
+    });
+    Ok(res
+        .iter()
+        .map(|r| match r {
+            Some(r) => {
+                let (t, s) = r.get();
+                t.iter()
+                    .zip(s.iter())
+                    .map(|(t, s)| (*t, s[0], s[1], s[2], s[3]))
+                    .collect()
+            }
+            None => vec![(f64::NAN, f64::NAN, f64::NAN, f64::NAN, f64::NAN)],
+        })
+        .collect())
 }
 
 /*

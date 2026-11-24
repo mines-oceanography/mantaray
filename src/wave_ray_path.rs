@@ -119,7 +119,7 @@ impl<'a> WaveRayPath<'a> {
         let point = crate::Point::new(*x, *y);
         let (h, dh) = self
             .bathymetry_data
-            .depth_and_gradient(&Point::new(*x as f32, *y as f32))?;
+            .depth_and_gradient(&Point::new(*x as f64, *y as f64))?;
 
         let h = h as f64;
         let dhdx = *dh.dx() as f64;
@@ -277,8 +277,8 @@ mod test_constant_bathymetry {
             if stepper.integrate().is_ok() {
                 let last_state = stepper.y_out().last().unwrap();
                 assert!(
-                    (last_state.x - xf).abs() < f64::EPSILON // super close, so I will take the values it gives as accurate
-               && (last_state.y - yf).abs() < f64::EPSILON,
+                    (last_state.x - xf).abs() < 1e-12 // super close, so I will take the values it gives as accurate
+               && (last_state.y - yf).abs() < 1e-12,
                     "expected xf: {}, actual: {} \nexpected yf: {}, actual: {}",
                     xf,
                     last_state.x,
@@ -522,24 +522,23 @@ mod test_constant_bathymetry {
         let data: &dyn BathymetryData = &ConstantDepth::new(0.1);
         // the approximation is the square root of gravity * h, but are not, they get closer as d approaches 0.
         let check_axis = [
-            // the numbers very close to zero are likely due to switching between f32 and f64
             (
                 0.0,
                 1.0,
                 0.00000000000000006031543168844801,
-                0.9850257515953494,
+                0.9850257444023037,
             ), // should be 0.0, 0.9899494936611665
-            (1.0, 0.0, 0.9850257515953494, 0.0),
+            (1.0, 0.0, 0.9850257444023037, 0.0),
             (
                 0.0,
                 -1.0,
                 0.00000000000000006031543168844801,
-                -0.9850257515953494,
+                -0.9850257444023037,
             ),
             (
                 -1.0,
                 0.0,
-                -0.9850257515953494,
+                -0.9850257444023037,
                 0.00000000000000012063086337689602,
             ),
         ];

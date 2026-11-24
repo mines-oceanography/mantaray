@@ -70,8 +70,8 @@ impl Dataset for netcdf::File {
 
 pub(crate) struct BathymetryFromNetCDF {
     file: netcdf::File,
-    x: Vec<f32>,
-    y: Vec<f32>,
+    x: Vec<f64>,
+    y: Vec<f64>,
     depth_name: String,
 }
 
@@ -83,17 +83,17 @@ impl BathymetryFromNetCDF {
     {
         let file = netcdf::open(&file).unwrap();
 
-        let x: Vec<f32> = file
+        let x: Vec<f64> = file
             .variable(x_name)
             .expect("Could not find variable 'x'")
-            .get::<f32, _>(..)
+            .get::<f64, _>(..)
             .expect("Could not get value of variable 'x'")
             .into_raw_vec();
 
-        let y: Vec<f32> = file
+        let y: Vec<f64> = file
             .variable(y_name)
             .expect("Could not find variable 'y'")
-            .get::<f32, _>(..)
+            .get::<f64, _>(..)
             .expect("Could not get value of variable 'y'")
             .into_raw_vec();
 
@@ -107,7 +107,7 @@ impl BathymetryFromNetCDF {
 }
 
 impl BathymetryFromNetCDF {
-    fn nearest_location_index(&self, x0: &f32, y0: &f32) -> Result<(usize, usize)> {
+    fn nearest_location_index(&self, x0: &f64, y0: &f64) -> Result<(usize, usize)> {
         let i = self
             .x
             .iter()
@@ -121,7 +121,7 @@ impl BathymetryFromNetCDF {
             .y
             .iter()
             .enumerate()
-            .map(|v| (v.0, (y0 - *v.1 as f32).abs()))
+            .map(|v| (v.0, (y0 - *v.1 as f64).abs()))
             .min_by(|a, b| a.1.partial_cmp(&b.1).unwrap())
             .expect("Could not find minimum")
             .0;
@@ -129,12 +129,12 @@ impl BathymetryFromNetCDF {
         Ok((i, j))
     }
 
-    fn depth_by_index(&self, i: usize, j: usize) -> f32 {
+    fn depth_by_index(&self, i: usize, j: usize) -> f64 {
         let z0 = self
             .file
             .variable(&self.depth_name)
             .expect("Could not find variable 'depth'")
-            .get_value::<f32, _>([j, i])
+            .get_value::<f64, _>([j, i])
             .expect("Could not get value of variable 'depth'");
 
         z0
@@ -142,12 +142,12 @@ impl BathymetryFromNetCDF {
 }
 
 impl BathymetryData for BathymetryFromNetCDF {
-    fn depth(&self, point: &Point<f32>) -> Result<f32> {
+    fn depth(&self, point: &Point<f64>) -> Result<f64> {
         let (i, j) = self.nearest_location_index(point.x(), point.y())?;
         Ok(self.depth_by_index(i, j))
     }
 
-    fn depth_and_gradient(&self, point: &Point<f32>) -> Result<(f32, Gradient<f32>)> {
+    fn depth_and_gradient(&self, point: &Point<f64>) -> Result<(f64, Gradient<f64>)> {
         let (i, j) = self.nearest_location_index(point.x(), point.y())?;
         let z0 = self.depth_by_index(i, j);
 
